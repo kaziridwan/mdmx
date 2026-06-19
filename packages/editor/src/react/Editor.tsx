@@ -14,10 +14,9 @@ import { keymap } from "prosemirror-keymap";
 import { baseKeymap } from "prosemirror-commands";
 import { dropCursor } from "prosemirror-dropcursor";
 import { gapCursor } from "prosemirror-gapcursor";
-import { insertPoint } from "prosemirror-transform";
 import { parseMDX, type CollectionSpec, type Registry } from "@imdx/core";
 import { buildSchema, componentNodeName, componentNameFromNode } from "../schema.js";
-import { imdxInputRules, initialProps } from "../commands.js";
+import { imdxInputRules, initialProps, resolveComponentDrop } from "../commands.js";
 import { fromMdast } from "../from-mdast.js";
 import { createReactNodeView } from "./react-node-view.js";
 import { makeComponentBlock } from "./ComponentBlock.js";
@@ -150,7 +149,10 @@ export function IMDXEditor({
         if (!coords) return false;
         const node = type.createAndFill({ props: initialProps(spec) });
         if (!node) return false;
-        const at = insertPoint(view.state.doc, coords.pos, type) ?? coords.pos;
+        // Resolve the drop into the deepest valid container (e.g. inside a
+        // Column); reject it if the schema or `allowedParents` forbids it there.
+        const at = resolveComponentDrop(registry, view.state.schema, view.state.doc, coords.pos, name);
+        if (at == null) return false;
         view.dispatch(view.state.tr.insert(at, node).scrollIntoView());
         return true;
       },

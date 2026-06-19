@@ -16,7 +16,10 @@ export {
   wrapBlockquote,
   insertComponent,
   buildComponentNode,
+  canInsertComponent,
+  resolveComponentDrop,
   initialProps,
   slashItems,
+  slashItemsFor,
 } from "./commands.js";
 export type { SlashItem } from "./commands.js";

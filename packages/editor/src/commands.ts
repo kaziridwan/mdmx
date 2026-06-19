@@ -1,9 +1,10 @@
 import { setBlockType, toggleMark, wrapIn } from "prosemirror-commands";
 import { inputRules, textblockTypeInputRule, wrappingInputRule } from "prosemirror-inputrules";
+import { insertPoint } from "prosemirror-transform";
 import type { Command, EditorState, Transaction } from "prosemirror-state";
-import { Fragment, type Node as PMNode, type Schema } from "prosemirror-model";
+import { Fragment, type Node as PMNode, type NodeType, type Schema } from "prosemirror-model";
 import type { ComponentSpec, Registry } from "@imdx/core";
-import { componentNodeName } from "./schema.js";
+import { componentNodeName, componentNameFromNode } from "./schema.js";
 
 /** Markdown input rules: type the shortcut, the block transforms. */
 export function imdxInputRules(schema: Schema) {
@@ -112,8 +113,98 @@ export function buildComponentNode(
 }
 
 /**
+ * `allowedParents` is enforced by the core validator, not the ProseMirror
+ * schema (every component node is in the `block` group), so the editor must
+ * check it explicitly on insert. Returns true when `spec` permits living
+ * directly inside `container` (null/empty constraint ⇒ anywhere).
+ */
+function parentAllowed(spec: ComponentSpec, container: PMNode | null): boolean {
+  const allowed = spec.constraints?.allowedParents ?? null;
+  if (!allowed || allowed.length === 0) return true;
+  const containerComponent = container ? componentNameFromNode(container.type.name) : null;
+  return containerComponent != null && allowed.includes(containerComponent);
+}
+
+interface InsertPlan {
+  /** Range to replace (`from === to` ⇒ a plain insert). */
+  from: number;
+  to: number;
+  /** The node the component would land inside (for `allowedParents` checks). */
+  container: PMNode | null;
+}
+
+/**
+ * Decide where a component `type` lands for the current selection, preferring
+ * the **deepest** valid container so an insert inside a Column stays inside it.
+ * When the cursor is in an empty textblock the container accepts, that block is
+ * replaced; otherwise the nearest `insertPoint` is used. Null ⇒ the schema has
+ * nowhere to put it near the cursor.
+ */
+function planComponentInsert(
+  state: EditorState,
+  type: NodeType,
+): InsertPlan | null {
+  const { $from, empty } = state.selection;
+  const depth = $from.depth;
+  if (empty && depth > 0 && $from.parent.isTextblock && $from.parent.content.size === 0) {
+    const container = $from.node(depth - 1);
+    const index = $from.index(depth - 1);
+    if (container.canReplaceWith(index, index + 1, type)) {
+      return { from: $from.before(depth), to: $from.after(depth), container };
+    }
+  }
+  const point = insertPoint(state.doc, state.selection.from, type);
+  if (point == null) return null;
+  return { from: point, to: point, container: state.doc.resolve(point).parent };
+}
+
+/**
+ * Whether `name` can be inserted at the current selection — both the schema can
+ * place it nearby AND its `allowedParents` constraint is satisfied. Drives the
+ * context-aware slash palette (`slashItemsFor`).
+ */
+export function canInsertComponent(
+  registry: Registry,
+  schema: Schema,
+  state: EditorState,
+  name: string,
+): boolean {
+  const spec = registry.get(name);
+  const type = schema.nodes[componentNodeName(name)];
+  if (!spec || !type) return false;
+  const plan = planComponentInsert(state, type);
+  return plan != null && parentAllowed(spec, plan.container);
+}
+
+/**
+ * Resolve where a rail-dropped component lands at document `pos`, honouring both
+ * the schema and `allowedParents`. Returns the insert position, or null when the
+ * component may not go there (so the drop is rejected rather than forced).
+ */
+export function resolveComponentDrop(
+  registry: Registry,
+  schema: Schema,
+  doc: PMNode,
+  pos: number,
+  name: string,
+): number | null {
+  const spec = registry.get(name);
+  const type = schema.nodes[componentNodeName(name)];
+  if (!spec || !type) return null;
+  const at = insertPoint(doc, pos, type);
+  if (at == null) return null;
+  return parentAllowed(spec, doc.resolve(at).parent) ? at : null;
+}
+
+/**
  * Insert a component at the current selection, seeding a usable subtree
  * (see `buildComponentNode`) so the block never lands broken or empty.
+ *
+ * Insertion is **region-local and constraint-aware**: it lands in the Column
+ * (or other container) the cursor is in rather than lifting to the document top
+ * level, and it refuses (a no-op, returns false) when the component's
+ * `allowedParents` forbids the target container — so a `Column` is never
+ * slash-inserted outside a `TwoColumn`.
  */
 export function insertComponent(
   registry: Registry,
@@ -122,10 +213,17 @@ export function insertComponent(
 ): Command {
   return (state: EditorState, dispatch?: (tr: Transaction) => void) => {
     const node = buildComponentNode(registry, schema, name);
-    if (!node) return false;
+    const spec = registry.get(name);
+    if (!node || !spec) return false;
+
+    const plan = planComponentInsert(state, node.type);
+    if (!plan || !parentAllowed(spec, plan.container)) return false;
 
     if (dispatch) {
-      const tr = state.tr.replaceSelectionWith(node);
+      const tr =
+        plan.from === plan.to
+          ? state.tr.insert(plan.from, node)
+          : state.tr.replaceWith(plan.from, plan.to, node);
       dispatch(tr.scrollIntoView());
     }
     return true;
@@ -162,4 +260,21 @@ export function slashItems(registry: Registry, schema: Schema): SlashItem[] {
     run: insertComponent(registry, schema, spec.name),
   }));
   return [...core, ...components];
+}
+
+/**
+ * Context-aware palette: like `slashItems`, but component items are filtered to
+ * those insertable at the current selection (schema + `allowedParents`). Core
+ * blocks are always offered. This is what makes the slash menu region-aware —
+ * inside a Column you won't be offered a `TwoColumn`-only child, and `Column`
+ * never appears outside a `TwoColumn`.
+ */
+export function slashItemsFor(
+  registry: Registry,
+  schema: Schema,
+  state: EditorState,
+): SlashItem[] {
+  return slashItems(registry, schema).filter(
+    (item) => item.kind === "core" || canInsertComponent(registry, schema, state, item.id),
+  );
 }

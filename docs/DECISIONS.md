@@ -562,3 +562,52 @@ testable with an in-memory fake and reusable outside Next.
 CSS). Tests: `editor/tests/media.test.ts`, `media-library.test.ts` (+12).
 Verified end-to-end against `next dev`. Open: an `image`-control "Browse…" entry
 point into the same library; narrowing the upload `accept` to the server set.
+
+## ADR-028 — `allowedParents` enforced in the editor; region-local insertion
+
+**Context.** S6 shipped TwoColumn nesting, but two gaps surfaced under test:
+(1) slash/palette `insertComponent` used `replaceSelectionWith`, which lifted a
+component *out* of the Column the cursor was in up to the document top level; and
+(2) `allowedParents` is enforced only by the core validator, **not** the
+ProseMirror schema — every component node is in the `block` group, so the schema
+happily lets a `Column` be a direct child of `doc` (or of another Column). A
+slash insert or rail drop could therefore build a schema-valid but
+iMDX-*invalid* document (IMDX005) with no immediate feedback. This **refines
+ADR-010**: registry constraints are "physics" only on the *children* axis
+(`allowedChildren` → the parent's content expression, so `TwoColumn` rejects a
+bare paragraph); the *parents* axis (`allowedParents`) is policy the editor must
+apply, not schema the model enforces.
+
+**Decision.**
+- **Insertion is region-local.** `planComponentInsert` finds the deepest valid
+  position for the selection: when the cursor is in an empty textblock (e.g. a
+  seeded Column paragraph) whose container accepts the node, replace that block
+  in place; otherwise use `insertPoint`. The component lands in the Column it was
+  triggered in, not at the top level.
+- **The editor enforces `allowedParents` itself** (`parentAllowed`): the node's
+  resolved container must be one of `allowedParents` (null/empty ⇒ anywhere).
+  This is a deliberate duplication of a validator rule into the editing layer —
+  the validator remains the normative authority (SPEC §3), but the editor must
+  prevent the bad edit *before* it happens, not just flag it after.
+- **The palette and drop are constraint-aware.** `slashItemsFor` filters
+  components to those `canInsertComponent` returns true for at the current
+  selection (so `Column` never appears outside a `TwoColumn`);
+  `resolveComponentDrop` returns null for a forbidden target so the drop is
+  rejected rather than forced.
+
+**Why duplicate the rule instead of leaning on the schema.** Encoding
+`allowedParents` into the schema (excluding `Column` from the `block` group and
+giving it a bespoke group) would make the generated schema depend on the full
+cross-product of constraints and would reject *paste*/programmatic construction
+that the validator is meant to handle with a diagnostic, not a hard throw. Keeping
+the schema permissive and enforcing the constraint at the interaction layer keeps
+the two concerns — "what documents exist" vs "what edits the UI offers" —
+separate, and matches how core blocks already behave (the schema allows, the
+validator judges).
+
+**Status.** `editor/src/commands.ts` (`planComponentInsert`, `parentAllowed`,
+`canInsertComponent`, `resolveComponentDrop`, `slashItemsFor`, rewritten
+`insertComponent`); `react/Editor.tsx` (drop), `react/SlashMenu.tsx` (palette);
+`editor/tests/nested-commands.test.ts` (+9). No SPEC change. Open: a visual drop
+indicator for rail (new-component) drags — `prosemirror-dropcursor` only renders
+for PM-managed drags; internal block moves already indicate correctly.

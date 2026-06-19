@@ -43,15 +43,19 @@ reimplementing what ProseMirror already does, then discarding it.
    `render.mode:"placeholder"`. Wrap live renders in an error boundary that
    degrades to placeholder on throw.
 
-3. **Nested drop targets.** Extend drop detection to recurse into Column
-   interiors. In ProseMirror you largely get this free via `dropPoint` + the
-   content expressions (a Column can't be dropped into a Column; a paragraph
-   can). Track a nested target *path*, not just a top-level block id — this is
-   the part the prototype's flat canvas-scan can't express.
+3. **Nested drop targets.** ✅ (S9) Rail drops resolve into the deepest valid
+   container via `resolveComponentDrop` (lands inside a Column; rejects a drop
+   whose `allowedParents` isn't satisfied, rather than forcing an invalid doc).
+   Internal block moves already recurse into Columns via ProseMirror's built-in
+   DnD + `dropcursor`. *Remaining:* a visual drop indicator for rail (new
+   component) drags — `dropcursor` only renders for PM-managed drags.
 
-4. **Per-region slash menu / palette insert.** `/` inside a Column inserts
-   into that Column. The insertion command carries its container context
-   (insert position resolves to the current selection's parent).
+4. **Per-region slash menu / palette insert.** ✅ (S9) `insertComponent` is
+   region-local — it replaces the empty seeded paragraph in the current Column
+   (or inserts at the nearest valid point) instead of lifting to the top level,
+   and enforces `allowedParents` (ADR-028). `slashItemsFor` filters the palette
+   to components insertable at the selection, so a `Column` is never offered
+   outside a `TwoColumn`.
 
 5. **Selection & deletion semantics.** Click selects the innermost block.
    Deleting a Column vs. the whole TwoColumn are distinct. Deleting to zero

@@ -27,7 +27,7 @@ content; GitHub-mode deploy is wired but undocumented as a guide.
 
 | Item | Status | Notes |
 | --- | --- | --- |
-| **TwoColumn / nested editing** | ✅ | Nested NodeViews + seeded insert; renders/edits/round-trips (ADR-021). Polish (nested drop indicators, per-region slash) pending |
+| **TwoColumn / nested editing** | ✅ | Nested NodeViews + seeded insert; renders/edits/round-trips (ADR-021). Region-local + `allowedParents`-aware insertion, context-aware slash palette, constraint-aware rail drop (ADR-028). Remaining: *visual* drop indicator for rail drags |
 | Container components generally | ✅ | Same machinery as TwoColumn — any `blocks`/slot container works |
 | Draft/publish workflow | ✅ | `status` frontmatter field; editor toggle + list grouping (ADR-025) |
 | Media library UI | ✅ | `MediaSource` adapter + `MediaLibrary` modal + `insertImage`; wired in demo-next over `/files`+`/media` (ADR-027) |

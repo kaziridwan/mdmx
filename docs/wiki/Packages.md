@@ -47,7 +47,7 @@ registry on change; reports `unchanged` when the content hash is identical).
 
 ---
 
-## @imdx/editor — 51 tests
+## @imdx/editor — 60 tests
 
 Registry→ProseMirror, converters, commands (main entry, React-free), plus the
 flat React editor UI behind the `@imdx/editor/react` subpath.
@@ -57,7 +57,7 @@ flat React editor UI behind the `@imdx/editor/react` subpath.
 | `schema.ts` | `buildSchema(registry)` — static markdown core + one node per component; children policies → content expressions; `MARK_PRIORITY`. |
 | `from-mdast.ts` | `fromMdast` — mdast → PM doc; mark accumulation; component nodes; `imdx_raw` fallback. |
 | `to-mdast.ts` | `toMdast` + `printPropValue` — PM doc → mdast; priority-ordered mark grouping; canonical prop printing. |
-| `commands.ts` | `slashItems`, `insertComponent`, `imdxInputRules`, mark commands, `initialProps`. |
+| `commands.ts` | `slashItems`/`slashItemsFor` (context-aware palette), region-local + `allowedParents`-aware `insertComponent`, `canInsertComponent`, `resolveComponentDrop`, `imdxInputRules`, mark commands, `initialProps` (ADR-028). |
 | `react/react-node-view.tsx` | Thin React-NodeView adapter (one React root per component node; `contentDOM` placement). Replaces TipTap (ADR-023). |
 | `react/ComponentBlock.tsx` | Generic component renderer: live author component + error boundary → placeholder card; content hole for rich-text/blocks. |
 | `react/Editor.tsx` | `IMDXEditor` — owns the `EditorView` (history, baseKeymap, input rules, drop/gap cursor, slash plugin), builds per-component NodeViews, drag-from-rail drop; composes the chrome. |

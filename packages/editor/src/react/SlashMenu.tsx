@@ -3,7 +3,7 @@ import type { EditorState } from "prosemirror-state";
 import type { EditorView } from "prosemirror-view";
 import type { Schema } from "prosemirror-model";
 import type { Registry } from "@imdx/core";
-import { slashItems, type SlashItem } from "../commands.js";
+import { slashItemsFor, type SlashItem } from "../commands.js";
 import { getSlashState } from "./slash-plugin.js";
 
 export interface SlashMenuProps {
@@ -18,7 +18,11 @@ const NAV_KEYS = new Set(["ArrowDown", "ArrowUp", "Enter", "Escape"]);
 /** `/`-triggered command palette, positioned at the trigger and keyboard-driven. */
 export function SlashMenu({ view, state, registry, schema }: SlashMenuProps) {
   const slash = getSlashState(state);
-  const items = useMemo(() => slashItems(registry, schema), [registry, schema]);
+  // Context-aware: recompute insertable items as the selection moves.
+  const items = useMemo(
+    () => slashItemsFor(registry, schema, state),
+    [registry, schema, state],
+  );
   const filtered = useMemo(() => {
     const q = slash.query.toLowerCase();
     return q ? items.filter((i) => i.label.toLowerCase().includes(q)) : items;
