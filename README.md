@@ -13,7 +13,7 @@ components live, driven by a generated component registry.
 | --- | --- | --- |
 | `@imdx/core` | ✅ implemented | iMDX spec: parser, validator (diagnostics `IMDX001`–`IMDX007`), canonical serializer, registry types, `defineIMDX()` |
 | `@imdx/cli` | ✅ implemented | `imdx generate` (TS compiler API prop extraction → registry.json + registry.ts), `imdx check` (content lint, CI-ready exit codes), and `imdx dev` (watch components/config → debounced, hash-diffed registry regenerate) |
-| `@imdx/editor` | 🟡 flat React UI done | Registry→ProseMirror schema, `fromMdast`/`toMdast` converters (byte-level round-trip tests), command/palette layer, and the **flat React editor** under `@imdx/editor/react` — React NodeViews on raw ProseMirror (ADR-023), rail palette, slash menu, prop panel, live-source pane. Run it via `examples/editor-playground`. Nested editing (TwoColumn) pending |
+| `@imdx/editor` | ✅ implemented | Registry→ProseMirror schema, `fromMdast`/`toMdast` converters (byte-level round-trip tests), command/palette layer, and the **React editor** under `@imdx/editor/react` — React NodeViews on raw ProseMirror (ADR-023), rail palette, slash menu, prop panel, live-source pane, **nested editing** (TwoColumn, ADR-021), and a **media library** (`MediaSource` adapter + browser/uploader, ADR-027). Run it via `examples/editor-playground`. Drop-indicator polish pending |
 | `@imdx/next` | ✅ implemented | LocalProvider, content readers, encrypted sessions (AES-GCM cookies), GitHub OAuth with push-permission authz + 5-min re-verification, full content/media API handlers (web-standard Request→Response, mountable as App Router routes), and a no-OAuth `localMode` for local authoring. The editor mount page + a runnable app live in `examples/demo-next` |
 | `@imdx/provider-github` | ✅ implemented | Git Data API provider: atomic multi-file commits (blobs→tree→commit→ref), optimistic concurrency via blob shas, path-safety guards; tested against an in-memory GitHub fake |
 
@@ -49,7 +49,7 @@ formatting is treated as a semver-major change.
 
 ```sh
 pnpm install
-pnpm test          # builds @imdx/core, then runs all 140 tests across packages
+pnpm test          # builds @imdx/core, then runs all 152 tests across packages
 pnpm build         # build all packages
 pnpm check         # typecheck all packages
 ```

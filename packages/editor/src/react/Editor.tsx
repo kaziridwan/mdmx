@@ -27,6 +27,8 @@ import { SourcePane } from "./SourcePane.js";
 import { PropPanel } from "./PropPanel.js";
 import { FrontmatterPanel } from "./FrontmatterPanel.js";
 import { SlashMenu } from "./SlashMenu.js";
+import { MediaLibrary } from "./MediaLibrary.js";
+import { insertImage, type MediaItem, type MediaSource } from "./media.js";
 import { serializeDoc } from "./source-map.js";
 
 /** Map of component name → the author's React component, for live rendering. */
@@ -47,6 +49,13 @@ export interface IMDXEditorProps {
   onSave?: (source: string) => void | Promise<void>;
   /** Label shown in the toolbar (e.g. the file path). */
   docTitle?: string;
+  /**
+   * Media storage adapter. When provided, an "Insert image" toolbar button
+   * opens the media library; the picked asset is inserted as an image node.
+   */
+  media?: MediaSource;
+  /** Media directory uploads are written under (default: `public/media`). */
+  mediaDir?: string;
 }
 
 type SaveStatus = "idle" | "saving" | "saved" | "error";
@@ -80,6 +89,8 @@ export function IMDXEditor({
   collection,
   onSave,
   docTitle,
+  media,
+  mediaDir = "public/media",
 }: IMDXEditorProps) {
   const schema = useMemo(() => buildSchema(registry), [registry]);
   const mountRef = useRef<HTMLDivElement>(null);
@@ -88,6 +99,7 @@ export function IMDXEditor({
   const [dirty, setDirty] = useState(false);
   const [saveStatus, setSaveStatus] = useState<SaveStatus>("idle");
   const [saveError, setSaveError] = useState<string | null>(null);
+  const [mediaOpen, setMediaOpen] = useState(false);
 
   useEffect(() => {
     const mount = mountRef.current;
@@ -170,36 +182,71 @@ export function IMDXEditor({
     }
   }, [view, onSave, registry]);
 
+  const handlePickMedia = useCallback(
+    (item: MediaItem) => {
+      setMediaOpen(false);
+      if (view) {
+        insertImage(view, { src: item.url, alt: "" });
+        view.focus();
+      }
+    },
+    [view],
+  );
+
+  const showToolbar = onSave != null || media != null;
+
   return (
     <div className="imdx-editor">
       <Rail registry={registry} schema={schema} view={view} />
       <div className="imdx-canvas-wrap">
-        {onSave ? (
+        {showToolbar ? (
           <div className="imdx-toolbar">
             <span className="imdx-toolbar-title">{docTitle ?? "Untitled"}</span>
-            <span className="imdx-toolbar-status" data-status={saveStatus}>
-              {saveStatus === "saving"
-                ? "Saving…"
-                : saveStatus === "saved" && !dirty
-                  ? "Saved"
-                  : saveStatus === "error"
-                    ? (saveError ?? "Save failed")
-                    : dirty
-                      ? "Unsaved changes"
-                      : ""}
-            </span>
-            <button
-              type="button"
-              className="imdx-toolbar-save"
-              onClick={handleSave}
-              disabled={saveStatus === "saving" || (!dirty && saveStatus !== "error")}
-            >
-              Save
-            </button>
+            {media ? (
+              <button
+                type="button"
+                className="imdx-toolbar-image"
+                onClick={() => setMediaOpen(true)}
+                disabled={!view}
+              >
+                Insert image
+              </button>
+            ) : null}
+            {onSave ? (
+              <>
+                <span className="imdx-toolbar-status" data-status={saveStatus}>
+                  {saveStatus === "saving"
+                    ? "Saving…"
+                    : saveStatus === "saved" && !dirty
+                      ? "Saved"
+                      : saveStatus === "error"
+                        ? (saveError ?? "Save failed")
+                        : dirty
+                          ? "Unsaved changes"
+                          : ""}
+                </span>
+                <button
+                  type="button"
+                  className="imdx-toolbar-save"
+                  onClick={handleSave}
+                  disabled={saveStatus === "saving" || (!dirty && saveStatus !== "error")}
+                >
+                  Save
+                </button>
+              </>
+            ) : null}
           </div>
         ) : null}
         <div className="imdx-canvas" ref={mountRef} />
         {view && state ? <SlashMenu view={view} state={state} registry={registry} schema={schema} /> : null}
+        {media && mediaOpen ? (
+          <MediaLibrary
+            media={media}
+            mediaDir={mediaDir}
+            onPick={handlePickMedia}
+            onClose={() => setMediaOpen(false)}
+          />
+        ) : null}
       </div>
       <SourcePane state={state} registry={registry} />
       {isComponentSelected(state, registry) ? (

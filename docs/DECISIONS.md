@@ -522,3 +522,43 @@ against `examples/demo` instead.
 `cli/src/index.ts` (exports); `cli/tests/dev.test.ts` (+7). No format/registry
 change, so no SPEC or diagnostic impact. Open: signaling a running editor to
 refresh its palette/schema is not yet wired — `dev` regenerates artifacts only.
+
+## ADR-027 — Media library via an editor-side `MediaSource` adapter
+
+**Context.** The `@imdx/next` API already had `POST /media` (upload) and could
+list a media dir through `GET /files`, but there was no UI to browse, upload, or
+insert media. The question was where the browser lives and how it talks to
+storage without coupling the editor to `@imdx/next` (Invariant 9 keeps layers
+from depending upward).
+
+**Decision.**
+- **The editor owns the UI but not the transport.** `IMDXEditor` takes an
+  optional `media: MediaSource` prop — an interface with `list()` and
+  `upload()` — mirroring how `onSave` abstracts persistence. The host wires it
+  to `@imdx/next`'s routes, a GitHub provider, or a fake. The editor never
+  fetches directly; the `MediaLibrary` modal calls only through the adapter.
+- **Insertion reuses the existing CommonMark `image` node** (already in the
+  schema, converters, and SPEC §2). `insertImage` drops an inline image at the
+  cursor (or wraps it in a paragraph when the selection isn't inline). **No new
+  grammar, registry, or diagnostic** — picking media is editor behavior, not a
+  format change, so SPEC is untouched.
+- **Upload helpers are pure and unit-tested** (`safeFilename` sanitizes to a
+  repo-safe basename, `mediaPath` joins under the media dir, `bytesToBase64`
+  builds the `POST /media` payload). The library component is the only
+  DOM-coupled piece; jsdom covers list/filter/pick/upload.
+- **The upload type-whitelist stays a server concern.** `@imdx/next`'s
+  `MEDIA_EXTENSIONS` (png/jpg/jpeg/gif/webp/avif — deliberately *not* svg, which
+  can carry scripts) is the authority; the editor's `IMAGE_EXTENSIONS` governs
+  only thumbnail *preview*. A rejected upload surfaces the server error in the
+  modal rather than being pre-validated client-side, keeping one source of truth.
+
+**Why an adapter over a built-in fetch client.** Hard-coding `fetch("/api/imdx/
+media")` into the editor would couple it to one mount path and one backend, and
+break the "main entry is React/Next-free" boundary. The adapter keeps the editor
+testable with an in-memory fake and reusable outside Next.
+
+**Status.** `editor/src/react/media.ts`, `MediaLibrary.tsx`, `Editor.tsx`,
+`react/index.ts`; `examples/demo-next` (`EditorClient` adapter, sample asset,
+CSS). Tests: `editor/tests/media.test.ts`, `media-library.test.ts` (+12).
+Verified end-to-end against `next dev`. Open: an `image`-control "Browse…" entry
+point into the same library; narrowing the upload `accept` to the server set.

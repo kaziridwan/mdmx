@@ -47,7 +47,7 @@ registry on change; reports `unchanged` when the content hash is identical).
 
 ---
 
-## @imdx/editor — 39 tests
+## @imdx/editor — 51 tests
 
 Registry→ProseMirror, converters, commands (main entry, React-free), plus the
 flat React editor UI behind the `@imdx/editor/react` subpath.
@@ -64,13 +64,14 @@ flat React editor UI behind the `@imdx/editor/react` subpath.
 | `react/Rail.tsx`, `SlashMenu.tsx`, `PropPanel.tsx`, `SourcePane.tsx` | Chrome: component palette, `/`-menu, props editor (one tx per edit), live canonical source with active-block marking. |
 | `react/Editor.tsx` (`onSave`/`docTitle`/`collection`) | Optional save toolbar (dirty/saving/saved/error); serializes the doc via `serializeDoc` and hands canonical iMDX to the host. Used by the Next mount page. |
 | `react/FrontmatterPanel.tsx`, `controls.tsx` | Document-level panel editing a collection's typed frontmatter; writes canonical YAML to the doc attr in one tx. `Control` is the shared typed input (also used by `PropPanel`). |
+| `react/media.ts`, `MediaLibrary.tsx` | Media library: `MediaSource` adapter (API-agnostic `list`/`upload`), pure upload helpers (`fileToUpload`/`safeFilename`/`bytesToBase64`), `insertImage` command, and the modal browser/uploader. Wired via the editor's `media` prop (ADR-027). |
 | `react/slash-plugin.ts`, `source-map.ts`, `prop-controls.ts` | Slash trigger plugin; doc→canonical serialization + active-block line mapping; prop value coercion (pure, unit-tested). |
 
 `@imdx/editor` main export stays React-free (Invariant 9); React imports come
 from `@imdx/editor/react`. The interactive design **spec** remains
 `examples/editor-prototype.html`; the runnable harness is
-`examples/editor-playground`. **Pending:** nested editing (see
-[TwoColumn](TwoColumn.md)).
+`examples/editor-playground`. Nested editing (TwoColumn) and the media library
+have landed; remaining polish is nested drop indicators + per-region slash.
 
 ---
 

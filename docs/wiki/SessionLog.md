@@ -11,6 +11,37 @@ initial design-and-build conversation (12 commits).
 
 <!-- APPEND NEW ENTRIES ABOVE THIS LINE -->
 
+### S8 — Media library UI
+- **editor**: new `src/react/media.ts` — `MediaSource` adapter interface
+  (API-agnostic `list`/`upload`, like `onSave`), pure helpers (`safeFilename`,
+  `mediaPath`, `bytesToBase64`, `fileToUpload`, `isImagePath`), and an
+  `insertImage` ProseMirror command (inserts the existing inline `image` node;
+  wraps in a paragraph when the cursor isn't in inline content). New
+  `MediaLibrary.tsx` modal: lists assets, search-filters, uploads, and yields
+  the picked asset. `Editor.tsx` gains `media`/`mediaDir` props → an "Insert
+  image" toolbar button opens the library; picking inserts an image. Exported
+  from `react/index.ts`.
+- **demo-next**: `EditorClient` implements `MediaSource` over the API
+  (`GET /files?dir=public/media` to list, `POST /media` to upload; empty dir →
+  `[]`), passes it to the editor; added a `public/media/sample-logo.svg` asset
+  and full media-library CSS in `globals.css`.
+- Decisions → **ADR-027** (editor-side `MediaSource` adapter; image insertion
+  reuses the CommonMark `image` node — no new grammar; upload type-whitelist
+  stays a server concern).
+- Tests: +12 editor (39→51): `media.test.ts` (helpers + image→`![]()` round
+  trip) and `media-library.test.ts` (jsdom: list/filter/pick/upload, plus editor
+  integration — "Insert image" → pick → `![](/media/logo.png)` in the source).
+  **152 total.**
+- Verified end-to-end against `next dev`: `list` returns the sample asset, PNG
+  `upload` writes to disk and returns 201, re-upload of the same path → **409**
+  (media is never silently overwritten). Confirmed `.svg` upload is correctly
+  rejected by the server whitelist (XSS safety).
+- Wiki touched: Packages, Roadmap, Testing, Home, SessionLog; README, AGENTS,
+  PROJECT_STATUS. No SPEC change (the `image` node was already in the subset).
+- Follow-ups: `image`-typed prop/frontmatter controls could open the same
+  library (a "Browse…" button); the editor previews `.svg` but the server
+  rejects svg uploads — a host may want to narrow the file `accept` to match.
+
 ### S7 — `imdx dev` (registry watch mode)
 - **cli**: new `src/dev.ts` — `runGenerate` (one generate pass + a formatted
   status line), `staticBase`/`watchTargets` (derive watch dirs from the
