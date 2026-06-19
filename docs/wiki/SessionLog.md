@@ -11,6 +11,38 @@ initial design-and-build conversation (12 commits).
 
 <!-- APPEND NEW ENTRIES ABOVE THIS LINE -->
 
+### S9 — Region-aware nested insertion (TwoColumn polish)
+- **Found a real bug**: slash/palette `insertComponent` used
+  `replaceSelectionWith`, which **lifted the component out of the Column to the
+  document top level** (proven by a throwaway probe). Also `allowedParents` is
+  *not* a ProseMirror-schema constraint (every component node is in the `block`
+  group) — it was only enforced by the core validator — so `insertPoint` would
+  place a `Column` at the top level (schema-valid, iMDX-invalid).
+- **editor/commands.ts**: insertion is now **region-local and constraint-aware**.
+  `planComponentInsert` lands the node in the deepest valid container (replacing
+  an empty seeded paragraph in place, else `insertPoint`); `parentAllowed`
+  enforces `allowedParents`. New exports: `canInsertComponent` (predicate),
+  `resolveComponentDrop` (rail-drop resolver that rejects invalid targets), and
+  `slashItemsFor` (context-aware palette — filters components to those
+  insertable at the selection). `Editor.tsx` drop handler uses
+  `resolveComponentDrop` (was `insertPoint(...) ?? coords.pos`, which could force
+  an invalid doc); `SlashMenu` uses `slashItemsFor`, recomputed as the selection
+  moves → a `Column` is never offered/inserted outside a `TwoColumn`.
+- Decisions → **ADR-028** (allowedParents enforced in the editor, not the
+  schema; region-local insertion; constraint-aware palette/drop).
+- Tests: +9 editor (51→60) in `nested-commands.test.ts` — region-local insert
+  (lands in the Column, replaces the empty paragraph), `allowedParents`
+  rejection, empty-doc top-level still works, `resolveComponentDrop` into a
+  Column / reject Column-at-top, and `slashItemsFor` hiding `Column`. Existing
+  `commands.test.ts` (8) unchanged. **161 total.**
+- Wiki touched: Packages, Roadmap, Testing, Home, TwoColumn, SessionLog; README,
+  PROJECT_STATUS. No SPEC change (no grammar/registry/diagnostic change — this
+  aligns editor insertion with the existing IMDX004/005 constraint semantics).
+- Follow-ups: the *visual* drop indicator for **rail** (new-component) drags
+  isn't shown — `prosemirror-dropcursor` only renders for PM-managed drags;
+  internal block moves already show nested indicators. Deletion semantics
+  (Step 5) unchanged.
+
 ### S8 — Media library UI
 - **editor**: new `src/react/media.ts` — `MediaSource` adapter interface
   (API-agnostic `list`/`upload`, like `onSave`), pure helpers (`safeFilename`,
