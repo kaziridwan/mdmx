@@ -30,7 +30,7 @@ content; GitHub-mode deploy is wired but undocumented as a guide.
 | **TwoColumn / nested editing** | ✅ | Nested NodeViews + seeded insert; renders/edits/round-trips (ADR-021). Polish (nested drop indicators, per-region slash) pending |
 | Container components generally | ✅ | Same machinery as TwoColumn — any `blocks`/slot container works |
 | Draft/publish workflow | ✅ | `status` frontmatter field; editor toggle + list grouping (ADR-025) |
-| Media library UI | ⬜ | API exists (`POST /media`); needs a browser |
+| Media library UI | ✅ | `MediaSource` adapter + `MediaLibrary` modal + `insertImage`; wired in demo-next over `/files`+`/media` (ADR-027) |
 | Collections (typed frontmatter, list views) | ✅ | Config→registry; `validateFrontmatter` (IMDX008/009); editor frontmatter panel (ADR-025) |
 | `imdx dev` (registry watch mode) | ✅ | Debounced, hash-diffed regenerate on component/config change (ADR-026). HMR push to a running editor still open |
 

@@ -31,3 +31,20 @@ export {
   displayControlValue,
   setPropValue,
 } from "./prop-controls.js";
+export { MediaLibrary } from "./MediaLibrary.js";
+export type { MediaLibraryProps } from "./MediaLibrary.js";
+export {
+  insertImage,
+  fileToUpload,
+  mediaPath,
+  safeFilename,
+  bytesToBase64,
+  isImagePath,
+  IMAGE_EXTENSIONS,
+} from "./media.js";
+export type {
+  MediaItem,
+  MediaUpload,
+  MediaSource,
+  UploadableFile,
+} from "./media.js";
