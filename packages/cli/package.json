@@ -1,0 +1,25 @@
+{
+  "name": "@imdx/cli",
+  "version": "0.1.0",
+  "description": "iMDX tooling: registry codegen (generate), content linting (check), and watch mode (dev)",
+  "type": "module",
+  "bin": {
+    "imdx": "./dist/bin.js"
+  },
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@imdx/core": "workspace:*",
+    "tinyglobby": "~0.2.15",
+    "typescript": "~5.5.4"
+  },
+  "devDependencies": {
+    "@types/node": "~22.10.10",
+    "@types/react": "~18.3.18"
+  }
+}

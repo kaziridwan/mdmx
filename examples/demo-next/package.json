@@ -1,0 +1,29 @@
+{
+  "name": "demo-next",
+  "private": true,
+  "version": "0.0.0",
+  "description": "Runnable Next.js app dogfooding the full iMDX loop: edit components-as-blocks, save canonical iMDX to the local repo (no GitHub needed)",
+  "scripts": {
+    "generate": "imdx generate",
+    "predev": "imdx generate",
+    "dev": "next dev",
+    "prebuild": "imdx generate",
+    "build": "next build",
+    "start": "next start"
+  },
+  "dependencies": {
+    "@imdx/core": "workspace:*",
+    "@imdx/editor": "workspace:*",
+    "@imdx/next": "workspace:*",
+    "next": "14.2.18",
+    "react": "~18.3.1",
+    "react-dom": "~18.3.1"
+  },
+  "devDependencies": {
+    "@imdx/cli": "workspace:*",
+    "@types/node": "~22.10.10",
+    "@types/react": "~18.3.18",
+    "@types/react-dom": "~18.3.5",
+    "typescript": "~5.5.4"
+  }
+}

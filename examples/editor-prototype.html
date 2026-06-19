@@ -1,0 +1,900 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>iMDX Editor</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Newsreader:opsz,wght@6..72,400;6..72,500;6..72,600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.3.1/umd/react.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.3.1/umd/react-dom.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.26.4/babel.min.js"></script>
+<style>
+  :root {
+    --paper:#FBFBFD; --canvas:#FFFFFF; --ink:#1A1B22; --muted:#6B6F80;
+    --line:#E7E8EF; --indigo:#4C50E6; --indigo-wash:#EEF0FE; --amber:#C77B12;
+    --code-bg:#14151C; --code-line:#22232E; --code-ink:#C9CCE0; --code-dim:#6A6E85;
+    --danger:#D8453A; --warn:#C77B12; --info:#3E6DDA;
+    --ui:"Space Grotesk",system-ui,sans-serif;
+    --body:"Newsreader",Georgia,serif;
+    --mono:"JetBrains Mono",ui-monospace,monospace;
+  }
+  * { box-sizing:border-box; }
+  html,body { margin:0; height:100%; }
+  body {
+    font-family:var(--ui); color:var(--ink); background:var(--paper);
+    -webkit-font-smoothing:antialiased; overflow:hidden;
+  }
+  #root { height:100vh; }
+
+  .app { display:grid; grid-template-columns:248px 1fr minmax(320px,38%); height:100vh; }
+  @media (max-width:1080px){ .app{ grid-template-columns:64px 1fr; } .source-pane{ display:none; } }
+
+  /* ---- Rail / palette ---- */
+  .rail { background:var(--canvas); border-right:1px solid var(--line); display:flex; flex-direction:column; min-height:0; }
+  .brand { padding:20px 20px 14px; display:flex; align-items:center; gap:10px; border-bottom:1px solid var(--line); }
+  .brand .mark { width:26px; height:26px; border-radius:7px; background:linear-gradient(135deg,var(--indigo),#7C4DF0); display:grid; place-items:center; color:#fff; font-weight:700; font-size:13px; box-shadow:0 2px 8px rgba(76,80,230,.35); }
+  .brand .name { font-weight:600; letter-spacing:-.01em; font-size:15px; }
+  .brand .name b { color:var(--indigo); }
+  .rail-scroll { overflow-y:auto; padding:14px 12px 20px; flex:1; min-height:0; }
+  .rail-label { font-size:10.5px; letter-spacing:.14em; text-transform:uppercase; color:var(--muted); padding:14px 8px 7px; font-weight:600; }
+  .palette-item { display:flex; align-items:center; gap:10px; width:100%; text-align:left; padding:8px 9px; border:1px solid transparent; border-radius:9px; background:transparent; cursor:pointer; color:var(--ink); font-family:var(--ui); font-size:13.5px; transition:background .12s,border-color .12s,transform .05s; }
+  .palette-item:hover { background:var(--paper); border-color:var(--line); }
+  .palette-item:active { transform:translateY(1px); }
+  .palette-item .ic { width:26px; height:26px; border-radius:7px; display:grid; place-items:center; flex:none; background:var(--indigo-wash); color:var(--indigo); }
+  .palette-item .ic svg { width:15px; height:15px; }
+  .palette-item .meta { min-width:0; }
+  .palette-item .meta .t { font-weight:500; }
+  .palette-item .meta .d { font-size:11px; color:var(--muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .rail-foot { padding:12px 16px; border-top:1px solid var(--line); font-size:11px; color:var(--muted); line-height:1.5; }
+  .rail-foot kbd { font-family:var(--mono); font-size:10.5px; background:var(--paper); border:1px solid var(--line); border-bottom-width:2px; border-radius:5px; padding:1px 5px; color:var(--ink); }
+
+  /* ---- Canvas ---- */
+  .canvas-wrap { position:relative; min-height:0; overflow-y:auto; background:var(--paper); }
+  .canvas-head { position:sticky; top:0; z-index:5; background:linear-gradient(var(--paper),var(--paper) 70%,transparent); padding:18px 56px 8px; display:flex; align-items:baseline; gap:14px; }
+  .doc-title { font-family:var(--ui); font-weight:600; font-size:13px; color:var(--muted); letter-spacing:-.01em; }
+  .doc-title .slug { color:var(--ink); }
+  .status-pill { font-size:11px; font-weight:600; padding:2px 9px; border-radius:999px; background:var(--indigo-wash); color:var(--indigo); letter-spacing:.02em; }
+  .canvas { max-width:680px; margin:0 auto; padding:8px 24px 40vh; min-height:60vh; }
+
+  .block { position:relative; padding:5px 0; }
+  .block .gutter { position:absolute; left:-30px; top:4px; display:flex; flex-direction:column; align-items:center; gap:1px; opacity:0; transition:opacity .12s; }
+  .block:hover .gutter, .block.sel .gutter { opacity:1; }
+  .gutter button { width:22px; height:22px; border:none; background:transparent; color:var(--muted); border-radius:5px; cursor:grab; display:grid; place-items:center; }
+  .gutter button:hover { background:var(--line); color:var(--ink); }
+  .gutter button.handle:active { cursor:grabbing; }
+  .gutter button.del:hover { background:#fdecea; color:var(--danger); }
+  .cblock-bar .bar-del { border-color:transparent; padding:3px 7px; color:var(--muted); }
+  .cblock-bar .bar-del:hover { border-color:var(--danger); color:var(--danger); background:#fdecea; }
+  .cblock-bar .bar-del svg { width:14px; height:14px; display:block; }
+  .palette-item { cursor:grab; }
+  .palette-item:active { cursor:grabbing; }
+  .gutter svg { width:15px; height:15px; }
+  .block.dragging { opacity:.4; }
+  /* drop indicator: a full-width line with a leading dot, sits in the gap */
+  .block.drop-before::before, .block.drop-after::after {
+    content:""; position:absolute; left:-4px; right:0; height:3px; border-radius:3px;
+    background:var(--indigo); box-shadow:0 0 0 3px var(--indigo-wash), -7px 0 0 0 var(--indigo); z-index:6;
+  }
+  .block.drop-before::before { top:-1px; }
+  .block.drop-after::after { bottom:-1px; }
+
+  .block.active > .block-inner { box-shadow:-3px 0 0 0 var(--indigo); }
+  .block-inner { border-radius:8px; padding:2px 8px; margin-left:-8px; }
+  .block.sel .block-inner { background:var(--indigo-wash); }
+
+  .rt { font-family:var(--body); font-size:18px; line-height:1.62; color:var(--ink); outline:none; }
+  .rt[contenteditable]:empty:before { content:attr(data-ph); color:var(--muted); }
+  h1.rt { font-size:30px; line-height:1.2; font-weight:600; letter-spacing:-.02em; margin:.3em 0 .15em; }
+  h2.rt { font-size:23px; line-height:1.25; font-weight:600; letter-spacing:-.015em; margin:.3em 0 .1em; }
+  h3.rt { font-size:19px; font-weight:600; margin:.2em 0; }
+  blockquote.rt { border-left:3px solid var(--indigo); padding-left:16px; color:#3a3c47; font-style:italic; }
+  .rt b,.rt strong { font-weight:600; }
+  .rt code { font-family:var(--mono); font-size:.85em; background:#f1f1f6; padding:.1em .35em; border-radius:4px; }
+  .rt a { color:var(--indigo); text-decoration:underline; text-underline-offset:2px; }
+
+  /* component block */
+  .cblock { border:1px solid var(--line); border-radius:12px; overflow:hidden; background:var(--canvas); }
+  .block.sel .cblock { border-color:var(--indigo); box-shadow:0 0 0 3px var(--indigo-wash); }
+  .cblock-bar { display:flex; align-items:center; gap:8px; padding:7px 10px; background:var(--paper); border-bottom:1px solid var(--line); font-size:12px; }
+  .cblock-bar .dot { width:7px; height:7px; border-radius:50%; background:var(--indigo); }
+  .cblock-bar .nm { font-weight:600; letter-spacing:-.01em; }
+  .cblock-bar .tag { font-family:var(--mono); font-size:10.5px; color:var(--muted); }
+  .cblock-bar .sp { flex:1; }
+  .cblock-bar button { font-family:var(--ui); font-size:11.5px; font-weight:500; border:1px solid var(--line); background:var(--canvas); color:var(--ink); padding:3px 10px; border-radius:7px; cursor:pointer; }
+  .cblock-bar button:hover { border-color:var(--indigo); color:var(--indigo); }
+  .cblock-body { padding:14px 16px; }
+
+  /* live component renders */
+  .x-callout { display:flex; gap:11px; padding:13px 15px; border-radius:10px; font-family:var(--body); font-size:15.5px; line-height:1.5; }
+  .x-callout .ico { flex:none; width:20px; height:20px; }
+  .x-callout.info { background:#eef4ff; color:#1f3a73; } .x-callout.info .ico{ color:var(--info); }
+  .x-callout.warn { background:#fdf4e6; color:#7a4e10; } .x-callout.warn .ico{ color:var(--warn); }
+  .x-callout.danger { background:#fdecea; color:#85271f; } .x-callout.danger .ico{ color:var(--danger); }
+  .x-callout .ttl { font-weight:600; font-family:var(--ui); font-size:13px; margin-bottom:2px; letter-spacing:-.01em; }
+  .x-stat { display:flex; flex-direction:column; gap:2px; }
+  .x-stat .v { font-family:var(--ui); font-weight:700; font-size:30px; letter-spacing:-.02em; display:flex; align-items:baseline; gap:8px; }
+  .x-stat .v .delta { font-size:13px; font-weight:600; padding:2px 7px; border-radius:6px; }
+  .x-stat .v .delta.up { background:#e6f6ec; color:#1c7a44; }
+  .x-stat .v .delta.down { background:#fdecea; color:var(--danger); }
+  .x-stat .v .delta.flat { background:var(--line); color:var(--muted); }
+  .x-stat .l { font-size:13px; color:var(--muted); font-family:var(--ui); }
+  .x-cols { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+  .x-col { border:1px dashed var(--line); border-radius:9px; padding:10px 12px; min-height:44px; }
+  .x-col .slot { font-family:var(--ui); font-size:11px; color:var(--muted); letter-spacing:.05em; text-transform:uppercase; }
+
+  /* ---- Source pane ---- */
+  .source-pane { background:var(--code-bg); display:flex; flex-direction:column; min-height:0; }
+  .source-head { display:flex; align-items:center; gap:9px; padding:13px 18px; border-bottom:1px solid var(--code-line); }
+  .source-head .lbl { font-family:var(--ui); font-size:11px; letter-spacing:.13em; text-transform:uppercase; color:var(--code-dim); font-weight:600; }
+  .source-head .live { margin-left:auto; display:flex; align-items:center; gap:6px; font-family:var(--mono); font-size:10.5px; color:#7BE0A8; }
+  .source-head .live .pulse { width:6px; height:6px; border-radius:50%; background:#7BE0A8; box-shadow:0 0 0 0 rgba(123,224,168,.6); animation:pulse 2.2s infinite; }
+  @keyframes pulse { 0%{box-shadow:0 0 0 0 rgba(123,224,168,.5);} 70%{box-shadow:0 0 0 7px rgba(123,224,168,0);} 100%{box-shadow:0 0 0 0 rgba(123,224,168,0);} }
+  .source-scroll { overflow:auto; flex:1; min-height:0; padding:10px 0 40vh; }
+  .src-line { display:grid; grid-template-columns:38px 1fr; font-family:var(--mono); font-size:12.5px; line-height:1.65; }
+  .src-line .ln { text-align:right; padding-right:14px; color:var(--code-dim); user-select:none; }
+  .src-line .lc { color:var(--code-ink); white-space:pre-wrap; word-break:break-word; padding-right:16px; }
+  .src-line.hot { background:rgba(199,123,18,.13); }
+  .src-line.hot .ln { color:var(--amber); }
+  .src-line.hot .lc { box-shadow:inset 2px 0 0 var(--amber); padding-left:6px; margin-left:-6px; }
+  .tok-fence { color:#7C82F2; } .tok-tag { color:#E08BC6; } .tok-attr { color:#7BE0A8; }
+  .tok-str { color:#E5C07B; } .tok-num { color:#56B6C2; } .tok-fm { color:#8C92A8; }
+  .tok-h { color:#7C82F2; font-weight:600; }
+
+  /* ---- Prop panel ---- */
+  .panel { position:absolute; top:0; right:0; height:100%; width:340px; background:var(--canvas); border-left:1px solid var(--line); box-shadow:-18px 0 40px rgba(20,21,28,.06); transform:translateX(105%); transition:transform .26s cubic-bezier(.22,.61,.36,1); display:flex; flex-direction:column; z-index:20; }
+  .panel.open { transform:translateX(0); }
+  .panel-head { padding:16px 18px; border-bottom:1px solid var(--line); display:flex; align-items:center; gap:10px; }
+  .panel-head .ic { width:30px; height:30px; border-radius:8px; background:var(--indigo-wash); color:var(--indigo); display:grid; place-items:center; }
+  .panel-head .nm { font-weight:600; font-size:15px; letter-spacing:-.01em; }
+  .panel-head .ds { font-size:11.5px; color:var(--muted); }
+  .panel-head .x { margin-left:auto; border:none; background:transparent; color:var(--muted); cursor:pointer; width:28px; height:28px; border-radius:7px; }
+  .panel-head .x:hover { background:var(--paper); color:var(--ink); }
+  .panel-body { overflow-y:auto; padding:6px 18px 24px; flex:1; }
+  .field { padding:13px 0; border-bottom:1px solid var(--line); }
+  .field:last-child { border-bottom:none; }
+  .field .flabel { display:flex; align-items:center; gap:7px; font-size:12.5px; font-weight:600; margin-bottom:7px; }
+  .field .flabel .req { color:var(--danger); }
+  .field .flabel .ty { font-family:var(--mono); font-size:10px; color:var(--muted); font-weight:400; background:var(--paper); padding:1px 6px; border-radius:5px; border:1px solid var(--line); margin-left:auto; }
+  .field .fdesc { font-size:11.5px; color:var(--muted); margin:-3px 0 8px; line-height:1.45; }
+  .ctl { width:100%; font-family:var(--ui); font-size:13.5px; color:var(--ink); border:1px solid var(--line); border-radius:8px; padding:8px 10px; background:var(--canvas); }
+  .ctl:focus { outline:none; border-color:var(--indigo); box-shadow:0 0 0 3px var(--indigo-wash); }
+  textarea.ctl { font-family:var(--mono); font-size:12px; resize:vertical; min-height:64px; }
+  .seg { display:flex; gap:6px; flex-wrap:wrap; }
+  .seg button { font-family:var(--ui); font-size:12.5px; padding:6px 12px; border-radius:8px; border:1px solid var(--line); background:var(--canvas); color:var(--ink); cursor:pointer; text-transform:capitalize; }
+  .seg button.on { border-color:var(--indigo); background:var(--indigo-wash); color:var(--indigo); font-weight:600; }
+  .toggle { display:flex; align-items:center; gap:9px; }
+  .toggle .sw { width:38px; height:22px; border-radius:999px; background:var(--line); position:relative; transition:background .15s; flex:none; }
+  .toggle .sw.on { background:var(--indigo); }
+  .toggle .sw i { position:absolute; top:2px; left:2px; width:18px; height:18px; border-radius:50%; background:#fff; transition:left .15s; box-shadow:0 1px 3px rgba(0,0,0,.2); }
+  .toggle .sw.on i { left:18px; }
+  .toggle .tv { font-size:12.5px; color:var(--muted); }
+  .listctl .row { display:flex; gap:6px; margin-bottom:6px; }
+  .listctl .row .ctl { flex:1; }
+  .listctl .row button, .listctl .add { border:1px solid var(--line); background:var(--canvas); border-radius:7px; cursor:pointer; color:var(--muted); font-family:var(--ui); }
+  .listctl .row button { width:32px; flex:none; }
+  .listctl .row button:hover { color:var(--danger); border-color:var(--danger); }
+  .listctl .add { font-size:12px; padding:6px 11px; color:var(--indigo); font-weight:500; }
+
+  /* slash menu */
+  .slash { position:absolute; z-index:30; width:260px; background:var(--canvas); border:1px solid var(--line); border-radius:12px; box-shadow:0 16px 44px rgba(20,21,28,.16); padding:6px; max-height:300px; overflow-y:auto; }
+  .slash .sl-cat { font-size:10px; letter-spacing:.12em; text-transform:uppercase; color:var(--muted); padding:8px 9px 4px; font-weight:600; }
+  .slash .sl-item { display:flex; align-items:center; gap:10px; padding:7px 9px; border-radius:8px; cursor:pointer; }
+  .slash .sl-item.cur { background:var(--indigo-wash); }
+  .slash .sl-item .ic { width:24px; height:24px; border-radius:6px; background:var(--paper); color:var(--indigo); display:grid; place-items:center; flex:none; }
+  .slash .sl-item .ic svg { width:14px; height:14px; }
+  .slash .sl-item .t { font-size:13px; font-weight:500; }
+  .slash .sl-item .d { font-size:11px; color:var(--muted); }
+
+  .toast { position:fixed; bottom:22px; left:50%; transform:translateX(-50%) translateY(20px); background:var(--ink); color:#fff; font-size:13px; padding:9px 16px; border-radius:10px; opacity:0; transition:.25s; pointer-events:none; z-index:50; display:flex; gap:9px; align-items:center; font-family:var(--ui); }
+  .toast.show { opacity:1; transform:translateX(-50%) translateY(0); }
+  .toast .ok { color:#7BE0A8; }
+  .diag { color:#FFB4AD; }
+</style>
+</head>
+<body>
+<div id="root"></div>
+
+<script type="text/babel" data-presets="react">
+const { useState, useRef, useEffect, useMemo, useCallback } = React;
+
+/* ----------------------------------------------------------------------------
+   Icons (inline, lucide-style)
+---------------------------------------------------------------------------- */
+const I = {
+  type:<><path d="M4 7V5h16v2M9 19h6M12 5v14"/></>,
+  h1:<><path d="M4 12h8M4 6v12M12 6v12"/><path d="M17 12l3-2v8"/></>,
+  h2:<><path d="M4 12h8M4 6v12M12 6v12"/><path d="M21 18h-4l3-4a2 2 0 1 0-3-2"/></>,
+  h3:<><path d="M4 12h8M4 6v12M12 6v12"/><path d="M17 10a2 2 0 1 1 3 2 2 2 0 1 1-3 2"/></>,
+  quote:<><path d="M3 21c3 0 7-1 7-8V5H3v7h4M14 21c3 0 7-1 7-8V5h-7v7h4"/></>,
+  alert:<><path d="M12 9v4M12 17h.01M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z"/></>,
+  trend:<><path d="M22 7 13.5 15.5l-5-5L2 17M16 7h6v6"/></>,
+  cols:<><rect x="3" y="4" width="7" height="16" rx="1"/><rect x="14" y="4" width="7" height="16" rx="1"/></>,
+  drag:<><circle cx="9" cy="6" r="1"/><circle cx="9" cy="12" r="1"/><circle cx="9" cy="18" r="1"/><circle cx="15" cy="6" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="15" cy="18" r="1"/></>,
+  plus:<><path d="M12 5v14M5 12h14"/></>,
+  trash:<><path d="M3 6h18M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2m2 0v14a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1V6"/><path d="M10 11v6M14 11v6"/></>,
+  x:<><path d="M18 6 6 18M6 6l12 12"/></>,
+  check:<><path d="M20 6 9 17l-5-5"/></>,
+};
+const Icon = ({n,...p}) => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...p}>{I[n]||I.type}</svg>;
+
+/* ----------------------------------------------------------------------------
+   The registry — exactly the shape @imdx/cli emits (registry.json)
+---------------------------------------------------------------------------- */
+const REGISTRY = {
+  Callout: {
+    name:"Callout", category:"Content", icon:"alert", description:"Highlighted note or warning",
+    children:"rich-text",
+    props:[
+      { name:"variant", required:true, control:{type:"select",options:["info","warn","danger"]}, default:"info", description:"Visual style of the callout" },
+      { name:"title", required:false, control:{type:"text",placeholder:"Optional title"}, description:"Short label shown in the header" },
+      { name:"dismissible", required:false, control:{type:"boolean"}, default:false },
+    ],
+  },
+  Stat: {
+    name:"Stat", category:"Data", icon:"trend", description:"A single headline metric",
+    children:"none",
+    props:[
+      { name:"value", required:true, control:{type:"text"}, description:"The headline number, preformatted" },
+      { name:"label", required:true, control:{type:"text"} },
+      { name:"trend", required:false, control:{type:"select",options:["up","down","flat"]}, default:"flat" },
+      { name:"delta", required:false, control:{type:"number"} },
+    ],
+  },
+  TwoColumn: {
+    name:"TwoColumn", category:"Layout", icon:"cols", description:"Two side-by-side columns",
+    children:"blocks",
+    props:[],
+  },
+};
+const ICON_FOR = { Callout:"alert", Stat:"trend", TwoColumn:"cols" };
+
+/* ----------------------------------------------------------------------------
+   Canonical iMDX serialization — mirrors printPropValue + the serializer
+---------------------------------------------------------------------------- */
+const IDENT = /^[A-Za-z_$][A-Za-z0-9_$]*$/;
+function printVal(v){
+  if (v===null) return "null";
+  if (typeof v==="string") return JSON.stringify(v);
+  if (typeof v==="number"||typeof v==="boolean") return String(v);
+  if (Array.isArray(v)) return "["+v.map(printVal).join(", ")+"]";
+  const e = Object.entries(v).map(([k,val])=>(IDENT.test(k)?k:JSON.stringify(k))+": "+printVal(val));
+  return "{"+e.join(", ")+"}";
+}
+// rich text model -> markdown inline
+function inlineToMd(spans){
+  return spans.map(s=>{
+    let t = s.text;
+    if (s.code) t = "`"+t+"`";
+    if (s.strong) t = "**"+t+"**";
+    if (s.em) t = "*"+t+"*";
+    return t;
+  }).join("");
+}
+function attrsFor(spec, props){
+  // canonical order = spec order; only emit non-default, defined values
+  const parts = [];
+  for (const p of spec.props){
+    if (!(p.name in props)) continue;
+    const v = props[p.name];
+    if (v===undefined || v===null || v==="") continue;
+    if (v===true) { parts.push(p.name); continue; }
+    if (v===false) continue;
+    if (typeof v==="string") parts.push(`${p.name}="${v}"`);
+    else parts.push(`${p.name}={${printVal(v)}}`);
+  }
+  return parts;
+}
+// Serialize one block to an array of source lines (with a tag for hot-sync)
+function blockLines(b){
+  const spec = b.type in REGISTRY ? REGISTRY[b.type] : null;
+  if (b.type==="h1") return [`# ${inlineToMd(b.spans)}`];
+  if (b.type==="h2") return [`## ${inlineToMd(b.spans)}`];
+  if (b.type==="h3") return [`### ${inlineToMd(b.spans)}`];
+  if (b.type==="quote") return [`> ${inlineToMd(b.spans)}`];
+  if (b.type==="p") return [inlineToMd(b.spans)];
+  if (spec){
+    const attrs = attrsFor(spec, b.props);
+    const open = attrs.length>2
+      ? [`<${b.type}`, ...attrs.map(a=>"  "+a)]
+      : [`<${b.type}${attrs.length?" "+attrs.join(" "):""}`];
+    if (spec.children==="none"){
+      if (attrs.length>2) return [...open, "/>"];
+      return [open[0] + " />"];
+    }
+    // container/rich-text
+    const head = attrs.length>2 ? [...open, ">"] : [open[0] + ">"];
+    let inner = [];
+    if (spec.children==="rich-text"){
+      inner = [ "  " + inlineToMd(b.spans) ];
+    } else {
+      (b.children||[]).forEach(c=>{ inner.push(...blockLines(c).map(l=>"  "+l)); inner.push(""); });
+      if (inner.length && inner[inner.length-1]==="") inner.pop();
+    }
+    return [...head, ...inner, `</${b.type}>`];
+  }
+  return [""];
+}
+function serializeDoc(doc){
+  const fm = ["---", `title: ${doc.title}`, `slug: ${doc.slug}`, `status: ${doc.status}`, "---", ""];
+  const lines = [...fm.map(t=>({t, block:null}))];
+  doc.blocks.forEach(b=>{
+    blockLines(b).forEach(t=>lines.push({t, block:b.id}));
+    lines.push({t:"", block:b.id});
+  });
+  if (lines.length && lines[lines.length-1].t==="") lines.pop();
+  lines.push({t:"", block:null});
+  return lines;
+}
+// light syntax highlight for a source line
+function hl(t){
+  if (/^---$/.test(t) || /^(title|slug|status):/.test(t)) return <span className="tok-fm">{t}</span>;
+  if (/^#{1,3}\s/.test(t)) return <span className="tok-h">{t}</span>;
+  const m = t.match(/^(\s*)(<\/?)([A-Z][A-Za-z0-9]*)?(.*?)(\/?>)?$/);
+  if (t.trim().startsWith("<") && m){
+    const [_,ws,lt,tag,rest,gt] = m;
+    const restEl = (rest||"").replace(/("[^"]*")/g,'\u0000$1\u0000').split("\u0000").map((seg,i)=>
+      seg.startsWith('"')&&seg.endsWith('"') ? <span key={i} className="tok-str">{seg}</span>
+      : <span key={i} className="tok-attr">{seg}</span>);
+    return <>{ws}<span className="tok-tag">{lt}{tag}</span>{restEl}<span className="tok-tag">{gt||""}</span></>;
+  }
+  return t;
+}
+
+/* ----------------------------------------------------------------------------
+   Live component renders (what the user's React components would look like)
+---------------------------------------------------------------------------- */
+function LiveComponent({block}){
+  const p = block.props;
+  if (block.type==="Callout"){
+    const v = p.variant||"info";
+    return <div className={"x-callout "+v}>
+      <span className="ico"><Icon n="alert"/></span>
+      <div>{p.title && <div className="ttl">{p.title}</div>}
+        <div dangerouslySetInnerHTML={{__html: mdInline(inlineToMd(block.spans||[{text:"Write inside this callout…"}]))}}/>
+      </div>
+    </div>;
+  }
+  if (block.type==="Stat"){
+    const tr = p.trend||"flat";
+    const arrow = tr==="up"?"↑":tr==="down"?"↓":"→";
+    return <div className="x-stat">
+      <div className="v">{p.value||"—"}{p.delta!=null && p.delta!=="" && <span className={"delta "+tr}>{arrow} {p.delta}</span>}</div>
+      <div className="l">{p.label||"Label"}</div>
+    </div>;
+  }
+  if (block.type==="TwoColumn"){
+    return <div className="x-cols">
+      {[0,1].map(i=><div className="x-col" key={i}><div className="slot">Column {i+1}</div></div>)}
+    </div>;
+  }
+  return null;
+}
+function mdInline(s){
+  return s.replace(/`([^`]+)`/g,"<code>$1</code>")
+          .replace(/\*\*([^*]+)\*\*/g,"<strong>$1</strong>")
+          .replace(/\*([^*]+)\*/g,"<em>$1</em>")
+          .replace(/\[([^\]]+)\]\(([^)]+)\)/g,'<a href="$2">$1</a>');
+}
+
+/* ----------------------------------------------------------------------------
+   Initial document
+---------------------------------------------------------------------------- */
+let UID = 1; const uid = () => "b"+(UID++);
+const initialDoc = {
+  title:"Welcome to iMDX", slug:"welcome", status:"published",
+  blocks:[
+    { id:uid(), type:"h1", spans:[{text:"Welcome to iMDX"}] },
+    { id:uid(), type:"p", spans:[{text:"Your components are now "},{text:"first-class blocks",strong:true},{text:". Edit on the left — watch clean, canonical iMDX appear on the right."}] },
+    { id:uid(), type:"Callout", props:{variant:"info",title:"How this works"}, spans:[{text:"This file lives in "},{text:"your",em:true},{text:" repo and round-trips through the editor losslessly."}] },
+    { id:uid(), type:"Stat", props:{value:"27ms",label:"median save-to-commit",trend:"up",delta:4} },
+    { id:uid(), type:"p", spans:[{text:"Press "},{text:"/",code:true},{text:" on an empty line to insert anything from the palette."}] },
+  ],
+};
+
+/* ----------------------------------------------------------------------------
+   Rich-text editable (contenteditable -> spans on blur)
+---------------------------------------------------------------------------- */
+function spansToHtml(spans){ return (spans||[]).map(s=>{
+  let t = escapeHtml(s.text);
+  if (s.code) t = `<code>${t}</code>`;
+  if (s.strong) t = `<strong>${t}</strong>`;
+  if (s.em) t = `<em>${t}</em>`;
+  return t;
+}).join(""); }
+function escapeHtml(s){ return s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
+function htmlToSpans(el){
+  const spans=[];
+  el.childNodes.forEach(n=>walk(n,{}));
+  function walk(node,fmt){
+    if (node.nodeType===3){ if(node.textContent) spans.push({text:node.textContent,...fmt}); return; }
+    const t=node.tagName?.toLowerCase();
+    const nf={...fmt};
+    if (t==="strong"||t==="b") nf.strong=true;
+    if (t==="em"||t==="i") nf.em=true;
+    if (t==="code") nf.code=true;
+    node.childNodes.forEach(c=>walk(c,nf));
+  }
+  return spans.length?spans:[{text:""}];
+}
+
+const RichText = React.memo(function RichText({block, tag, placeholder, onCommit, onFocus, onSlash}){
+  const ref = useRef(null);
+  useEffect(()=>{ if(ref.current && document.activeElement!==ref.current) ref.current.innerHTML = spansToHtml(block.spans); });
+  const Tag = tag||"div";
+  return <Tag ref={ref} className={"rt"} data-ph={placeholder} contentEditable suppressContentEditableWarning
+    onFocus={onFocus}
+    onBlur={e=>onCommit(htmlToSpans(e.currentTarget))}
+    onKeyDown={e=>{
+      if (e.key==="/" && e.currentTarget.textContent===""){ e.preventDefault(); onSlash(e.currentTarget); }
+    }}/>;
+});
+
+/* ----------------------------------------------------------------------------
+   Prop panel controls
+---------------------------------------------------------------------------- */
+function Control({field, value, onChange}){
+  const c = field.control;
+  if (c.type==="select"){
+    return <div className="seg">{c.options.map(o=>
+      <button key={o} className={value===o?"on":""} onClick={()=>onChange(o)}>{o}</button>)}</div>;
+  }
+  if (c.type==="boolean"){
+    const on = !!value;
+    return <div className="toggle" onClick={()=>onChange(!on)}>
+      <div className={"sw"+(on?" on":"")}><i/></div><span className="tv">{on?"On":"Off"}</span></div>;
+  }
+  if (c.type==="number"){
+    return <input className="ctl" type="number" value={value??""} placeholder="0"
+      onChange={e=>onChange(e.target.value===""?undefined:Number(e.target.value))}/>;
+  }
+  if (c.type==="textarea"||c.type==="json"){
+    return <textarea className="ctl" value={typeof value==="string"?value:JSON.stringify(value??"",null,0)}
+      onChange={e=>onChange(e.target.value)}/>;
+  }
+  return <input className="ctl" type="text" value={value??""} placeholder={c.placeholder||""}
+    onChange={e=>onChange(e.target.value)}/>;
+}
+function PropPanel({block, onClose, onChange}){
+  const spec = REGISTRY[block?.type];
+  const open = !!spec;
+  return <div className={"panel"+(open?" open":"")}>
+    {spec && <>
+      <div className="panel-head">
+        <div className="ic"><Icon n={ICON_FOR[spec.name]}/></div>
+        <div><div className="nm">{spec.name}</div><div className="ds">{spec.description}</div></div>
+        <button className="x" onClick={onClose}><Icon n="x"/></button>
+      </div>
+      <div className="panel-body">
+        {spec.props.length===0 && <div className="field"><div className="fdesc">This component has no editable props. Add blocks inside it on the canvas.</div></div>}
+        {spec.props.map(f=>
+          <div className="field" key={f.name}>
+            <div className="flabel">{f.name}{f.required && <span className="req">*</span>}
+              <span className="ty">{f.control.type}</span></div>
+            {f.description && <div className="fdesc">{f.description}</div>}
+            <Control field={f} value={block.props[f.name]}
+              onChange={v=>onChange(f.name, v)}/>
+          </div>)}
+      </div>
+    </>}
+  </div>;
+}
+
+/* ----------------------------------------------------------------------------
+   Slash menu
+---------------------------------------------------------------------------- */
+const CORE_ITEMS = [
+  {kind:"core",id:"p",label:"Text",icon:"type",desc:"Plain paragraph"},
+  {kind:"core",id:"h1",label:"Heading 1",icon:"h1"},
+  {kind:"core",id:"h2",label:"Heading 2",icon:"h2"},
+  {kind:"core",id:"h3",label:"Heading 3",icon:"h3"},
+  {kind:"core",id:"quote",label:"Quote",icon:"quote"},
+];
+function SlashMenu({pos, query, onPick, cursor}){
+  const items = useMemo(()=>{
+    const comp = Object.values(REGISTRY).map(s=>({kind:"comp",id:s.name,label:s.name,icon:ICON_FOR[s.name],desc:s.description,cat:s.category}));
+    const all = [...CORE_ITEMS, ...comp];
+    if (!query) return all;
+    return all.filter(i=>i.label.toLowerCase().includes(query.toLowerCase()));
+  },[query]);
+  if (!pos) return null;
+  let last=null;
+  return <div className="slash" style={{left:pos.x, top:pos.y}}>
+    {items.map((it,i)=>{
+      const cat = it.kind==="core"?"Basic":it.cat||"Components";
+      const showCat = cat!==last; last=cat;
+      return <React.Fragment key={it.id}>
+        {showCat && <div className="sl-cat">{cat}</div>}
+        <div className={"sl-item"+(i===cursor?" cur":"")} onMouseDown={e=>{e.preventDefault();onPick(it);}}>
+          <span className="ic"><Icon n={it.icon}/></span>
+          <div><div className="t">{it.label}</div>{it.desc && <div className="d">{it.desc}</div>}</div>
+        </div>
+      </React.Fragment>;
+    })}
+    {items.length===0 && <div className="sl-item"><div className="d" style={{padding:"4px 4px"}}>No matches</div></div>}
+  </div>;
+}
+
+/* ----------------------------------------------------------------------------
+   App
+---------------------------------------------------------------------------- */
+function App(){
+  const [doc, setDoc] = useState(initialDoc);
+  const [selId, setSelId] = useState(null);
+  const [activeId, setActiveId] = useState(doc.blocks[2].id);
+  const [slash, setSlash] = useState(null); // {pos, query, cursor, blockId, el}
+  const [toast, setToast] = useState(null);
+  const [drag, setDrag] = useState(null); // {kind:"move",id} | {kind:"new",type}
+  const [dropTarget, setDropTarget] = useState(null); // {id, edge:"before"|"after"}
+  const srcRef = useRef(null);
+  const canvasRef = useRef(null);
+  const blockRefs = useRef({}); // id -> DOM element
+
+  // Map a pointer Y to the nearest insertion point across the whole canvas.
+  // Every pixel of the canvas resolves to some {block, edge}, so you can drop
+  // anywhere — on a block, in the gaps, above the first, or below the last.
+  function updateDropFromPointer(clientY){
+    const order = doc.blocks;
+    if (order.length===0){ setDropTarget(null); return; }
+    // Find the block whose vertical span contains the pointer; for gaps/ends,
+    // fall back to nearest by midpoint.
+    let best=null, bestDist=Infinity;
+    for (const b of order){
+      const el = blockRefs.current[b.id];
+      if (!el) continue;
+      const r = el.getBoundingClientRect();
+      if (clientY >= r.top && clientY <= r.bottom){
+        best = { id:b.id, edge: clientY < r.top + r.height/2 ? "before" : "after" };
+        bestDist = 0; break;
+      }
+      const mid = r.top + r.height/2;
+      const d = Math.abs(clientY - mid);
+      if (d < bestDist){
+        bestDist = d;
+        best = { id:b.id, edge: clientY < mid ? "before" : "after" };
+      }
+    }
+    if (!best){ setDropTarget(null); return; }
+    // Don't show an indicator that would be a no-op for the block being moved.
+    if (drag?.kind==="move"){
+      const idx = order.findIndex(x=>x.id===drag.id);
+      const tIdx = order.findIndex(x=>x.id===best.id);
+      const wouldStay =
+        best.id===drag.id ||
+        (best.edge==="after"  && tIdx===idx-1) ||
+        (best.edge==="before" && tIdx===idx+1);
+      if (wouldStay){ setDropTarget(null); return; }
+    }
+    setDropTarget(best);
+  }
+
+  function commitDrop(){
+    if (!drag){ return; }
+    if (dropTarget){
+      if (drag.kind==="new") insertNewAt(drag.type, dropTarget.id, dropTarget.edge);
+      else moveBlock(drag.id, dropTarget.id, dropTarget.edge);
+    } else {
+      // No specific target (e.g. empty doc) -> append.
+      if (drag.kind==="new") insertNewAt(drag.type, null, "after");
+    }
+    setDrag(null); setDropTarget(null);
+  }
+
+  function moveBlock(srcId, targetId, edge){
+    if (srcId===targetId) return;
+    setDoc(d=>{
+      const blocks=[...d.blocks];
+      const from=blocks.findIndex(b=>b.id===srcId);
+      if (from<0) return d;
+      const [moved]=blocks.splice(from,1);
+      let to=blocks.findIndex(b=>b.id===targetId);
+      if (to<0) { blocks.splice(from,0,moved); return d; }
+      if (edge==="after") to+=1;
+      blocks.splice(to,0,moved);
+      return {...d, blocks};
+    });
+    setActiveId(srcId);
+    flash("Moved block");
+  }
+
+  function insertNewAt(type, targetId, edge){
+    const nb = makeBlock(type);
+    setDoc(d=>{
+      const blocks=[...d.blocks];
+      let to=blocks.findIndex(b=>b.id===targetId);
+      if (to<0) blocks.push(nb);
+      else { if(edge==="after") to+=1; blocks.splice(to,0,nb); }
+      return {...d, blocks};
+    });
+    setActiveId(nb.id);
+    if (REGISTRY[type]) setSelId(nb.id);
+    flash(`Inserted ${type}`);
+  }
+
+  // Unified drop is handled at the canvas level (updateDropFromPointer +
+  // commitDrop). Block-level drop handlers are no longer needed.
+
+  function deleteBlock(id){
+    setDoc(d=>{
+      const idx=d.blocks.findIndex(b=>b.id===id);
+      if (idx<0) return d;
+      const blocks=d.blocks.filter(b=>b.id!==id);
+      // keep something active/selected sensibly
+      const next = blocks[idx] || blocks[idx-1] || null;
+      queueMicrotask(()=>{ setActiveId(next?next.id:null); });
+      return {...d, blocks};
+    });
+    if (selId===id) setSelId(null);
+    flash("Deleted block");
+  }
+
+  const lines = useMemo(()=>serializeDoc(doc),[doc]);
+  const source = lines.map(l=>l.t).join("\n");
+
+  const selBlock = doc.blocks.find(b=>b.id===selId) || nestedFind(doc.blocks, selId);
+
+  function update(id, patch){
+    setDoc(d=>({...d, blocks:patchBlocks(d.blocks, id, patch)}));
+  }
+  function setProps(id, name, value){
+    setDoc(d=>({...d, blocks:patchBlocks(d.blocks, id, b=>{
+      const props={...b.props}; if(value===undefined) delete props[name]; else props[name]=value; return {props};
+    })}));
+  }
+  function insertAfter(afterId, type){
+    const nb = makeBlock(type);
+    setDoc(d=>{
+      const idx = d.blocks.findIndex(b=>b.id===afterId);
+      const blocks=[...d.blocks]; blocks.splice(idx+1,0,nb); return {...d, blocks};
+    });
+    setActiveId(nb.id);
+    if (REGISTRY[type]) setSelId(nb.id);
+    flash(`Inserted ${type}`);
+  }
+  function replaceBlock(id, type){
+    setDoc(d=>({...d, blocks:d.blocks.map(b=>b.id===id?{...makeBlock(type), id, spans:b.spans}:b)}));
+    if (REGISTRY[type]) setSelId(id);
+  }
+
+  // slash handling
+  function openSlash(blockId, el){
+    const r = el.getBoundingClientRect();
+    setSlash({pos:{x:r.left, y:r.bottom+6}, query:"", cursor:0, blockId, el});
+  }
+  useEffect(()=>{
+    if(!slash) return;
+    function onKey(e){
+      if (e.key==="Escape"){ setSlash(null); return; }
+      const items = slashFiltered(slash.query);
+      if (e.key==="ArrowDown"){ e.preventDefault(); setSlash(s=>({...s,cursor:Math.min(items.length-1,s.cursor+1)})); }
+      else if (e.key==="ArrowUp"){ e.preventDefault(); setSlash(s=>({...s,cursor:Math.max(0,s.cursor-1)})); }
+      else if (e.key==="Enter"){ e.preventDefault(); const it=items[slash.cursor]; if(it) pickSlash(it); }
+      else if (e.key==="Backspace"){ if(slash.query==="") setSlash(null); else setSlash(s=>({...s,query:s.query.slice(0,-1),cursor:0})); }
+      else if (/^[a-zA-Z0-9]$/.test(e.key)){ setSlash(s=>({...s,query:s.query+e.key,cursor:0})); }
+    }
+    window.addEventListener("keydown", onKey);
+    return ()=>window.removeEventListener("keydown", onKey);
+  },[slash]);
+  function pickSlash(it){
+    const bid = slash.blockId; setSlash(null);
+    const b = doc.blocks.find(x=>x.id===bid);
+    if (b && b.type==="p" && (!b.spans || !b.spans.some(s=>s.text))) replaceBlock(bid, it.id);
+    else insertAfter(bid, it.id);
+  }
+
+  function flash(msg, diag){ setToast({msg,diag}); setTimeout(()=>setToast(null), 1800); }
+
+  // Keyboard: delete the SELECTED component block with Delete/Backspace,
+  // but only when focus isn't inside an editable field (so text editing and
+  // prop inputs keep their normal backspace behaviour).
+  useEffect(()=>{
+    function onKey(e){
+      if (e.key!=="Delete" && e.key!=="Backspace") return;
+      if (!selId) return;
+      const el = document.activeElement;
+      const editing = el && (el.isContentEditable || el.tagName==="INPUT" || el.tagName==="TEXTAREA");
+      if (editing) return;
+      e.preventDefault();
+      deleteBlock(selId);
+    }
+    window.addEventListener("keydown", onKey);
+    return ()=>window.removeEventListener("keydown", onKey);
+  },[selId, doc.blocks]);
+
+  // sync source scroll to active block
+  useEffect(()=>{
+    if(!srcRef.current) return;
+    const hot = srcRef.current.querySelector(".src-line.hot");
+    if (hot) hot.scrollIntoView({block:"nearest", behavior:"smooth"});
+  },[activeId]);
+
+  const errors = countErrors(doc);
+
+  return <div className="app" onClick={()=>slash&&setSlash(null)}>
+    {/* RAIL */}
+    <aside className="rail">
+      <div className="brand"><div className="mark">i</div><div className="name">i<b>MDX</b> editor</div></div>
+      <div className="rail-scroll">
+        <div className="rail-label">Basic</div>
+        {CORE_ITEMS.map(it=><button key={it.id} className="palette-item" draggable
+          onDragStart={e=>{e.dataTransfer.effectAllowed="copy"; e.dataTransfer.setData("text/plain","new:"+it.id); setDrag({kind:"new", type:it.id});}}
+          onDragEnd={()=>{setDrag(null); setDropTarget(null);}}
+          onClick={()=>insertAfter(activeId, it.id)}>
+          <span className="ic"><Icon n={it.icon}/></span>
+          <span className="meta"><div className="t">{it.label}</div></span></button>)}
+        {["Content","Data","Layout"].map(cat=>{
+          const comps = Object.values(REGISTRY).filter(s=>s.category===cat);
+          if(!comps.length) return null;
+          return <React.Fragment key={cat}>
+            <div className="rail-label">{cat}</div>
+            {comps.map(s=><button key={s.name} className="palette-item" draggable
+              onDragStart={e=>{e.dataTransfer.effectAllowed="copy"; e.dataTransfer.setData("text/plain","new:"+s.name); setDrag({kind:"new", type:s.name});}}
+              onDragEnd={()=>{setDrag(null); setDropTarget(null);}}
+              onClick={()=>insertAfter(activeId,s.name)}>
+              <span className="ic"><Icon n={ICON_FOR[s.name]}/></span>
+              <span className="meta"><div className="t">{s.name}</div><div className="d">{s.description}</div></span>
+            </button>)}
+          </React.Fragment>;
+        })}
+      </div>
+      <div className="rail-foot">Drag any item onto the canvas, or click to insert. Type <kbd>/</kbd> on an empty line for the same menu.</div>
+    </aside>
+
+    {/* CANVAS */}
+    <main className="canvas-wrap">
+      <div className="canvas-head">
+        <div className="doc-title">content/posts/<span className="slug">{doc.slug}</span>.mdx</div>
+        <div className="status-pill">{doc.status}</div>
+      </div>
+      <div className="canvas"
+        ref={canvasRef}
+        onDragOver={e=>{ if(drag){ e.preventDefault(); e.dataTransfer.dropEffect = drag.kind==="new"?"copy":"move"; updateDropFromPointer(e.clientY); } }}
+        onDrop={e=>{ if(drag){ e.preventDefault(); commitDrop(); } }}
+        onDragLeave={e=>{ // only clear if leaving the canvas entirely
+          if(!e.currentTarget.contains(e.relatedTarget)) setDropTarget(null);
+        }}>
+        {doc.blocks.map(b=>
+          <BlockView key={b.id} block={b}
+            registerRef={el=>{ if(el) blockRefs.current[b.id]=el; else delete blockRefs.current[b.id]; }}
+            selected={selId===b.id} active={activeId===b.id}
+            dragging={drag?.kind==="move" && drag.id===b.id}
+            dropEdge={dropTarget?.id===b.id ? dropTarget.edge : null}
+            onSelect={()=>{setSelId(REGISTRY[b.type]?b.id:null); setActiveId(b.id);}}
+            onActivate={()=>setActiveId(b.id)}
+            onCommit={spans=>update(b.id,{spans})}
+            onSlash={el=>openSlash(b.id, el)}
+            onOpenProps={()=>setSelId(b.id)}
+            onDelete={()=>deleteBlock(b.id)}
+            onDragStart={()=>setDrag({kind:"move", id:b.id})}
+            onDragEnd={()=>{setDrag(null); setDropTarget(null);}}
+          />)}
+      </div>
+      <PropPanel block={selBlock} onClose={()=>setSelId(null)} onChange={(n,v)=>setProps(selId,n,v)}/>
+    </main>
+
+    {/* SOURCE */}
+    <section className="source-pane">
+      <div className="source-head">
+        <span className="lbl">Canonical iMDX</span>
+        <span className="live"><span className="pulse"/>live · {errors===0?"valid":errors+" issue"+(errors>1?"s":"")}</span>
+      </div>
+      <div className="source-scroll" ref={srcRef}>
+        {lines.map((l,i)=>
+          <div key={i} className={"src-line"+(l.block===activeId&&activeId?" hot":"")}>
+            <span className="ln">{i+1}</span><span className="lc">{hl(l.t)|| "\u00a0"}</span>
+          </div>)}
+      </div>
+    </section>
+
+    {slash && <SlashMenu pos={slash.pos} query={slash.query} cursor={slash.cursor} onPick={pickSlash}/>}
+    <button onClick={()=>flash(errors?`Blocked: ${errors} validation issue`:"Committed to main ✓", errors>0)}
+      style={{position:"fixed",right:slash?22:"calc(38% + 22px)",bottom:22,zIndex:40,
+        fontFamily:"var(--ui)",fontSize:13,fontWeight:600,border:"none",borderRadius:10,
+        padding:"10px 18px",cursor:"pointer",color:"#fff",
+        background:errors?"#D8453A":"linear-gradient(135deg,#4C50E6,#7C4DF0)",
+        boxShadow:"0 6px 20px rgba(76,80,230,.4)"}}>
+      {errors? "Fix issues" : "Save & commit"}
+    </button>
+
+    {toast && <div className={"toast show"}>
+      {!toast.diag && <span className="ok"><Icon n="check"/></span>}
+      <span className={toast.diag?"diag":""}>{toast.msg}</span></div>}
+  </div>;
+}
+
+function BlockView({block, registerRef, selected, active, dragging, dropEdge, onSelect, onActivate, onCommit, onSlash, onOpenProps, onDelete, onDragStart, onDragEnd}){
+  const spec = REGISTRY[block.type];
+  const [grab, setGrab] = useState(false); // handle armed -> block draggable
+  const cls = "block"
+    + (selected?" sel":"") + (active?" active":"") + (dragging?" dragging":"")
+    + (dropEdge==="before"?" drop-before":"") + (dropEdge==="after"?" drop-after":"");
+
+  const dragProps = {
+    ref: registerRef,
+    draggable: grab,
+    onDragStart: e => { e.dataTransfer.effectAllowed="move"; e.dataTransfer.setData("text/plain", block.id); onDragStart(); },
+    onDragEnd: () => { setGrab(false); onDragEnd(); },
+  };
+  const handleProps = {
+    className:"handle", title:"Drag to reorder",
+    onMouseDown:()=>setGrab(true),
+    onMouseUp:()=>setGrab(false),
+  };
+  const del = e => { e.stopPropagation(); onDelete(); };
+
+  if (spec){
+    return <div className={cls} {...dragProps} onClick={e=>{e.stopPropagation(); onSelect();}}>
+      <div className="gutter">
+        <button {...handleProps}><Icon n="drag"/></button>
+        <button className="del" title="Delete block" onClick={del}><Icon n="trash"/></button>
+      </div>
+      <div className="block-inner">
+        <div className="cblock">
+          <div className="cblock-bar">
+            <span className="dot"/><span className="nm">{block.type}</span>
+            <span className="tag">{spec.children==="none"?"leaf":spec.children}</span>
+            <span className="sp"/>
+            <button onClick={e=>{e.stopPropagation();onOpenProps();}}>Edit props</button>
+            <button className="bar-del" title="Delete" onClick={del}><Icon n="trash"/></button>
+          </div>
+          <div className="cblock-body">
+            <LiveComponent block={block}/>
+            {spec.children==="rich-text" &&
+              <div style={{marginTop:10,paddingTop:10,borderTop:"1px solid var(--line)"}}>
+                <RichText block={block} placeholder="Callout body…" onCommit={onCommit}
+                  onFocus={onActivate} onSlash={onSlash}/>
+              </div>}
+          </div>
+        </div>
+      </div>
+    </div>;
+  }
+  const tagMap={h1:"h1",h2:"h2",h3:"h3",quote:"blockquote",p:"div"};
+  return <div className={cls} {...dragProps} onClick={e=>{e.stopPropagation(); onSelect();}}>
+    <div className="gutter">
+      <button title="Add below" onMouseDown={e=>{e.preventDefault();}} onClick={e=>{e.stopPropagation(); onSlash(e.currentTarget);}}><Icon n="plus"/></button>
+      <button {...handleProps}><Icon n="drag"/></button>
+      <button className="del" title="Delete block" onClick={del}><Icon n="trash"/></button>
+    </div>
+    <div className="block-inner">
+      <RichText block={block} tag={tagMap[block.type]}
+        placeholder={block.type==="p"?"Write, or press / for blocks":block.type}
+        onCommit={onCommit} onFocus={onActivate} onSlash={onSlash}/>
+    </div>
+  </div>;
+}
+
+/* ---- helpers ---- */
+function makeBlock(type){
+  if (REGISTRY[type]){
+    const props={}; REGISTRY[type].props.forEach(p=>{ if(p.default!==undefined) props[p.name]=p.default; });
+    return {id:uid(), type, props, spans:[{text:""}], children: REGISTRY[type].children==="blocks"?[]:undefined};
+  }
+  return {id:uid(), type, spans:[{text:""}]};
+}
+function patchBlocks(blocks, id, patch){
+  return blocks.map(b=>{
+    if (b.id===id){ const p = typeof patch==="function"?patch(b):patch; return {...b,...p}; }
+    return b;
+  });
+}
+function nestedFind(blocks,id){ for(const b of blocks){ if(b.children){const f=b.children.find(c=>c.id===id); if(f)return f;} } return null; }
+function slashFiltered(q){
+  const comp = Object.values(REGISTRY).map(s=>({kind:"comp",id:s.name,label:s.name,icon:ICON_FOR[s.name],desc:s.description,cat:s.category}));
+  const all=[...CORE_ITEMS,...comp];
+  return q? all.filter(i=>i.label.toLowerCase().includes(q.toLowerCase())) : all;
+}
+function countErrors(doc){
+  let n=0;
+  doc.blocks.forEach(b=>{
+    const spec=REGISTRY[b.type]; if(!spec) return;
+    spec.props.forEach(p=>{ if(p.required && p.default===undefined && (b.props[p.name]===undefined||b.props[p.name]==="")) n++; });
+  });
+  return n;
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
+</script>
+</body>
+</html>

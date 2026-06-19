@@ -1,0 +1,40 @@
+{
+  "name": "@imdx/core",
+  "version": "0.1.0",
+  "description": "iMDX spec: parser, validator, and canonical serializer for the interactive MDX subset",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "mdast-util-mdx-jsx": "~3.2.0",
+    "remark-frontmatter": "~5.0.0",
+    "remark-gfm": "~4.0.1",
+    "remark-mdx": "~3.1.1",
+    "remark-parse": "~11.0.0",
+    "remark-stringify": "~11.0.0",
+    "unified": "~11.0.5",
+    "unist-util-visit": "~5.0.0",
+    "yaml": "~2.8.2"
+  },
+  "devDependencies": {
+    "@types/estree": "~1.0.8",
+    "@types/mdast": "~4.0.4",
+    "@types/node": "~22.10.10",
+    "@types/unist": "~3.0.3",
+    "mdast-util-mdx": "~3.0.0"
+  }
+}

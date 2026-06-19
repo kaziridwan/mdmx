@@ -1,0 +1,20 @@
+{
+  "components": "components/imdx/**/*.tsx",
+  "contentDir": "content",
+  "outDir": ".imdx",
+  "collections": {
+    "posts": {
+      "dir": "content/posts",
+      "fields": {
+        "title": { "control": { "type": "text" }, "required": true },
+        "status": {
+          "control": { "type": "select", "options": ["draft", "published"] },
+          "required": true,
+          "default": "draft"
+        },
+        "slug": { "control": { "type": "text" } },
+        "description": { "control": { "type": "textarea" } }
+      }
+    }
+  }
+}

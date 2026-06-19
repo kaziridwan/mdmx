@@ -1,0 +1,19 @@
+{
+  "name": "@imdx/provider-github",
+  "version": "0.1.0",
+  "description": "ContentProvider implementation over the GitHub Git Data API (atomic multi-file commits)",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@imdx/core": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "~22.10.10"
+  }
+}

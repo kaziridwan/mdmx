@@ -1,0 +1,50 @@
+iMDX EDITOR — design notes
+
+Subject: a writing tool where the author's own React components are blocks,
+and every edit produces clean, canonical iMDX text in their git repo.
+
+Thesis / signature: the visible seam. A split view — composed blocks on the
+left, the canonical iMDX source materializing on the right as you type, with
+the active block highlighted in BOTH panes. The product's whole reason to
+exist (WYSIWYG that round-trips to reviewable text) is the thing you watch
+happen. No other block editor shows you its output as a first-class surface.
+
+NOT the AI defaults: not cream+serif+terracotta, not near-black+acid accent,
+not broadsheet hairlines. Instead an "engineering daylight" palette — cool
+paper, ink, a single confident indigo for structure/active state, and a warm
+amber reserved only for the live source caret line. Editor chrome stays quiet
+so the content (real components) carries the color.
+
+Palette:
+  --paper   #FBFBFD  app background (very slightly cool white)
+  --canvas  #FFFFFF  the writing surface
+  --ink     #1A1B22  primary text
+  --muted   #6B6F80  secondary/labels
+  --line    #E7E8EF  hairlines, block separators
+  --indigo  #4C50E6  structure, active block, focus
+  --indigo-wash #EEF0FE  active block tint
+  --amber   #C77B12  the live-source active line marker only
+  --code-bg #14151C  source pane (dark, so it reads as "output/terminal")
+
+Type:
+  Display/UI: "Space Grotesk" — geometric, a little mechanical, distinctive
+    without being loud; used for the wordmark, palette, panel labels.
+  Body (canvas): "Newsreader" — a readable text serif, signals "this is
+    writing, not a form."
+  Mono (source + prop values): "JetBrains Mono".
+
+Layout:
+  [ rail ][ ——— canvas ——— ][ source pane ]   prop panel slides over canvas
+  Rail = component palette (grouped by category, icon + name).
+  Canvas = blocks; hovering shows a drag handle + "+"; "/" opens slash menu.
+  Source = dark, live canonical iMDX, active block's lines marked amber.
+
+Signature interaction: selecting a block scrolls + glows its counterpart in
+the source pane (and vice-versa is implied). Prop panel edits update the live
+component render AND the source simultaneously — the round-trip made visible.
+
+Risk taken: devoting a third of the screen permanently to "output" text in a
+WYSIWYG editor is unusual — most editors hide the markup. Here it IS the pitch.
+
+One accessory removed: dropped a planned minimap of the document; the source
+pane already serves as the document's structural overview.

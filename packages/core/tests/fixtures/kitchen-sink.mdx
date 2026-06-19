@@ -1,0 +1,49 @@
+---
+title: Hello iMDX
+slug: hello-imdx
+status: draft
+---
+
+# Hello iMDX
+
+This is **bold**, this is *italic*, this is ~~struck~~, and this is `inline code` with a [link](https://example.com).
+
+- a bullet
+- another bullet
+  - nested
+
+1. first
+2. second
+
+> A blockquote with *emphasis*.
+
+```ts
+const x: number = 42;
+```
+
+| Region | Revenue |
+| ------ | ------- |
+| EU     | 120     |
+| US     | 240     |
+
+<Callout variant="warn" title="Heads up">
+  This supports **inline markdown** and [links](https://example.com/docs).
+</Callout>
+
+<Chart title="Revenue" height={320} stacked series={["q1", "q2"]} config={{legend: "top", max: -5}} />
+
+<TwoColumn>
+  <Column>
+    ## Left side
+
+    <Chart series={["q1"]} />
+  </Column>
+
+  <Column>
+    Regular paragraphs here.
+  </Column>
+</TwoColumn>
+
+---
+
+The end.
