@@ -1,0 +1,365 @@
+/*
+ * iMDX editor playground — "engineering daylight" palette (DESIGN_NOTES.txt).
+ * Cool paper + ink, one confident indigo for structure/active state, amber
+ * reserved for the live-source active line, dark source pane as "output".
+ */
+:root {
+  --paper: #fbfbfd;
+  --canvas: #ffffff;
+  --ink: #1a1b22;
+  --muted: #6b6f80;
+  --line: #e7e8ef;
+  --indigo: #4c50e6;
+  --indigo-wash: #eef0fe;
+  --amber: #c77b12;
+  --code-bg: #14151c;
+  --code-ink: #d7d9e3;
+  --code-active: rgba(199, 123, 18, 0.16);
+}
+
+* {
+  box-sizing: border-box;
+}
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+}
+body {
+  background: var(--paper);
+  color: var(--ink);
+  font-family: "Space Grotesk", system-ui, sans-serif;
+}
+
+.imdx-editor {
+  display: grid;
+  grid-template-columns: 220px minmax(0, 1fr) 280px 420px;
+  height: 100vh;
+  background: var(--paper);
+}
+
+/* -- Rail ----------------------------------------------------------------- */
+.imdx-rail {
+  border-right: 1px solid var(--line);
+  padding: 18px 14px;
+  overflow-y: auto;
+  grid-column: 1;
+}
+.imdx-rail-title {
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 14px;
+}
+.imdx-rail-group-label {
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin: 14px 4px 6px;
+}
+.imdx-rail-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--canvas);
+  color: var(--ink);
+  font: inherit;
+  font-size: 14px;
+  text-align: left;
+  cursor: grab;
+  margin-bottom: 6px;
+}
+.imdx-rail-item:hover {
+  border-color: var(--indigo);
+  background: var(--indigo-wash);
+}
+.imdx-rail-icon {
+  width: 16px;
+  height: 16px;
+  border-radius: 4px;
+  background: var(--indigo);
+  opacity: 0.5;
+  flex: none;
+}
+
+/* -- Canvas --------------------------------------------------------------- */
+.imdx-canvas-wrap {
+  grid-column: 2;
+  position: relative;
+  overflow-y: auto;
+}
+.imdx-canvas {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 48px 40px 240px;
+}
+.imdx-canvas .ProseMirror {
+  outline: none;
+  font-family: "Newsreader", Georgia, serif;
+  font-size: 18px;
+  line-height: 1.7;
+  color: var(--ink);
+}
+.imdx-canvas .ProseMirror > * + * {
+  margin-top: 0.85em;
+}
+.imdx-canvas h1 {
+  font-family: "Space Grotesk", sans-serif;
+  font-size: 2em;
+  font-weight: 600;
+}
+.imdx-canvas h2 {
+  font-family: "Space Grotesk", sans-serif;
+  font-size: 1.5em;
+  font-weight: 600;
+}
+.imdx-canvas h3 {
+  font-family: "Space Grotesk", sans-serif;
+  font-size: 1.2em;
+  font-weight: 600;
+}
+.imdx-canvas blockquote {
+  border-left: 3px solid var(--indigo);
+  margin: 0;
+  padding-left: 16px;
+  color: var(--muted);
+}
+.imdx-canvas code {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 0.86em;
+  background: var(--indigo-wash);
+  padding: 1px 5px;
+  border-radius: 4px;
+}
+.imdx-canvas a {
+  color: var(--indigo);
+}
+
+/* Component NodeViews */
+.imdx-nodeview {
+  margin: 0.85em 0;
+}
+.imdx-component {
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 4px;
+  transition: border-color 0.12s;
+}
+.imdx-component.is-selected,
+.imdx-nodeview.imdx-selected .imdx-component {
+  border-color: var(--indigo);
+  box-shadow: 0 0 0 3px var(--indigo-wash);
+}
+.imdx-component aside {
+  font-family: "Newsreader", serif;
+  background: var(--indigo-wash);
+  border-radius: 8px;
+  padding: 12px 16px;
+}
+.imdx-component figure {
+  margin: 0;
+  padding: 12px 16px;
+  text-align: center;
+}
+.imdx-component figure span {
+  display: block;
+  font-family: "Space Grotesk", sans-serif;
+  font-size: 2em;
+  font-weight: 600;
+  color: var(--indigo);
+}
+.imdx-component figcaption {
+  color: var(--muted);
+  font-size: 0.85em;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+.imdx-content {
+  font-family: "Newsreader", serif;
+}
+.imdx-placeholder {
+  border: 1px dashed var(--line);
+  border-radius: 8px;
+  padding: 12px 16px;
+  background: var(--paper);
+}
+.imdx-placeholder-head {
+  display: flex;
+  gap: 10px;
+  align-items: baseline;
+  font-family: "Space Grotesk", sans-serif;
+}
+.imdx-placeholder-name {
+  font-weight: 600;
+  color: var(--indigo);
+}
+.imdx-placeholder-props {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+/* -- Slash menu ----------------------------------------------------------- */
+.imdx-slash {
+  position: absolute;
+  z-index: 20;
+  min-width: 240px;
+  max-height: 320px;
+  overflow-y: auto;
+  background: var(--canvas);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  box-shadow: 0 12px 32px rgba(26, 27, 34, 0.16);
+  padding: 6px;
+}
+.imdx-slash-item {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  border: 0;
+  background: none;
+  text-align: left;
+  font: inherit;
+  padding: 7px 10px;
+  border-radius: 7px;
+  cursor: pointer;
+  color: var(--ink);
+}
+.imdx-slash-item.is-active {
+  background: var(--indigo-wash);
+}
+.imdx-slash-item-label {
+  font-size: 14px;
+}
+.imdx-slash-item-desc {
+  font-size: 12px;
+  color: var(--muted);
+}
+
+/* -- Prop panel ----------------------------------------------------------- */
+.imdx-props {
+  grid-column: 3;
+  border-left: 1px solid var(--line);
+  padding: 18px 16px;
+  overflow-y: auto;
+}
+.imdx-props-label {
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 14px;
+}
+.imdx-props-empty {
+  color: var(--muted);
+  font-size: 14px;
+}
+.imdx-prop-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 14px;
+}
+.imdx-prop-name {
+  font-size: 13px;
+  font-weight: 500;
+}
+.imdx-prop-req {
+  color: var(--indigo);
+}
+.imdx-prop-desc {
+  font-size: 12px;
+  color: var(--muted);
+}
+.imdx-control {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 13px;
+  padding: 6px 8px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--canvas);
+  color: var(--ink);
+}
+.imdx-control:focus {
+  outline: none;
+  border-color: var(--indigo);
+}
+.imdx-control-checkbox {
+  width: 16px;
+  height: 16px;
+}
+.imdx-control-textarea {
+  resize: vertical;
+}
+
+/* -- Source pane ---------------------------------------------------------- */
+.imdx-source {
+  grid-column: 4;
+  background: var(--code-bg);
+  color: var(--code-ink);
+  overflow-y: auto;
+}
+.imdx-source-label {
+  position: sticky;
+  top: 0;
+  background: var(--code-bg);
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #6f748a;
+  padding: 14px 18px 8px;
+}
+.imdx-source-pre {
+  margin: 0;
+  padding: 0 0 200px;
+}
+.imdx-source-pre code {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 13px;
+  line-height: 1.6;
+}
+.imdx-source-line {
+  padding: 0 18px;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+.imdx-source-line.is-active {
+  background: var(--code-active);
+  box-shadow: inset 2px 0 0 var(--amber);
+}
+
+/* ProseMirror drop cursor */
+.imdx-dropcursor {
+  background: var(--indigo);
+}
+
+/* ProseMirror gap cursor (inlined from prosemirror-gapcursor) */
+.ProseMirror-gapcursor {
+  display: none;
+  pointer-events: none;
+  position: absolute;
+}
+.ProseMirror-gapcursor::after {
+  content: "";
+  display: block;
+  position: absolute;
+  top: -2px;
+  width: 20px;
+  border-top: 1px solid var(--ink);
+  animation: ProseMirror-cursor-blink 1.1s steps(2, start) infinite;
+}
+@keyframes ProseMirror-cursor-blink {
+  to {
+    visibility: hidden;
+  }
+}
+.ProseMirror-focused .ProseMirror-gapcursor {
+  display: block;
+}

@@ -1,0 +1,10 @@
+export { loadConfig, DEFAULT_CONFIG } from "./config.js";
+export type { IMDXConfig } from "./config.js";
+export { generate } from "./generate.js";
+export type { GenerateResult } from "./generate.js";
+export { check, formatDiagnostics } from "./check.js";
+export type { CheckResult, FileDiagnostics } from "./check.js";
+export { dev, runGenerate, watchTargets, staticBase, fsWatcher } from "./dev.js";
+export type { DevHandle, DevOptions, DevSummary, Watcher } from "./dev.js";
+export { extractComponents } from "./extract.js";
+export type { ExtractionIssue, ExtractionResult } from "./extract.js";

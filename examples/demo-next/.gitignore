@@ -1,0 +1,5 @@
+/.next/
+/.imdx/
+/node_modules/
+next-env.d.ts
+*.tsbuildinfo

@@ -1,0 +1,5 @@
+{
+  "components": "components/imdx/**/*.tsx",
+  "contentDir": "content",
+  "outDir": ".imdx"
+}

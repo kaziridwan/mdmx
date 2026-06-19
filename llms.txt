@@ -1,0 +1,47 @@
+# iMDX
+
+> A git-native CMS toolkit for Next.js built on "iMDX": a strict, round-trippable
+> subset of MDX where the user's own React components are first-class blocks in a
+> Notion-style editor. Content is committed to the user's GitHub repo; a codegen
+> step turns their components into a typed registry that drives validation, the
+> editor palette, and prop panels. TypeScript, npm-workspaces monorepo, ESM.
+
+Key invariants: canonical byte-stable serialization (changes are semver-major);
+component props must be JSON literals; out-of-subset content is preserved
+byte-for-byte via raw blocks; editing one prop changes one line of output.
+
+Agents: documentation is part of "done". After each session, follow the
+wiki-upkeep checklist in AGENTS.md (append SessionLog, record ADRs, sync wiki).
+
+## Docs
+
+- [SPEC.md](SPEC.md): normative iMDX v1 grammar, canonical form, registry schema, diagnostics, provider contract
+- [AGENTS.md](AGENTS.md): agent operating guide — architecture map, commands, invariants, wiki-upkeep rule
+- [claude-code-handoff.md](agent-context/claude-code-handoff.md): start-here briefing for a Claude Code session
+- [docs/DECISIONS.md](docs/DECISIONS.md): Architecture Decision Record (ADR log)
+- [docs/wiki/Home.md](docs/wiki/Home.md): the documentation hub
+- [README.md](README.md): overview, package status, roadmap
+
+## Wiki
+
+- [Architecture](docs/wiki/Architecture.md): the pipeline and how packages connect
+- [Packages](docs/wiki/Packages.md): per-package reference and test counts
+- [Invariants](docs/wiki/Invariants.md): the nine rules that must not break
+- [Glossary](docs/wiki/Glossary.md): iMDX, registry, control, children policy, …
+- [Roadmap](docs/wiki/Roadmap.md): done / in-progress / next, by phase
+- [TwoColumn](docs/wiki/TwoColumn.md): the nested-editing implementation plan
+- [Testing](docs/wiki/Testing.md): suite organization and load-bearing guarantees
+- [SessionLog](docs/wiki/SessionLog.md): chronological change history
+
+## Packages
+
+- [packages/core](packages/core): parser, validator (IMDX001–007), canonical serializer, Registry, defineIMDX, ContentProvider contract
+- [packages/cli](packages/cli): `imdx generate` (TS type extraction → registry codegen), `imdx check` (content lint)
+- [packages/editor](packages/editor): registry→ProseMirror schema, mdast⇄ProseMirror converters, command/palette layer (React UI pending)
+- [packages/next](packages/next): LocalProvider, content readers, sessions, GitHub OAuth, API handlers (mount page pending)
+- [packages/provider-github](packages/provider-github): atomic multi-file commits via the GitHub Git Data API with conflict detection
+
+## Examples
+
+- [examples/demo](examples/demo): minimal consumer project; run `node ../../packages/cli/dist/bin.js generate` inside it
+- [examples/editor-prototype.html](examples/editor-prototype.html): interactive editor UI spec (self-contained React artifact)
