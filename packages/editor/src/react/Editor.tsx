@@ -32,6 +32,7 @@ import {
   storeSidebarWidth,
 } from "./sidebar-resize.js";
 import { SlashMenu } from "./SlashMenu.js";
+import { CodeIcon, SlidersIcon, LayersIcon } from "./icons.js";
 import { MediaLibrary } from "./MediaLibrary.js";
 import { insertImage, type MediaItem, type MediaSource } from "./media.js";
 import { MediaPickerContext, type RequestMedia } from "./media-context.js";
@@ -112,6 +113,9 @@ export function IMDXEditor({
     () => readStoredWidth() ?? DEFAULT_SIDEBAR_WIDTH,
   );
   const rootRef = useRef<HTMLDivElement>(null);
+  // Mobile: which off-canvas sheet is open (desktop ignores this; FABs are
+  // hidden by CSS and the rail/sidebar are normal columns).
+  const [mobilePanel, setMobilePanel] = useState<"palette" | "sidebar" | null>(null);
 
   useEffect(() => {
     const mount = mountRef.current;
@@ -240,11 +244,20 @@ export function IMDXEditor({
   return (
     <MediaPickerContext.Provider value={media ? requestMedia : null}>
     <div
-      className="imdx-editor"
+      className={
+        "imdx-editor" +
+        (mobilePanel === "palette" ? " is-palette-open" : "") +
+        (mobilePanel === "sidebar" ? " is-sidebar-open" : "")
+      }
       ref={rootRef}
       style={{ ["--imdx-sidebar-width"]: `${sidebarWidth}px` } as CSSProperties}
     >
-      <Rail registry={registry} schema={schema} view={view} />
+      <Rail
+        registry={registry}
+        schema={schema}
+        view={view}
+        onAfterInsert={() => setMobilePanel(null)}
+      />
       <div className="imdx-canvas-wrap">
         {showToolbar ? (
           <div className="imdx-toolbar">
@@ -308,6 +321,49 @@ export function IMDXEditor({
         componentSelected={isComponentSelected(state, registry)}
         onResizeStart={startResize}
       />
+
+      {/* Mobile-only floating controls (hidden on desktop via CSS). */}
+      <div className="imdx-mobile-fabs imdx-fabs-left">
+        <button
+          type="button"
+          className="imdx-fab"
+          aria-label="Open components"
+          onClick={() => setMobilePanel((p) => (p === "palette" ? null : "palette"))}
+        >
+          <LayersIcon size={20} />
+        </button>
+      </div>
+      <div className="imdx-mobile-fabs imdx-fabs-right">
+        <button
+          type="button"
+          className="imdx-fab"
+          aria-label="Open source"
+          onClick={() => {
+            setSidebarMode("source");
+            setMobilePanel("sidebar");
+          }}
+        >
+          <CodeIcon size={20} />
+        </button>
+        <button
+          type="button"
+          className="imdx-fab"
+          aria-label="Open properties"
+          onClick={() => {
+            setSidebarMode("properties");
+            setMobilePanel("sidebar");
+          }}
+        >
+          <SlidersIcon size={20} />
+        </button>
+      </div>
+      {mobilePanel ? (
+        <div
+          className="imdx-mobile-backdrop"
+          aria-hidden="true"
+          onClick={() => setMobilePanel(null)}
+        />
+      ) : null}
     </div>
     </MediaPickerContext.Provider>
   );

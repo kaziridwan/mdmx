@@ -676,3 +676,33 @@ panel (breaks the live-source-beside-content reading that motivates the design).
 `editor/tests/editor-mount.test.ts` (+1, two updated). No SPEC change. Mobile
 adaptation and resize handle are tracked as S12/S13 in
 `agent-context/plans/road-to-0.3.0.md`.
+
+## ADR-031 — Mobile editor: one DOM, repositioned by CSS
+
+**Context.** On narrow viewports the three-column editor (rail · canvas ·
+sidebar) doesn't fit. The panels need to become overlays, but the rail and
+sidebar are stateful (ProseMirror view, prop panel, live source) — rendering a
+second "mobile" copy would duplicate that state and risk divergence.
+
+**Decision.** Keep a **single** render tree and reposition it with CSS. Below an
+860px breakpoint a `@media` block turns the rail into a left slide-in sheet and
+the sidebar into a right slide-in sheet (`position: fixed` + `translateX`),
+collapses the grid to one column, and reveals floating action buttons. React owns
+only the open-state (`mobilePanel`), exposed as `is-palette-open` /
+`is-sidebar-open` classes on the editor root that flip the sheets' transform; a
+backdrop dismisses. The Source/Properties FABs reuse the existing `sidebarMode`
+(ADR-030) — they set the mode, then open the one sheet — so there is exactly one
+source pane and one prop panel regardless of viewport. Inserting from the mobile
+palette closes the sheet via a new `Rail.onAfterInsert`.
+
+**Why not a separate mobile component tree.** Two trees would mean two
+ProseMirror views (or prop-drilling one into both), doubling the surface for
+selection/undo bugs and the live-source divergence the design is built to avoid.
+CSS repositioning keeps the desktop and mobile experiences literally the same
+components.
+
+**Status.** `editor/src/react/Editor.tsx` (mobile state + FABs + backdrop),
+`Rail.tsx` (`onAfterInsert`), `icons.tsx` (shared); `examples/demo-next/app/
+globals.css`, `examples/editor-playground/src/styles.css` (`@media` block);
+`editor/tests/editor-mount.test.ts` (+2). No SPEC change. The half-screen sheet
+width (`min(440px, 92vw)`) and breakpoint are tunable; resize is desktop-only.

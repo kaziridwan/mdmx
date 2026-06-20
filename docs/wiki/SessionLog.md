@@ -11,6 +11,31 @@ initial design-and-build conversation (12 commits).
 
 <!-- APPEND NEW ENTRIES ABOVE THIS LINE -->
 
+### S13 — Mobile layout (floating controls + off-canvas sheets)
+- **editor**: below 860px the rail and sidebar become slide-in **sheets** (same
+  DOM, repositioned by CSS — no duplicate panels) toggled by floating buttons.
+  `Editor.tsx` tracks `mobilePanel: "palette" | "sidebar" | null`, applies
+  `is-palette-open`/`is-sidebar-open` on the root, and renders FABs (bottom-left
+  **Components**; bottom-right **Source**/**Properties** — the latter two set
+  `sidebarMode` then open the sidebar sheet) + a backdrop that dismisses. The rail
+  gained `onAfterInsert` so inserting from the mobile palette closes the sheet.
+  Shared inline icons extracted to `react/icons.tsx` (`CodeIcon`/`SlidersIcon`/
+  `LayersIcon`), reused by the sidebar tabs and FABs.
+- **CSS** (demo + playground in sync): FABs/backdrop hidden on desktop; a
+  `@media (max-width: 860px)` block collapses the grid to one column, makes the
+  rail a left sheet and the sidebar a right sheet (`translateX` toggled by the
+  root classes; editor visible behind a translucent backdrop), hides the resize
+  handle, and styles the FABs.
+- Decisions → **ADR-031** (mobile = same-DOM panels repositioned by CSS + a React
+  open-state, not a separate mobile tree).
+- Tests: +2 editor (73→75) in `editor-mount.test.ts` (jsdom): palette FAB opens
+  the sheet + backdrop dismisses; Source/Properties FABs open the sidebar sheet in
+  the correct mode. **176 total.**
+- Plan: `road-to-0.3.0.md` (S13 ✓). Wiki: Packages, Testing, Home, SessionLog;
+  README, PROJECT_STATUS. No SPEC change.
+- Follow-ups: S14 component-picker grouping UX (collapsible + filter; group the
+  slash menu too).
+
 ### S12 — Resizable sidebar (desktop)
 - **editor**: new `react/sidebar-resize.ts` — pure `clampSidebarWidth`
   (260–640px) + `readStoredWidth`/`storeSidebarWidth` (localStorage,

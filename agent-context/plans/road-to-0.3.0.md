@@ -35,7 +35,7 @@ globals.css`, `examples/editor-playground/src/styles.css`) — keep both in sync
 - [x] **S12 — Resizable sidebar (desktop).** Drag handle on the sidebar's left
   edge sets `--imdx-sidebar-width` on the editor root (clamped); persist the last
   width. Pure-ish resize logic unit-tested; jsdom drag smoke.
-- [ ] **S13 — Mobile layout.** Below a breakpoint: the left palette collapses to a
+- [x] **S13 — Mobile layout.** Below a breakpoint: the left palette collapses to a
   floating button (bottom-left) opening a half-height/scrollable modal; the right
   sidebar becomes two floating buttons (bottom-right) — Source and Properties —
   each opening a half-screen (horizontal) scrollable modal with the editor still
