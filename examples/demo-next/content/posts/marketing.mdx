@@ -55,3 +55,29 @@ Drop a call-to-action anywhere in the flow:
 
   <Stat value="0" label="lock-in" />
 </StatsBand>
+
+## Simple pricing
+
+<PricingTable>
+  <PricingTier name="Starter" price="$0" period="mo" ctaLabel="Get started">
+    Up to 3 collections.
+
+    Local authoring, no account.
+  </PricingTier>
+
+  <PricingTier
+    name="Team"
+    price="$29"
+    period="mo"
+    ctaLabel="Start trial"
+    featured={true}
+  >
+    Unlimited collections.
+
+    GitHub OAuth and roles.
+  </PricingTier>
+</PricingTable>
+
+<Testimonial author="Jane Doe" role="CTO, Acme">
+  iMDX let our writers ship landing pages without ever touching the build.
+</Testimonial>

@@ -1007,3 +1007,78 @@ body.imdx-resizing {
   gap: 40px;
   flex-wrap: wrap;
 }
+
+/* -- Demo marketing components (PricingTable, Testimonial) ----------------- */
+.mk-pricing {
+  display: grid;
+  gap: 16px;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+}
+.mk-tier {
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 22px;
+  background: var(--canvas);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.mk-tier[data-featured="true"] {
+  border-color: var(--indigo);
+  box-shadow: 0 8px 30px rgba(76, 80, 230, 0.15);
+}
+.mk-tier-name {
+  font-size: 15px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin: 0;
+}
+.mk-tier-price {
+  margin: 0;
+}
+.mk-tier-amount {
+  font-size: 32px;
+  font-weight: 700;
+}
+.mk-tier-period {
+  color: var(--muted);
+  font-size: 15px;
+}
+.mk-tier-features {
+  font-size: 14px;
+  color: var(--muted);
+  flex: 1;
+}
+.mk-tier .mk-btn {
+  justify-content: center;
+}
+.mk-quote {
+  margin: 0;
+  border-left: 3px solid var(--indigo);
+  padding: 8px 0 8px 22px;
+}
+.mk-quote-body {
+  margin: 0 0 14px;
+  font-size: 20px;
+  font-family: "Newsreader", Georgia, serif;
+}
+.mk-quote-cite {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.mk-quote-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 999px;
+  object-fit: cover;
+}
+.mk-quote-author {
+  font-weight: 600;
+  display: block;
+}
+.mk-quote-role {
+  color: var(--muted);
+  font-size: 14px;
+}

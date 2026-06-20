@@ -11,6 +11,23 @@ initial design-and-build conversation (12 commits).
 
 <!-- APPEND NEW ENTRIES ABOVE THIS LINE -->
 
+### S17 — Demo marketing components: Pricing + Testimonial
+- **demo-next**: three more Marketing components:
+  - `PricingTable` — `blocks` container, `allowedChildren: ["PricingTier"]`.
+  - `PricingTier` — `rich-text`, `allowedParents: ["PricingTable"]`; name/price/
+    period/ctaLabel/ctaHref (link) + **featured** (boolean → checkbox control).
+  - `Testimonial` — `rich-text` quote; author/role + **avatar** (image → Browse
+    via the S10 media picker).
+  Registered in `lib/components.ts`; demo-next registry now **12** components.
+  Extended `marketing.mdx` (pricing row + testimonial); canonical + `imdx
+  check`-clean. CSS `.mk-pricing`/`.mk-tier`/`.mk-quote` (featured tier
+  highlight, auto-fit grid).
+- Verification: demo-next `tsc` clean; full repo `pnpm check` + 185 tests green;
+  controls confirmed (boolean/link/image).
+- No package code → no test-count change (185), no ADR, no SPEC change. Plan:
+  `road-to-0.3.0.md` (S17 ✓).
+- Follow-ups: S18 logo cloud / FAQ / newsletter; then S19 HTML component, S20 bump.
+
 ### S16 — Demo marketing components: FeatureGrid + StatsBand
 - **demo-next**: three more Marketing components, exercising the slot-container
   machinery (ADR-021) end-to-end in the demo:
