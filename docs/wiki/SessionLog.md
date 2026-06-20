@@ -11,6 +11,18 @@ initial design-and-build conversation (12 commits).
 
 <!-- APPEND NEW ENTRIES ABOVE THIS LINE -->
 
+### S20 — Release 0.3.0
+- Bumped all five packages (`core`/`cli`/`editor`/`next`/`provider-github`) and
+  the root from `0.1.0`/`0.0.0` → **`0.3.0`**. Internal deps use `workspace:*`
+  (no version pins to update); `pnpm-lock.yaml` unchanged (a package's own
+  version isn't a lockfile importer field).
+- Closes the **road-to-0.3.0** plan: editor sidebar overhaul (S11–S13), picker
+  grouping (S14), 11 new demo components across Content/Marketing/Layout/Data/
+  Advanced (S15–S18), and the `<Html>` block + snippets (S19).
+- Verification: full `pnpm check` + **201 tests** green at 0.3.0.
+- Wiki: PROJECT_STATUS, Home (version note), SessionLog; plan (S20 ✓ — **plan
+  complete**). No ADR, no SPEC change.
+
 ### S19 — `<Html>` custom-markup block + snippets
 - **editor (package code)**:
   - `src/sanitize-html.ts` — pure, dependency-free `sanitizeHtml` (runs at build

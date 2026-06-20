@@ -1,6 +1,6 @@
 {
   "name": "@imdx/cli",
-  "version": "0.1.0",
+  "version": "0.3.0",
   "description": "iMDX tooling: registry codegen (generate), content linting (check), and watch mode (dev)",
   "type": "module",
   "bin": {

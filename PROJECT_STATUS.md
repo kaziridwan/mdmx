@@ -6,6 +6,7 @@ Snapshot of the iMDX monorepo at packaging time. For the full picture read
 
 ## At a glance
 
+- **v0.3.0** — all five packages at `0.3.0`.
 - **201 tests passing**, all five packages typecheck clean under strict TS.
 - The entire **headless pipeline is implemented and tested**: define a
   component → generate a typed registry → edit content as a validated block
