@@ -12,6 +12,10 @@ import { StatsBand } from "../components/imdx/StatsBand";
 import { PricingTable } from "../components/imdx/PricingTable";
 import { PricingTier } from "../components/imdx/PricingTier";
 import { Testimonial } from "../components/imdx/Testimonial";
+import { LogoCloud } from "../components/imdx/LogoCloud";
+import { FAQ } from "../components/imdx/FAQ";
+import { FAQItem } from "../components/imdx/FAQItem";
+import { Newsletter } from "../components/imdx/Newsletter";
 
 /** Author components keyed by registry name, for live rendering in the editor. */
 export const components: ComponentMap = {
@@ -27,4 +31,8 @@ export const components: ComponentMap = {
   PricingTable,
   PricingTier,
   Testimonial,
+  LogoCloud,
+  FAQ,
+  FAQItem,
+  Newsletter,
 };
