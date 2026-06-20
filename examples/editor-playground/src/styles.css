@@ -66,6 +66,100 @@ body.imdx-resizing {
   cursor: col-resize;
   user-select: none;
 }
+
+/* -- Mobile: floating controls + off-canvas sheets ------------------------ */
+.imdx-mobile-fabs {
+  display: none;
+}
+.imdx-mobile-backdrop {
+  display: none;
+}
+
+@media (max-width: 860px) {
+  .imdx-editor {
+    grid-template-columns: 1fr;
+  }
+  .imdx-canvas-wrap {
+    grid-column: 1;
+  }
+  /* Left rail → slide-in sheet from the left. */
+  .imdx-rail {
+    position: fixed;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    width: min(360px, 86vw);
+    transform: translateX(-100%);
+    transition: transform 0.22s ease;
+    z-index: 40;
+    background: var(--paper);
+    overflow-y: auto;
+    box-shadow: 0 0 40px rgba(0, 0, 0, 0.18);
+  }
+  .imdx-editor.is-palette-open .imdx-rail {
+    transform: none;
+  }
+  /* Right sidebar → slide-in sheet from the right (editor visible behind). */
+  .imdx-sidebar {
+    position: fixed;
+    top: 0;
+    bottom: 0;
+    right: 0;
+    left: auto;
+    width: min(440px, 92vw);
+    transform: translateX(100%);
+    transition: transform 0.22s ease;
+    z-index: 40;
+    background: var(--paper);
+    box-shadow: 0 0 40px rgba(0, 0, 0, 0.18);
+  }
+  .imdx-editor.is-sidebar-open .imdx-sidebar {
+    transform: none;
+  }
+  .imdx-sidebar-resize {
+    display: none;
+  }
+
+  .imdx-mobile-backdrop {
+    display: block;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.32);
+    z-index: 35;
+  }
+  .imdx-mobile-fabs {
+    display: flex;
+    position: fixed;
+    bottom: 16px;
+    z-index: 45;
+    gap: 10px;
+  }
+  .imdx-fabs-left {
+    left: 16px;
+  }
+  .imdx-fabs-right {
+    right: 16px;
+    flex-direction: column;
+  }
+  /* Hide the FABs while a sheet is open (the backdrop dismisses it). */
+  .imdx-editor.is-palette-open .imdx-mobile-fabs,
+  .imdx-editor.is-sidebar-open .imdx-mobile-fabs {
+    display: none;
+  }
+  .imdx-fab {
+    width: 48px;
+    height: 48px;
+    border-radius: 999px;
+    border: 1px solid var(--line);
+    background: #fff;
+    color: var(--ink);
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.16);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+  }
+}
 .imdx-sidebar-tabs {
   display: flex;
   border-bottom: 1px solid var(--line);

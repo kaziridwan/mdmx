@@ -21,16 +21,19 @@ export interface RailProps {
   registry: Registry;
   schema: Schema;
   view: EditorView | null;
+  /** Called after a successful insert (e.g. to close the mobile palette sheet). */
+  onAfterInsert?: () => void;
 }
 
 /** Left rail: the component palette, grouped by category. */
-export function Rail({ registry, schema, view }: RailProps) {
+export function Rail({ registry, schema, view, onAfterInsert }: RailProps) {
   const groups = useMemo(() => groupByCategory(registry.components), [registry]);
 
   const insert = (name: string) => {
     if (!view) return;
     insertComponent(registry, schema, name)(view.state, view.dispatch);
     view.focus();
+    onAfterInsert?.();
   };
 
   return (

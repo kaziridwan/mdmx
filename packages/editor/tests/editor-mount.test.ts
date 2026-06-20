@@ -204,6 +204,43 @@ describe("unified sidebar (source ⇄ properties)", () => {
   });
 });
 
+describe("mobile layout (floating panels)", () => {
+  it("opens the palette sheet and dismisses via the backdrop", async () => {
+    const el = await mountEditor(SRC);
+    const root = el.querySelector(".imdx-editor") as HTMLElement;
+    expect(el.querySelector(".imdx-mobile-backdrop")).toBeNull();
+
+    (el.querySelector('[aria-label="Open components"]') as HTMLButtonElement).click();
+    for (let i = 0; i < 2; i++) await flush();
+    expect(root.classList.contains("is-palette-open")).toBe(true);
+    const backdrop = el.querySelector(".imdx-mobile-backdrop") as HTMLElement;
+    expect(backdrop).not.toBeNull();
+
+    backdrop.click();
+    for (let i = 0; i < 2; i++) await flush();
+    expect(root.classList.contains("is-palette-open")).toBe(false);
+    expect(el.querySelector(".imdx-mobile-backdrop")).toBeNull();
+  });
+
+  it("the Source/Properties FABs open the sidebar sheet in the right mode", async () => {
+    const el = await mountEditor(SRC);
+    const root = el.querySelector(".imdx-editor") as HTMLElement;
+
+    (el.querySelector('[aria-label="Open properties"]') as HTMLButtonElement).click();
+    for (let i = 0; i < 2; i++) await flush();
+    expect(root.classList.contains("is-sidebar-open")).toBe(true);
+    // Properties mode → the document/prop panel is shown, not the source pane.
+    expect(el.querySelector(".imdx-props")).not.toBeNull();
+    expect(el.querySelector(".imdx-source-pre")).toBeNull();
+
+    (el.querySelector('[aria-label="Open source"]') as HTMLButtonElement).click();
+    for (let i = 0; i < 2; i++) await flush();
+    expect(root.classList.contains("is-sidebar-open")).toBe(true);
+    expect(el.querySelector(".imdx-source-pre")).not.toBeNull();
+    expect(el.querySelector(".imdx-props")).toBeNull();
+  });
+});
+
 describe("frontmatter panel (collections)", () => {
   const POST = `---
 title: Hi
