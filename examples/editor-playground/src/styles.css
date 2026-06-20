@@ -552,3 +552,45 @@ body.imdx-resizing {
 .ProseMirror-focused .ProseMirror-gapcursor {
   display: block;
 }
+
+/* -- Snippets (Save as snippet toolbar + rail group) ---------------------- */
+.imdx-toolbar-snippet {
+  margin-left: auto;
+  font: inherit;
+  font-size: 14px;
+  padding: 7px 14px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fff;
+  color: var(--ink);
+  cursor: pointer;
+}
+.imdx-snippet-save {
+  margin-left: auto;
+  display: inline-flex;
+  gap: 6px;
+}
+.imdx-snippet-input {
+  font: inherit;
+  font-size: 14px;
+  padding: 6px 10px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+.imdx-snippet-confirm {
+  font: inherit;
+  font-size: 14px;
+  padding: 6px 12px;
+  border: 0;
+  border-radius: 8px;
+  background: var(--indigo);
+  color: #fff;
+  cursor: pointer;
+}
+.imdx-snippet-confirm:disabled {
+  background: var(--line);
+  color: var(--muted);
+}
+.imdx-rail-group-static {
+  cursor: default;
+}

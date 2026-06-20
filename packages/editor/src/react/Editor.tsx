@@ -36,6 +36,7 @@ import { CodeIcon, SlidersIcon, LayersIcon } from "./icons.js";
 import { MediaLibrary } from "./MediaLibrary.js";
 import { insertImage, type MediaItem, type MediaSource } from "./media.js";
 import { MediaPickerContext, type RequestMedia } from "./media-context.js";
+import { listSnippets, saveSnippet, type Snippet } from "../snippets.js";
 import { serializeDoc } from "./source-map.js";
 
 /** Map of component name → the author's React component, for live rendering. */
@@ -89,6 +90,16 @@ function isComponentSelected(state: EditorState | null, registry: Registry): boo
   return name != null && registry.get(name) != null;
 }
 
+/** The `code` of a selected `<Html>` component node, or null. */
+function selectedHtmlCode(state: EditorState | null): string | null {
+  if (!state) return null;
+  const sel = state.selection;
+  if (!(sel instanceof NodeSelection)) return null;
+  if (componentNameFromNode(sel.node.type.name) !== "Html") return null;
+  const code = (sel.node.attrs.props as Record<string, unknown> | undefined)?.code;
+  return typeof code === "string" ? code : "";
+}
+
 export function IMDXEditor({
   registry,
   components,
@@ -109,6 +120,8 @@ export function IMDXEditor({
   // The callback awaiting a media pick; non-null ⇒ the library modal is open.
   const [mediaPick, setMediaPick] = useState<((item: MediaItem) => void) | null>(null);
   const [sidebarMode, setSidebarMode] = useState<SidebarMode>("source");
+  const [snippets, setSnippets] = useState<Snippet[]>(() => listSnippets());
+  const [snippetName, setSnippetName] = useState<string | null>(null);
   const [sidebarWidth, setSidebarWidth] = useState<number>(
     () => readStoredWidth() ?? DEFAULT_SIDEBAR_WIDTH,
   );
@@ -239,7 +252,31 @@ export function IMDXEditor({
     [view],
   );
 
-  const showToolbar = onSave != null || media != null;
+  // Insert a saved snippet as an <Html> block carrying its HTML as `code`.
+  const insertSnippet = useCallback(
+    (snippet: Snippet) => {
+      if (!view) return;
+      const type = view.state.schema.nodes[componentNodeName("Html")];
+      const node = type?.createAndFill({ props: { code: snippet.html } });
+      if (!node) return;
+      view.dispatch(view.state.tr.replaceSelectionWith(node).scrollIntoView());
+      view.focus();
+    },
+    [view],
+  );
+
+  const htmlCode = selectedHtmlCode(state);
+  const commitSnippet = useCallback(() => {
+    if (snippetName == null) return;
+    const code = selectedHtmlCode(view?.state ?? null);
+    if (code != null) {
+      saveSnippet(snippetName, code);
+      setSnippets(listSnippets());
+    }
+    setSnippetName(null);
+  }, [snippetName, view]);
+
+  const showToolbar = onSave != null || media != null || htmlCode != null;
 
   return (
     <MediaPickerContext.Provider value={media ? requestMedia : null}>
@@ -257,6 +294,8 @@ export function IMDXEditor({
         schema={schema}
         view={view}
         onAfterInsert={() => setMobilePanel(null)}
+        snippets={snippets}
+        onInsertSnippet={insertSnippet}
       />
       <div className="imdx-canvas-wrap">
         {showToolbar ? (
@@ -271,6 +310,41 @@ export function IMDXEditor({
               >
                 Insert image
               </button>
+            ) : null}
+            {htmlCode != null ? (
+              snippetName == null ? (
+                <button
+                  type="button"
+                  className="imdx-toolbar-snippet"
+                  onClick={() => setSnippetName("")}
+                >
+                  Save as snippet
+                </button>
+              ) : (
+                <span className="imdx-snippet-save">
+                  <input
+                    className="imdx-snippet-input"
+                    type="text"
+                    autoFocus
+                    placeholder="Snippet name"
+                    aria-label="Snippet name"
+                    value={snippetName}
+                    onChange={(e) => setSnippetName(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") commitSnippet();
+                      if (e.key === "Escape") setSnippetName(null);
+                    }}
+                  />
+                  <button
+                    type="button"
+                    className="imdx-snippet-confirm"
+                    onClick={commitSnippet}
+                    disabled={snippetName.trim() === ""}
+                  >
+                    Save
+                  </button>
+                </span>
+              )
             ) : null}
             {onSave ? (
               <>

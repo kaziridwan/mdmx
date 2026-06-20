@@ -2,9 +2,11 @@
 import { afterEach, describe, expect, it } from "vitest";
 import { createElement } from "react";
 import { createRoot, type Root } from "react-dom/client";
+import { vi } from "vitest";
 import { Registry, type RegistrySpec } from "@imdx/core";
 import { buildSchema } from "../src/schema.js";
 import { Rail } from "../src/react/Rail.js";
+import type { Snippet } from "../src/snippets.js";
 
 const spec: RegistrySpec = {
   imdxRegistryVersion: 1,
@@ -32,13 +34,13 @@ afterEach(() => {
   root = host = null;
 });
 
-async function renderRail(): Promise<HTMLElement> {
+async function renderRail(extra: Record<string, unknown> = {}): Promise<HTMLElement> {
   const registry = new Registry(spec);
   host = document.createElement("div");
   document.body.appendChild(host);
   root = createRoot(host);
   root.render(
-    createElement(Rail, { registry, schema: buildSchema(registry), view: null }),
+    createElement(Rail, { registry, schema: buildSchema(registry), view: null, ...extra }),
   );
   await flush();
   return host;
@@ -75,5 +77,21 @@ describe("Rail (jsdom)", () => {
     await flush();
     expect(contentHeader.getAttribute("aria-expanded")).toBe("false");
     expect(names(el)).toEqual(["Hero", "Chart"]); // Callout hidden
+  });
+
+  it("shows a Snippets group and inserts on click", async () => {
+    const snippets: Snippet[] = [{ name: "My Card", html: "<div>card</div>" }];
+    const onInsertSnippet = vi.fn();
+    const el = await renderRail({ snippets, onInsertSnippet });
+    const snippet = el.querySelector(".imdx-rail-snippet") as HTMLButtonElement;
+    expect(snippet).not.toBeNull();
+    expect(snippet.textContent).toContain("My Card");
+    snippet.click();
+    expect(onInsertSnippet).toHaveBeenCalledWith(snippets[0]);
+  });
+
+  it("hides the Snippets group when there is no insert handler", async () => {
+    const el = await renderRail({ snippets: [{ name: "X", html: "<i>x</i>" }] });
+    expect(el.querySelector(".imdx-rail-snippet")).toBeNull();
   });
 });

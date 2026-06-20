@@ -4,6 +4,7 @@ import type { Schema } from "prosemirror-model";
 import type { Registry } from "@imdx/core";
 import { insertComponent } from "../commands.js";
 import { filterComponents, groupByCategory } from "./rail-groups.js";
+import type { Snippet } from "../snippets.js";
 
 export const IMDX_DRAG_MIME = "application/x-imdx-component";
 
@@ -13,10 +14,21 @@ export interface RailProps {
   view: EditorView | null;
   /** Called after a successful insert (e.g. to close the mobile palette sheet). */
   onAfterInsert?: () => void;
+  /** Saved HTML snippets, shown as an extra "Snippets" group. */
+  snippets?: Snippet[];
+  /** Insert a saved snippet (as an `<Html>` block). */
+  onInsertSnippet?: (snippet: Snippet) => void;
 }
 
 /** Left rail: the component palette — filterable, grouped by category, collapsible. */
-export function Rail({ registry, schema, view, onAfterInsert }: RailProps) {
+export function Rail({
+  registry,
+  schema,
+  view,
+  onAfterInsert,
+  snippets = [],
+  onInsertSnippet,
+}: RailProps) {
   const [query, setQuery] = useState("");
   const [collapsed, setCollapsed] = useState<ReadonlySet<string>>(new Set());
 
@@ -24,6 +36,11 @@ export function Rail({ registry, schema, view, onAfterInsert }: RailProps) {
     () => groupByCategory(filterComponents(registry.components, query)),
     [registry, query],
   );
+
+  const matchedSnippets = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    return q ? snippets.filter((s) => s.name.toLowerCase().includes(q)) : snippets;
+  }, [snippets, query]);
 
   const insert = (name: string) => {
     if (!view) return;
@@ -94,6 +111,26 @@ export function Rail({ registry, schema, view, onAfterInsert }: RailProps) {
           );
         })
       )}
+      {onInsertSnippet && matchedSnippets.length > 0 ? (
+        <div className="imdx-rail-group">
+          <div className="imdx-rail-group-label imdx-rail-group-static">Snippets</div>
+          {matchedSnippets.map((snippet) => (
+            <button
+              key={snippet.name}
+              type="button"
+              className="imdx-rail-item imdx-rail-snippet"
+              onClick={() => {
+                onInsertSnippet(snippet);
+                onAfterInsert?.();
+              }}
+              title="Insert saved HTML snippet"
+            >
+              <span className="imdx-rail-icon" data-icon="code" aria-hidden />
+              <span className="imdx-rail-name">{snippet.name}</span>
+            </button>
+          ))}
+        </div>
+      ) : null}
     </nav>
   );
 }

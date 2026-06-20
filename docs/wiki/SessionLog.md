@@ -11,6 +11,37 @@ initial design-and-build conversation (12 commits).
 
 <!-- APPEND NEW ENTRIES ABOVE THIS LINE -->
 
+### S19 — `<Html>` custom-markup block + snippets
+- **editor (package code)**:
+  - `src/sanitize-html.ts` — pure, dependency-free `sanitizeHtml` (runs at build
+    time without a DOM): strips `<script>`/`<iframe>`/`<object>`/`<embed>` +
+    bodies, `<base>`/`<meta>`/`<link>`, `on*` handlers (all quoting styles), and
+    `javascript:` URLs in href/src/xlink:href. Documented best-effort (regex,
+    not a full parser; production untrusted input → DOMPurify).
+  - `src/snippets.ts` — localStorage-backed snippet store (`listSnippets`/
+    `saveSnippet`/`deleteSnippet`; upsert-by-name, SSR/corruption-safe). The
+    pragmatic "save as a component" (no runtime `.tsx` codegen).
+  - `Rail` gains a **Snippets** group (filterable; insert via `onInsertSnippet`).
+    `Editor` reads the store, inserts a snippet as an `<Html>` block, and shows a
+    **Save as snippet** toolbar affordance (inline name input) when an `<Html>`
+    node is selected.
+  Exported from the main (React-free) index: `sanitizeHtml`, `listSnippets`,
+  `saveSnippet`, `deleteSnippet`, `Snippet`.
+- **demo-next**: `Html.tsx` (category **Advanced**, leaf, `code` textarea) renders
+  `dangerouslySetInnerHTML` of `sanitizeHtml(code)`; registry now **17**
+  components (5 categories). Showcase `Html` block in `marketing.mdx` (canonical,
+  `imdx check`-clean). `.mk-html` + snippet-chrome CSS (both stylesheets for the
+  chrome).
+- Decisions → **ADR-032**. Tests: **+16 editor (84→100)** — `sanitize-html.test.ts`
+  (7), `snippets.test.ts` (6), Rail snippets group (+2), editor-mount snippet
+  insert (+1). **201 total.** No SPEC change (`Html` is an ordinary registered
+  component; no new control type/diagnostic).
+- Plan: `road-to-0.3.0.md` (S19 ✓). Wiki: Packages, Testing, Home, SessionLog;
+  README, PROJECT_STATUS. Next: **S20 — bump to 0.3.0**.
+- Follow-up: the Save-as-snippet trigger is selection-gated (covered by store
+  units + manual check; jsdom can't drive PM node-selection); a future pass could
+  surface snippet management (rename/delete) in the UI.
+
 ### S18 — Demo marketing components: LogoCloud + FAQ + Newsletter
 - **demo-next**: four more Marketing components, completing the new-components
   phase (S15–S18):
