@@ -32,7 +32,7 @@ globals.css`, `examples/editor-playground/src/styles.css`) — keep both in sync
   prop panel when a component is selected, else the frontmatter panel. Default
   mode: source (the signature view). Update demo + playground CSS to a 3-column
   grid. jsdom tests for the toggle.
-- [ ] **S12 — Resizable sidebar (desktop).** Drag handle on the sidebar's left
+- [x] **S12 — Resizable sidebar (desktop).** Drag handle on the sidebar's left
   edge sets `--imdx-sidebar-width` on the editor root (clamped); persist the last
   width. Pure-ish resize logic unit-tested; jsdom drag smoke.
 - [ ] **S13 — Mobile layout.** Below a breakpoint: the left palette collapses to a

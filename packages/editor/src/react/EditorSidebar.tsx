@@ -1,3 +1,4 @@
+import type { MouseEvent as ReactMouseEvent } from "react";
 import type { EditorState } from "prosemirror-state";
 import type { EditorView } from "prosemirror-view";
 import type { CollectionSpec, Registry } from "@imdx/core";
@@ -16,6 +17,8 @@ export interface EditorSidebarProps {
   collection?: CollectionSpec;
   /** True when a component node is selected → properties shows the prop panel. */
   componentSelected: boolean;
+  /** Begin a drag-to-resize from the sidebar's left edge (desktop). */
+  onResizeStart?: (e: ReactMouseEvent) => void;
 }
 
 /** Inline icons (no dependency) so the toggle reads at a glance. */
@@ -57,9 +60,19 @@ export function EditorSidebar({
   registry,
   collection,
   componentSelected,
+  onResizeStart,
 }: EditorSidebarProps) {
   return (
     <aside className="imdx-sidebar" aria-label="Editor sidebar">
+      {onResizeStart ? (
+        <div
+          className="imdx-sidebar-resize"
+          role="separator"
+          aria-orientation="vertical"
+          aria-label="Resize sidebar"
+          onMouseDown={onResizeStart}
+        />
+      ) : null}
       <div className="imdx-sidebar-tabs" role="tablist">
         <button
           type="button"

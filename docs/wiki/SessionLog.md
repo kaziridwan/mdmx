@@ -11,6 +11,27 @@ initial design-and-build conversation (12 commits).
 
 <!-- APPEND NEW ENTRIES ABOVE THIS LINE -->
 
+### S12 — Resizable sidebar (desktop)
+- **editor**: new `react/sidebar-resize.ts` — pure `clampSidebarWidth`
+  (260–640px) + `readStoredWidth`/`storeSidebarWidth` (localStorage,
+  `imdx:sidebar-width`, best-effort/SSR-safe). `EditorSidebar` renders a
+  `.imdx-sidebar-resize` grab strip on its left edge (`role="separator"`);
+  `Editor.tsx` owns the width (init from storage), applies it as the
+  `--imdx-sidebar-width` CSS var on the editor root, and drives a mouse-drag
+  resize (width = root.right − clientX, clamped, persisted on release; adds
+  `body.imdx-resizing` for the drag cursor/selection guard). Exported from
+  `react/index.ts`.
+- **CSS** (demo + playground in sync): `.imdx-sidebar` is now `position:
+  relative`; added `.imdx-sidebar-resize` (hover/active indicator) and
+  `body.imdx-resizing`.
+- Tests: +8 editor (65→73): `sidebar-resize.test.ts` (clamp bounds/rounding/
+  non-finite, storage round-trip + invalid) and a jsdom drag smoke in
+  `editor-mount.test.ts` (mousedown→move→up sets the CSS var + persists).
+  **174 total.** Builds on ADR-030's `--imdx-sidebar-width` seam (no new ADR).
+- Plan: `road-to-0.3.0.md` (S12 ✓). Wiki: Packages, Testing, Home, SessionLog;
+  README, PROJECT_STATUS. No SPEC change.
+- Follow-ups: S13 mobile layout (floating buttons + half-screen modals).
+
 ### S11 — Unified editor sidebar (Source ⇄ Properties)
 - **The bug**: the editor laid out as a 4-column grid with the source pane
   (col 4) *and* the properties/frontmatter panel (col 3) both always on; on
