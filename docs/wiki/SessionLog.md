@@ -11,6 +11,25 @@ initial design-and-build conversation (12 commits).
 
 <!-- APPEND NEW ENTRIES ABOVE THIS LINE -->
 
+### S15 — Demo marketing components: Hero + CallToAction
+- **demo-next**: two original components (category **Marketing**) inspired by
+  common landing-page sections (not copies of any proprietary kit):
+  - `Hero.tsx` — leaf (`children: none`); props eyebrow/title/subtitle/
+    primary+secondary label+href/align. Inference gave `select` for `align`,
+    `link` for hrefs, `textarea` for subtitle.
+  - `CallToAction.tsx` — `children: rich-text` (supporting copy edited inline);
+    heading/buttonLabel/buttonHref/variant (`select`).
+  Registered in `lib/components.ts`; `pnpm generate` → demo-next registry now has
+  **6** components across Content/Marketing/Layout/Data (exercising the S14
+  grouping). Added `content/posts/marketing.mdx` showcase, **canonicalized via
+  `toMDX(parseMDX(...))`** and validated clean by `imdx check`. Marketing CSS
+  (`.mk-hero`/`.mk-cta`/`.mk-btn`) added to demo `globals.css`.
+- Verification: demo-next `tsc` clean; full repo `pnpm check` + 185 tests green;
+  registry controls confirmed (select/link/textarea); showcase round-trips.
+- No package code → **no test-count change (185)**, no ADR, no SPEC change. Plan:
+  `road-to-0.3.0.md` (S15 ✓). Wiki: SessionLog (+ this entry).
+- Follow-ups: S16 Feature grid + Stats band; later iterations add more sections.
+
 ### S14 — Component-picker grouping UX
 - **editor**: extracted pure `react/rail-groups.ts` (`filterComponents` — matches
   name/category/description; `groupByCategory` — order-preserving). The **Rail**

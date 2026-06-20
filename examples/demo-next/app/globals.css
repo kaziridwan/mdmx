@@ -863,3 +863,90 @@ body.imdx-resizing {
   border-radius: 8px;
   padding: 8px 12px;
 }
+
+/* -- Demo marketing components (Hero, CallToAction) ----------------------- */
+.mk-hero {
+  text-align: center;
+  padding: 56px 32px;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: linear-gradient(180deg, #f6f6ff, #ffffff);
+}
+.mk-hero[data-align="left"] {
+  text-align: left;
+}
+.mk-hero-eyebrow {
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--indigo);
+  margin: 0 0 10px;
+}
+.mk-hero-title {
+  font-size: 34px;
+  line-height: 1.15;
+  margin: 0 0 12px;
+}
+.mk-hero-subtitle {
+  font-size: 17px;
+  color: var(--muted);
+  max-width: 46ch;
+  margin: 0 auto 22px;
+}
+.mk-hero[data-align="left"] .mk-hero-subtitle {
+  margin-left: 0;
+}
+.mk-hero-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+.mk-hero[data-align="left"] .mk-hero-actions {
+  justify-content: flex-start;
+}
+.mk-btn {
+  display: inline-flex;
+  align-items: center;
+  font-size: 15px;
+  font-weight: 500;
+  padding: 10px 20px;
+  border-radius: 10px;
+  text-decoration: none;
+  cursor: pointer;
+}
+.mk-btn-primary {
+  background: var(--indigo);
+  color: #fff;
+}
+.mk-btn-ghost {
+  background: transparent;
+  color: var(--ink);
+  border: 1px solid var(--line);
+}
+.mk-cta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  flex-wrap: wrap;
+  padding: 28px 32px;
+  border-radius: 16px;
+  background: #111827;
+  color: #f9fafb;
+}
+.mk-cta[data-variant="soft"] {
+  background: #eef2ff;
+  color: var(--ink);
+}
+.mk-cta-heading {
+  font-size: 22px;
+  margin: 0 0 6px;
+}
+.mk-cta-copy {
+  opacity: 0.85;
+}
+.mk-cta .mk-btn-primary {
+  white-space: nowrap;
+}

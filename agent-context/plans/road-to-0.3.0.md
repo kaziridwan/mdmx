@@ -47,7 +47,7 @@ globals.css`, `examples/editor-playground/src/styles.css`) — keep both in sync
   Headless tests for grouping/filtering.
 
 ### New demo components (original, inspired by common marketing blocks)
-- [ ] **S15 — Hero + CTA** components (`category: "Marketing"`), live-rendered in
+- [x] **S15 — Hero + CTA** components (`category: "Marketing"`), live-rendered in
   demo-next, registry regenerated, a showcase `.mdx`.
 - [ ] **S16 — Feature grid + Stats band.**
 - [ ] **S17 — Pricing + Testimonial.**
