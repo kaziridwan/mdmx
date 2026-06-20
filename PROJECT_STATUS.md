@@ -6,7 +6,7 @@ Snapshot of the iMDX monorepo at packaging time. For the full picture read
 
 ## At a glance
 
-- **176 tests passing**, all five packages typecheck clean under strict TS.
+- **185 tests passing**, all five packages typecheck clean under strict TS.
 - The entire **headless pipeline is implemented and tested**: define a
   component → generate a typed registry → edit content as a validated block
   document → serialize to canonical iMDX → commit atomically to GitHub with

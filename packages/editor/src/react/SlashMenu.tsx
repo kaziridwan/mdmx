@@ -3,7 +3,7 @@ import type { EditorState } from "prosemirror-state";
 import type { EditorView } from "prosemirror-view";
 import type { Schema } from "prosemirror-model";
 import type { Registry } from "@imdx/core";
-import { slashItemsFor, type SlashItem } from "../commands.js";
+import { slashItemsFor, groupSlashItems, type SlashItem } from "../commands.js";
 import { getSlashState } from "./slash-plugin.js";
 
 export interface SlashMenuProps {
@@ -23,10 +23,13 @@ export function SlashMenu({ view, state, registry, schema }: SlashMenuProps) {
     () => slashItemsFor(registry, schema, state),
     [registry, schema, state],
   );
-  const filtered = useMemo(() => {
+  const groups = useMemo(() => {
     const q = slash.query.toLowerCase();
-    return q ? items.filter((i) => i.label.toLowerCase().includes(q)) : items;
+    const matched = q ? items.filter((i) => i.label.toLowerCase().includes(q)) : items;
+    return groupSlashItems(matched);
   }, [items, slash.query]);
+  // Flat order = concatenation of group buckets; keyboard nav indexes into this.
+  const filtered = useMemo(() => groups.flatMap(([, list]) => list), [groups]);
 
   const [index, setIndex] = useState(0);
   useEffect(() => {
@@ -76,26 +79,35 @@ export function SlashMenu({ view, state, registry, schema }: SlashMenuProps) {
     return null;
   }
 
+  let flatIndex = -1;
   return (
     <div className="imdx-slash" style={style} role="listbox">
-      {filtered.map((item, i) => (
-        <button
-          key={item.id}
-          type="button"
-          role="option"
-          aria-selected={i === index}
-          className={"imdx-slash-item" + (i === index ? " is-active" : "")}
-          onMouseEnter={() => setIndex(i)}
-          onMouseDown={(e) => {
-            e.preventDefault();
-            run(item);
-          }}
-        >
-          <span className="imdx-slash-item-label">{item.label}</span>
-          {item.description ? (
-            <span className="imdx-slash-item-desc">{item.description}</span>
-          ) : null}
-        </button>
+      {groups.map(([label, list]) => (
+        <div key={label} className="imdx-slash-group">
+          <div className="imdx-slash-group-label">{label}</div>
+          {list.map((item) => {
+            const i = (flatIndex += 1);
+            return (
+              <button
+                key={item.id}
+                type="button"
+                role="option"
+                aria-selected={i === index}
+                className={"imdx-slash-item" + (i === index ? " is-active" : "")}
+                onMouseEnter={() => setIndex(i)}
+                onMouseDown={(e) => {
+                  e.preventDefault();
+                  run(item);
+                }}
+              >
+                <span className="imdx-slash-item-label">{item.label}</span>
+                {item.description ? (
+                  <span className="imdx-slash-item-desc">{item.description}</span>
+                ) : null}
+              </button>
+            );
+          })}
+        </div>
       ))}
     </div>
   );

@@ -42,7 +42,7 @@ globals.css`, `examples/editor-playground/src/styles.css`) — keep both in sync
   visible behind. Shared modal primitive; tests for open/close + which panel.
 
 ### Component picker
-- [ ] **S14 — Grouping UX.** The rail already groups by `category`; make groups
+- [x] **S14 — Grouping UX.** The rail already groups by `category`; make groups
   collapsible + add a filter box, and group the slash menu by category too.
   Headless tests for grouping/filtering.
 

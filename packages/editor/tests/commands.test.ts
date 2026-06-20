@@ -7,6 +7,7 @@ import {
   initialProps,
   insertComponent,
   slashItems,
+  groupSlashItems,
 } from "../src/index.js";
 
 const spec: RegistrySpec = {
@@ -53,6 +54,22 @@ describe("slashItems", () => {
     expect(components.map((i) => i.label)).toEqual(["Callout", "Chart"]);
     expect(components[0]!.category).toBe("Content");
     expect(components[0]!.description).toBe("A note box");
+  });
+});
+
+describe("groupSlashItems", () => {
+  it("puts core blocks under 'Blocks' and components under their category", () => {
+    const groups = groupSlashItems(slashItems(registry, schema));
+    expect(groups.map(([label]) => label)).toEqual(["Blocks", "Content", "Data"]);
+    expect(groups[0]![1].every((i) => i.kind === "core")).toBe(true);
+    expect(groups[1]![1].map((i) => i.id)).toEqual(["Callout"]);
+    expect(groups[2]![1].map((i) => i.id)).toEqual(["Chart"]);
+  });
+
+  it("flattening the groups reproduces the input order (nav stays aligned)", () => {
+    const items = slashItems(registry, schema);
+    const flat = groupSlashItems(items).flatMap(([, list]) => list);
+    expect(flat.map((i) => i.id)).toEqual(items.map((i) => i.id));
   });
 });
 
