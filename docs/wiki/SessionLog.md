@@ -11,6 +11,27 @@ initial design-and-build conversation (12 commits).
 
 <!-- APPEND NEW ENTRIES ABOVE THIS LINE -->
 
+### S10 — `image`-control "Browse…" into the media library
+- **editor**: `image`-typed controls (prop panel + frontmatter) now render a
+  **Browse…** button that opens the media library and writes the picked asset's
+  url into the control, plus an inline thumbnail preview. New
+  `react/media-context.ts` (`MediaPickerContext` + `useMediaPicker`): the editor
+  owns a single library modal and exposes a `requestMedia(onPick)` opener through
+  context, so both the toolbar "Insert image" and any control route their pick
+  back to the right place. `Editor.tsx` replaced the `mediaOpen` boolean with a
+  `mediaPick` callback and wraps the tree in the provider (null when no `media`
+  source → Browse hides). `controls.tsx` gained the `image` case.
+- **demo-next**: added an optional `coverImage` (`image` control) field to the
+  `posts` collection so the frontmatter panel shows Browse; image-control CSS.
+- Decisions → **ADR-029** (single modal, context-routed picker; extends ADR-027).
+- Tests: +4 editor (60→64) in `controls.test.tsx` (jsdom): Browse appears with a
+  picker and routes the pick to `onChange`; hidden without one; thumbnail
+  preview for image-looking values only. **165 total.**
+- Wiki touched: Packages, Roadmap, Testing, Home, SessionLog; README,
+  PROJECT_STATUS. No SPEC change (the `image` control type already existed).
+- Follow-ups: the same context could back a `link`-control picker; rail-drag
+  visual drop indicator (from S9) still open.
+
 ### S9 — Region-aware nested insertion (TwoColumn polish)
 - **Found a real bug**: slash/palette `insertComponent` used
   `replaceSelectionWith`, which **lifted the component out of the Column to the

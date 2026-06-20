@@ -28,6 +28,7 @@ import { FrontmatterPanel } from "./FrontmatterPanel.js";
 import { SlashMenu } from "./SlashMenu.js";
 import { MediaLibrary } from "./MediaLibrary.js";
 import { insertImage, type MediaItem, type MediaSource } from "./media.js";
+import { MediaPickerContext, type RequestMedia } from "./media-context.js";
 import { serializeDoc } from "./source-map.js";
 
 /** Map of component name → the author's React component, for live rendering. */
@@ -98,7 +99,8 @@ export function IMDXEditor({
   const [dirty, setDirty] = useState(false);
   const [saveStatus, setSaveStatus] = useState<SaveStatus>("idle");
   const [saveError, setSaveError] = useState<string | null>(null);
-  const [mediaOpen, setMediaOpen] = useState(false);
+  // The callback awaiting a media pick; non-null ⇒ the library modal is open.
+  const [mediaPick, setMediaPick] = useState<((item: MediaItem) => void) | null>(null);
 
   useEffect(() => {
     const mount = mountRef.current;
@@ -184,9 +186,13 @@ export function IMDXEditor({
     }
   }, [view, onSave, registry]);
 
-  const handlePickMedia = useCallback(
+  // Open the library, remembering who asked so its pick is routed back to them.
+  const requestMedia = useCallback<RequestMedia>((onPick) => {
+    setMediaPick(() => onPick);
+  }, []);
+
+  const insertPickedImage = useCallback(
     (item: MediaItem) => {
-      setMediaOpen(false);
       if (view) {
         insertImage(view, { src: item.url, alt: "" });
         view.focus();
@@ -198,6 +204,7 @@ export function IMDXEditor({
   const showToolbar = onSave != null || media != null;
 
   return (
+    <MediaPickerContext.Provider value={media ? requestMedia : null}>
     <div className="imdx-editor">
       <Rail registry={registry} schema={schema} view={view} />
       <div className="imdx-canvas-wrap">
@@ -208,7 +215,7 @@ export function IMDXEditor({
               <button
                 type="button"
                 className="imdx-toolbar-image"
-                onClick={() => setMediaOpen(true)}
+                onClick={() => requestMedia(insertPickedImage)}
                 disabled={!view}
               >
                 Insert image
@@ -241,12 +248,15 @@ export function IMDXEditor({
         ) : null}
         <div className="imdx-canvas" ref={mountRef} />
         {view && state ? <SlashMenu view={view} state={state} registry={registry} schema={schema} /> : null}
-        {media && mediaOpen ? (
+        {media && mediaPick ? (
           <MediaLibrary
             media={media}
             mediaDir={mediaDir}
-            onPick={handlePickMedia}
-            onClose={() => setMediaOpen(false)}
+            onPick={(item) => {
+              mediaPick(item);
+              setMediaPick(null);
+            }}
+            onClose={() => setMediaPick(null)}
           />
         ) : null}
       </div>
@@ -257,5 +267,6 @@ export function IMDXEditor({
         <FrontmatterPanel view={view} state={state} collection={collection} />
       )}
     </div>
+    </MediaPickerContext.Provider>
   );
 }

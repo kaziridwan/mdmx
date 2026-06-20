@@ -13,7 +13,11 @@
           "default": "draft"
         },
         "slug": { "control": { "type": "text" } },
-        "description": { "control": { "type": "textarea" } }
+        "description": { "control": { "type": "textarea" } },
+        "coverImage": {
+          "control": { "type": "image" },
+          "description": "Pick from the media library (Browse…)"
+        }
       }
     }
   }

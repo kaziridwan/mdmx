@@ -6,7 +6,7 @@ Snapshot of the iMDX monorepo at packaging time. For the full picture read
 
 ## At a glance
 
-- **161 tests passing**, all five packages typecheck clean under strict TS.
+- **165 tests passing**, all five packages typecheck clean under strict TS.
 - The entire **headless pipeline is implemented and tested**: define a
   component → generate a typed registry → edit content as a validated block
   document → serialize to canonical iMDX → commit atomically to GitHub with
@@ -65,13 +65,12 @@ the demo groups its list into Published/Drafts.
 ## What's next (Phase 2 cont.)
 
 TwoColumn / nested editing (ADR-021), `imdx dev` watch mode (ADR-026), the
-media library (ADR-027), and region-aware nested insertion + context-aware slash
-palette (ADR-028) have landed. Remaining:
+media library + `image`-control Browse (ADR-027, ADR-029), and region-aware
+nested insertion + context-aware slash palette (ADR-028) have landed. Remaining:
 
 1. A GitHub-mode deploy guide (drop `localMode`; wire OAuth + `GitHubProvider`).
-2. `image`-control "Browse…" entry point into the media library.
-3. HMR: push registry changes from `imdx dev` into a running editor.
-4. Visual drop indicator for rail (new-component) drags into nested containers.
+2. HMR: push registry changes from `imdx dev` into a running editor.
+3. Visual drop indicator for rail (new-component) drags into nested containers.
 
 Phase 2/3 (collections, draft/publish workflow, media library UI, segment
 composer, GitLab provider, Yjs collaboration) are scoped in README.md.
