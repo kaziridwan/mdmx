@@ -11,6 +11,25 @@ initial design-and-build conversation (12 commits).
 
 <!-- APPEND NEW ENTRIES ABOVE THIS LINE -->
 
+### S16 — Demo marketing components: FeatureGrid + StatsBand
+- **demo-next**: three more Marketing components, exercising the slot-container
+  machinery (ADR-021) end-to-end in the demo:
+  - `FeatureGrid` — `blocks` container, `allowedChildren: ["Feature"]`, `columns`
+    prop (select 2/3/4).
+  - `Feature` — `rich-text` card, `allowedParents: ["FeatureGrid"]`; title + icon.
+  - `StatsBand` — `blocks` container, `allowedChildren: ["Stat"]` (**reuses** the
+    existing `Stat` leaf), optional title.
+  Registered in `lib/components.ts`; demo-next registry now **9** components.
+  Extended `content/posts/marketing.mdx` with a FeatureGrid (3 Features) and a
+  StatsBand (3 Stats); canonical + `imdx check`-clean. Added `.mk-features`/
+  `.mk-feature`/`.mk-stats` CSS (responsive grid).
+- Verification: demo-next `tsc` clean; full repo `pnpm check` + 185 tests green;
+  constraints confirmed (allowedChildren/allowedParents) — insertion seeds two
+  children automatically (the S6 repeater case).
+- No package code → no test-count change (185), no ADR, no SPEC change. Plan:
+  `road-to-0.3.0.md` (S16 ✓).
+- Follow-ups: S17 Pricing + Testimonial; S18 logo cloud / FAQ / newsletter.
+
 ### S15 — Demo marketing components: Hero + CallToAction
 - **demo-next**: two original components (category **Marketing**) inspired by
   common landing-page sections (not copies of any proprietary kit):
