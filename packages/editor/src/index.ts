@@ -21,5 +21,6 @@ export {
   initialProps,
   slashItems,
   slashItemsFor,
+  groupSlashItems,
 } from "./commands.js";
 export type { SlashItem } from "./commands.js";

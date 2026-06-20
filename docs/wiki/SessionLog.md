@@ -11,6 +11,25 @@ initial design-and-build conversation (12 commits).
 
 <!-- APPEND NEW ENTRIES ABOVE THIS LINE -->
 
+### S14 — Component-picker grouping UX
+- **editor**: extracted pure `react/rail-groups.ts` (`filterComponents` — matches
+  name/category/description; `groupByCategory` — order-preserving). The **Rail**
+  gains a filter box and **collapsible** category groups (header is a button with
+  a chevron + `aria-expanded`; a non-empty filter auto-expands so matches show).
+  `commands.ts` gains `groupSlashItems` (core → "Blocks", components → category,
+  order-preserving so flattening reproduces nav order). The **SlashMenu** now
+  renders grouped with labels while keeping a single flat index for keyboard nav.
+- **CSS** (demo + playground in sync): `.imdx-rail-filter`, `.imdx-rail-empty`,
+  `.imdx-rail-group-chevron`, group label as a button, `.imdx-slash-group-label`.
+- Tests: +9 editor (75→84): `rail-groups.test.ts` (filter + group order, +4),
+  `commands.test.ts` `groupSlashItems` (+2), `rail.test.tsx` jsdom (group/filter/
+  collapse, +3). **185 total.** No ADR (UX feature; grouping was already the rail's
+  model).
+- Plan: `road-to-0.3.0.md` (S14 ✓). Wiki: Packages, Testing, Home, SessionLog;
+  README, PROJECT_STATUS. No SPEC change.
+- Follow-ups: S15+ new demo components (original, inspired by marketing blocks) —
+  these will populate the new categories the grouping now shows off.
+
 ### S13 — Mobile layout (floating controls + off-canvas sheets)
 - **editor**: below 860px the rail and sidebar become slide-in **sheets** (same
   DOM, repositioned by CSS — no duplicate panels) toggled by floating buttons.

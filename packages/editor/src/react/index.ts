@@ -9,6 +9,7 @@ export type {
 export { makeComponentBlock } from "./ComponentBlock.js";
 export { Rail, IMDX_DRAG_MIME } from "./Rail.js";
 export type { RailProps } from "./Rail.js";
+export { filterComponents, groupByCategory, DEFAULT_CATEGORY } from "./rail-groups.js";
 export { SourcePane } from "./SourcePane.js";
 export type { SourcePaneProps } from "./SourcePane.js";
 export { EditorSidebar } from "./EditorSidebar.js";

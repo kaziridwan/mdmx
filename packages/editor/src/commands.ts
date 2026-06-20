@@ -263,6 +263,26 @@ export function slashItems(registry: Registry, schema: Schema): SlashItem[] {
 }
 
 /**
+ * Group slash items for display: core blocks under "Blocks", components under
+ * their `category`. First-appearance order is preserved for both groups and
+ * items, so flattening the result reproduces the input order (the slash menu
+ * relies on this to keep keyboard-nav indices aligned). Pure.
+ */
+export function groupSlashItems(items: SlashItem[]): [string, SlashItem[]][] {
+  const order: string[] = [];
+  const groups = new Map<string, SlashItem[]>();
+  for (const item of items) {
+    const key = item.kind === "core" ? "Blocks" : (item.category ?? "Components");
+    if (!groups.has(key)) {
+      groups.set(key, []);
+      order.push(key);
+    }
+    groups.get(key)!.push(item);
+  }
+  return order.map((key) => [key, groups.get(key)!]);
+}
+
+/**
  * Context-aware palette: like `slashItems`, but component items are filtered to
  * those insertable at the current selection (schema + `allowedParents`). Core
  * blocks are always offered. This is what makes the slash menu region-aware —
