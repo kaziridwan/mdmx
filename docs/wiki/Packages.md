@@ -47,7 +47,7 @@ registry on change; reports `unchanged` when the content hash is identical).
 
 ---
 
-## @imdx/editor — 84 tests
+## @imdx/editor — 100 tests
 
 Registry→ProseMirror, converters, commands (main entry, React-free), plus the
 flat React editor UI behind the `@imdx/editor/react` subpath.
@@ -66,6 +66,7 @@ flat React editor UI behind the `@imdx/editor/react` subpath.
 | `react/FrontmatterPanel.tsx`, `controls.tsx` | Document-level panel editing a collection's typed frontmatter; writes canonical YAML to the doc attr in one tx. `Control` is the shared typed input (also used by `PropPanel`). |
 | `react/media.ts`, `MediaLibrary.tsx`, `media-context.ts` | Media library: `MediaSource` adapter (API-agnostic `list`/`upload`), pure upload helpers (`fileToUpload`/`safeFilename`/`bytesToBase64`), `insertImage` command, the modal browser/uploader, and `MediaPickerContext`/`useMediaPicker` (one modal routed to the toolbar + `image` controls). Wired via the editor's `media` prop (ADR-027, ADR-029). |
 | `react/slash-plugin.ts`, `source-map.ts`, `prop-controls.ts` | Slash trigger plugin; doc→canonical serialization + active-block line mapping; prop value coercion (pure, unit-tested). |
+| `sanitize-html.ts`, `snippets.ts` | Pure best-effort `sanitizeHtml` (for the demo `<Html>` block; build-time safe) + the localStorage snippet store (`save`/`list`/`delete`) backing "save as snippet" (ADR-032). |
 
 `@imdx/editor` main export stays React-free (Invariant 9); React imports come
 from `@imdx/editor/react`. The interactive design **spec** remains

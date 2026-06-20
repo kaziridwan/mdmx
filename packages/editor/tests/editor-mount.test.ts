@@ -50,6 +50,11 @@ const registrySpec: RegistrySpec = {
       constraints: { allowedParents: ["TwoColumn"], allowedChildren: null },
       props: [],
     },
+    {
+      name: "Html",
+      children: { policy: "none" },
+      props: [{ name: "code", required: true, control: { type: "textarea" } }],
+    },
   ],
 };
 
@@ -238,6 +243,31 @@ describe("mobile layout (floating panels)", () => {
     expect(root.classList.contains("is-sidebar-open")).toBe(true);
     expect(el.querySelector(".imdx-source-pre")).not.toBeNull();
     expect(el.querySelector(".imdx-props")).toBeNull();
+  });
+});
+
+describe("snippets (insert saved HTML)", () => {
+  it("shows a saved snippet in the rail and inserts it as an Html block", async () => {
+    localStorage.setItem(
+      "imdx:snippets",
+      JSON.stringify([{ name: "Card", html: "<div>saved card</div>" }]),
+    );
+    const el = await mountEditor(SRC);
+    const snippet = Array.from(el.querySelectorAll(".imdx-rail-snippet")).find((b) =>
+      b.textContent?.includes("Card"),
+    ) as HTMLButtonElement;
+    expect(snippet).not.toBeNull();
+
+    snippet.click();
+    for (let i = 0; i < 4; i++) await flush();
+
+    // Default sidebar is source; the inserted Html block serializes there.
+    const source = Array.from(el.querySelectorAll(".imdx-source-line"))
+      .map((n) => n.textContent)
+      .join("\n");
+    expect(source).toContain("<Html");
+    expect(source).toContain("saved card");
+    localStorage.clear();
   });
 });
 

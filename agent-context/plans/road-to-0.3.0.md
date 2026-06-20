@@ -56,7 +56,7 @@ globals.css`, `examples/editor-playground/src/styles.css`) — keep both in sync
   metadata with category/icon, generate, a showcase post, verify in `next dev`.)
 
 ### HTML component
-- [ ] **S19 — `<Html>` component.** A registered component with a raw-HTML string
+- [x] **S19 — `<Html>` component.** A registered component with a raw-HTML string
   prop, rendered sandboxed (sanitized) in the editor + at build time; a "save as
   snippet/component" affordance per the assumption above. Tests for the
   component + sanitization.

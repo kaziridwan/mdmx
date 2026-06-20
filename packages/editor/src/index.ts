@@ -4,6 +4,9 @@ export {
   componentNameFromNode,
   MARK_PRIORITY,
 } from "./schema.js";
+export { sanitizeHtml } from "./sanitize-html.js";
+export { listSnippets, saveSnippet, deleteSnippet } from "./snippets.js";
+export type { Snippet } from "./snippets.js";
 export { fromMdast } from "./from-mdast.js";
 export type { FromMdastOptions } from "./from-mdast.js";
 export { toMdast, printPropValue } from "./to-mdast.js";

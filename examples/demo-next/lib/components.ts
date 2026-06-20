@@ -16,6 +16,7 @@ import { LogoCloud } from "../components/imdx/LogoCloud";
 import { FAQ } from "../components/imdx/FAQ";
 import { FAQItem } from "../components/imdx/FAQItem";
 import { Newsletter } from "../components/imdx/Newsletter";
+import { Html } from "../components/imdx/Html";
 
 /** Author components keyed by registry name, for live rendering in the editor. */
 export const components: ComponentMap = {
@@ -35,4 +36,5 @@ export const components: ComponentMap = {
   FAQ,
   FAQItem,
   Newsletter,
+  Html,
 };

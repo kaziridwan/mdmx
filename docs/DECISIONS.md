@@ -706,3 +706,43 @@ components.
 globals.css`, `examples/editor-playground/src/styles.css` (`@media` block);
 `editor/tests/editor-mount.test.ts` (+2). No SPEC change. The half-screen sheet
 width (`min(440px, 92vw)`) and breakpoint are tunable; resize is desktop-only.
+
+## ADR-032 — `<Html>` block: best-effort sanitizer + snippets as "save as component"
+
+**Context.** Users want an escape hatch — drop in custom HTML — and to "save it
+as a new component in the picker." Two hard constraints shape the design: (1)
+rendering arbitrary HTML is an XSS vector, and the same component renders at
+**build time** (no DOM) and in the editor; (2) iMDX components are *code*
+(`.tsx`) compiled into the registry by `imdx generate`, so the in-browser editor
+cannot mint a real new component at runtime without a build step.
+
+**Decision.**
+- **`<Html>` is an ordinary registered component** with a single `code` string
+  prop (textarea control). No grammar/registry/diagnostic change — it round-trips
+  like any other component, so SPEC is untouched.
+- **Sanitize on render with a pure, dependency-free `sanitizeHtml`** living in
+  `@imdx/editor`'s React-free main entry (so the build-time render can import it
+  without a DOM). It strips active-content elements, `on*` handlers, and
+  `javascript:` URLs. It is explicitly **best-effort** (a regex pass, not a
+  parser) and documented as such — production untrusted input should use a real
+  sanitizer (DOMPurify). Chosen over a DOM-based sanitizer because there is no DOM
+  at build time and we won't add a heavy dep to the demo path.
+- **"Save as component" is a snippet, not codegen.** Saved HTML is persisted to
+  `localStorage` (`imdx:snippets`) and surfaced as a **Snippets** group in the
+  rail; inserting one drops an `<Html>` block carrying the saved markup. This is
+  the pragmatic stand-in for `.tsx` codegen (which would require writing a file
+  and re-running `imdx generate` — a CLI/dev-server job, not an editor one).
+  Flagged to the user; revisit if true file-writing codegen is wanted.
+
+**Alternatives rejected.** Allowing raw HTML in the iMDX grammar (reopens the
+round-trip/security surface IMDX003 deliberately closes — raw HTML stays *out* of
+the subset; `<Html code="…">` keeps it as JSON-prop data instead). Runtime
+`.tsx` generation from the browser (no safe build step). A DOM/iframe sandbox
+(doesn't help the no-DOM build render).
+
+**Status.** `editor/src/sanitize-html.ts`, `snippets.ts`, `Rail.tsx` (snippets
+group), `Editor.tsx` (insert + save affordance), main `index.ts` exports;
+`editor/tests/sanitize-html.test.ts` + `snippets.test.ts` + rail/editor-mount
+(+16). `examples/demo-next/components/imdx/Html.tsx`, showcase, CSS. No SPEC
+change. Open: snippet rename/delete UI; selection-gated save trigger isn't
+jsdom-tested.
