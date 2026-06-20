@@ -11,6 +11,33 @@ initial design-and-build conversation (12 commits).
 
 <!-- APPEND NEW ENTRIES ABOVE THIS LINE -->
 
+### S11 — Unified editor sidebar (Source ⇄ Properties)
+- **The bug**: the editor laid out as a 4-column grid with the source pane
+  (col 4) *and* the properties/frontmatter panel (col 3) both always on; on
+  narrower viewports they collided (the user's screenshot). **Fix**: one right
+  sidebar with a header that toggles between **Source** (live canonical iMDX) and
+  **Properties** (the component prop panel, or the frontmatter panel when nothing
+  is selected). Default mode: source (the signature view).
+- **editor**: new `react/EditorSidebar.tsx` (`SidebarMode = "source" |
+  "properties"`, inline SVG tab icons). `Editor.tsx` holds `sidebarMode` and
+  renders one `<EditorSidebar>` in place of the two columns; exported from
+  `react/index.ts`. `SourcePane`/`PropPanel`/`FrontmatterPanel` are unchanged —
+  now mounted inside the sidebar body.
+- **CSS** (demo + playground, kept in sync): grid is now `220px | 1fr |
+  var(--imdx-sidebar-width, 380px)`; added `.imdx-sidebar`/`-tabs`/`-tab`/`-body`;
+  `.imdx-source` and `.imdx-props` lost their `grid-column` and own scroll (the
+  sidebar body scrolls). The `--imdx-sidebar-width` var is the hook for S12's
+  resize.
+- Decisions → **ADR-030** (one sidebar, mode toggle, default source; consumer
+  CSS goes 4-col → 3-col).
+- Tests: +1 editor (64→65): `editor-mount.test.ts` toggle test (default source;
+  switch to properties shows the panel; switch back). Two frontmatter tests now
+  switch to Properties first via a `switchSidebar` helper. **166 total.**
+- Plan: `agent-context/plans/road-to-0.3.0.md` (S11 ✓). Wiki: Packages, Roadmap,
+  Testing, Home, SessionLog. No SPEC change.
+- Follow-ups (next plan items): S12 resizable sidebar; S13 mobile layout
+  (floating buttons + half modals).
+
 ### S10 — `image`-control "Browse…" into the media library
 - **editor**: `image`-typed controls (prop panel + frontmatter) now render a
   **Browse…** button that opens the media library and writes the picked asset's

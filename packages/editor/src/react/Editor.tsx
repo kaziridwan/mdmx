@@ -22,9 +22,7 @@ import { createReactNodeView } from "./react-node-view.js";
 import { makeComponentBlock } from "./ComponentBlock.js";
 import { slashPlugin } from "./slash-plugin.js";
 import { Rail, IMDX_DRAG_MIME } from "./Rail.js";
-import { SourcePane } from "./SourcePane.js";
-import { PropPanel } from "./PropPanel.js";
-import { FrontmatterPanel } from "./FrontmatterPanel.js";
+import { EditorSidebar, type SidebarMode } from "./EditorSidebar.js";
 import { SlashMenu } from "./SlashMenu.js";
 import { MediaLibrary } from "./MediaLibrary.js";
 import { insertImage, type MediaItem, type MediaSource } from "./media.js";
@@ -101,6 +99,7 @@ export function IMDXEditor({
   const [saveError, setSaveError] = useState<string | null>(null);
   // The callback awaiting a media pick; non-null ⇒ the library modal is open.
   const [mediaPick, setMediaPick] = useState<((item: MediaItem) => void) | null>(null);
+  const [sidebarMode, setSidebarMode] = useState<SidebarMode>("source");
 
   useEffect(() => {
     const mount = mountRef.current;
@@ -260,12 +259,15 @@ export function IMDXEditor({
           />
         ) : null}
       </div>
-      <SourcePane state={state} registry={registry} />
-      {isComponentSelected(state, registry) ? (
-        <PropPanel view={view} state={state} registry={registry} />
-      ) : (
-        <FrontmatterPanel view={view} state={state} collection={collection} />
-      )}
+      <EditorSidebar
+        mode={sidebarMode}
+        onModeChange={setSidebarMode}
+        view={view}
+        state={state}
+        registry={registry}
+        collection={collection}
+        componentSelected={isComponentSelected(state, registry)}
+      />
     </div>
     </MediaPickerContext.Provider>
   );

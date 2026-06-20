@@ -641,3 +641,38 @@ minimal fit for a single-editor subtree.
 `requestMedia`), `controls.tsx` (`image` case); `editor/tests/controls.test.tsx`
 (+4); `examples/demo-next` (`coverImage` field, CSS). Extends ADR-027; no SPEC
 change.
+
+## ADR-030 — One editor sidebar with a Source ⇄ Properties toggle
+
+**Context.** The editor shipped a 4-column grid: rail, canvas, properties panel
+(col 3), source pane (col 4). Both side panels were always visible, so on
+narrower viewports they overlapped and the properties panel spilled under the
+canvas (reported with a screenshot). Showing two fixed side panels also leaves no
+room for a comfortable editing column.
+
+**Decision.** Collapse the two side panels into **one** right sidebar
+(`EditorSidebar`) with a header that toggles between **Source** (the live
+canonical iMDX view — the product's signature) and **Properties** (the selected
+component's prop panel, or the document frontmatter panel when nothing is
+selected). The editor owns a `sidebarMode` state; default is **source** so the
+round-trip view — and the existing source-oriented tests — stay the landing view.
+The grid becomes three columns with the sidebar width behind a
+`--imdx-sidebar-width` CSS variable (the seam for a future drag-to-resize, S12).
+
+**Consumer impact.** This changes the markup consumers style: the always-on
+`grid-column: 3/4` panels are gone; CSS moves to a 3-column grid plus
+`.imdx-sidebar*` classes. Both bundled stylesheets (`examples/demo-next`,
+`examples/editor-playground`) were updated in lockstep; downstream consumers must
+do the same. `SourcePane`/`PropPanel`/`FrontmatterPanel` keep their own markup and
+classes — they're just mounted inside the sidebar body — so their styles carry
+over unchanged.
+
+**Alternatives rejected.** Keeping both panels and making them collapsible
+independently (still two columns of fixed cost, the original problem); a bottom
+panel (breaks the live-source-beside-content reading that motivates the design).
+
+**Status.** `editor/src/react/EditorSidebar.tsx`, `Editor.tsx`, `react/index.ts`;
+`examples/demo-next/app/globals.css`, `examples/editor-playground/src/styles.css`;
+`editor/tests/editor-mount.test.ts` (+1, two updated). No SPEC change. Mobile
+adaptation and resize handle are tracked as S12/S13 in
+`agent-context/plans/road-to-0.3.0.md`.

@@ -29,7 +29,7 @@ registry that drives validation, the editor palette, and prop panels.
 
 ## Status at a glance
 
-- **5 packages**, 165 tests, all green; strict TypeScript throughout.
+- **5 packages**, 166 tests, all green; strict TypeScript throughout.
 - The **entire headless pipeline** is implemented and tested: define a
   component → generate a typed registry → edit as a validated block document
   → serialize to canonical iMDX → commit atomically with conflict safety →

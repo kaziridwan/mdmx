@@ -49,7 +49,7 @@ formatting is treated as a semver-major change.
 
 ```sh
 pnpm install
-pnpm test          # builds @imdx/core, then runs all 165 tests across packages
+pnpm test          # builds @imdx/core, then runs all 166 tests across packages
 pnpm build         # build all packages
 pnpm check         # typecheck all packages
 ```
