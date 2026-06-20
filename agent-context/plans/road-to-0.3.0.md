@@ -49,7 +49,7 @@ globals.css`, `examples/editor-playground/src/styles.css`) — keep both in sync
 ### New demo components (original, inspired by common marketing blocks)
 - [x] **S15 — Hero + CTA** components (`category: "Marketing"`), live-rendered in
   demo-next, registry regenerated, a showcase `.mdx`.
-- [ ] **S16 — Feature grid + Stats band.**
+- [x] **S16 — Feature grid + Stats band.**
 - [ ] **S17 — Pricing + Testimonial.**
 - [ ] **S18 — Logo cloud + FAQ + Newsletter signup.**
   (Each: real component in `examples/demo-next/components/imdx`, `defineIMDX`

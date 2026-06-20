@@ -6,6 +6,9 @@ import TwoColumn from "../components/imdx/TwoColumn";
 import Column from "../components/imdx/Column";
 import { Hero } from "../components/imdx/Hero";
 import { CallToAction } from "../components/imdx/CallToAction";
+import { FeatureGrid } from "../components/imdx/FeatureGrid";
+import { Feature } from "../components/imdx/Feature";
+import { StatsBand } from "../components/imdx/StatsBand";
 
 /** Author components keyed by registry name, for live rendering in the editor. */
 export const components: ComponentMap = {
@@ -15,4 +18,7 @@ export const components: ComponentMap = {
   Column,
   Hero,
   CallToAction,
+  FeatureGrid,
+  Feature,
+  StatsBand,
 };

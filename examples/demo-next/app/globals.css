@@ -950,3 +950,60 @@ body.imdx-resizing {
 .mk-cta .mk-btn-primary {
   white-space: nowrap;
 }
+
+/* -- Demo marketing components (FeatureGrid, Feature, StatsBand) ----------- */
+.mk-features {
+  display: grid;
+  gap: 16px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+.mk-features[data-columns="2"] {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+.mk-features[data-columns="4"] {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+@media (max-width: 700px) {
+  .mk-features,
+  .mk-features[data-columns="2"],
+  .mk-features[data-columns="4"] {
+    grid-template-columns: 1fr;
+  }
+}
+.mk-feature {
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 18px;
+  background: var(--canvas);
+}
+.mk-feature-icon {
+  font-size: 22px;
+  line-height: 1;
+}
+.mk-feature-title {
+  font-size: 16px;
+  margin: 8px 0 6px;
+}
+.mk-feature-body {
+  font-size: 14px;
+  color: var(--muted);
+}
+.mk-stats {
+  padding: 28px 24px;
+  border-radius: 16px;
+  background: var(--indigo-wash);
+  text-align: center;
+}
+.mk-stats-title {
+  font-size: 14px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin: 0 0 16px;
+}
+.mk-stats-row {
+  display: flex;
+  justify-content: center;
+  gap: 40px;
+  flex-wrap: wrap;
+}
