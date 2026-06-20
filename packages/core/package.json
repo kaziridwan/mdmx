@@ -1,6 +1,6 @@
 {
   "name": "@imdx/core",
-  "version": "0.1.0",
+  "version": "0.3.0",
   "description": "iMDX spec: parser, validator, and canonical serializer for the interactive MDX subset",
   "type": "module",
   "main": "./dist/index.js",

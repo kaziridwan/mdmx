@@ -62,7 +62,7 @@ globals.css`, `examples/editor-playground/src/styles.css`) — keep both in sync
   component + sanitization.
 
 ### Release
-- [ ] **S20 — Bump to 0.3.0.** All package `version` fields → `0.3.0`, root and
+- [x] **S20 — Bump to 0.3.0.** All package `version` fields → `0.3.0`, root and
   examples as appropriate; update README/Home/PROJECT_STATUS; final full verify.
 
 ## Status notes
