@@ -425,6 +425,34 @@ body {
   margin-left: 0;
 }
 
+/* Image control (prop panel / frontmatter) */
+.imdx-control-image {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+.imdx-control-image .imdx-control {
+  flex: 1;
+  min-width: 120px;
+}
+.imdx-control-browse {
+  font: inherit;
+  font-size: 13px;
+  padding: 6px 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fff;
+  cursor: pointer;
+}
+.imdx-control-preview {
+  width: 100%;
+  max-height: 120px;
+  object-fit: contain;
+  background: #f5f5f7;
+  border-radius: 8px;
+}
+
 /* Media library modal */
 .imdx-media-overlay {
   position: fixed;

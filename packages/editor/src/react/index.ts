@@ -33,6 +33,8 @@ export {
 } from "./prop-controls.js";
 export { MediaLibrary } from "./MediaLibrary.js";
 export type { MediaLibraryProps } from "./MediaLibrary.js";
+export { MediaPickerContext, useMediaPicker } from "./media-context.js";
+export type { RequestMedia } from "./media-context.js";
 export {
   insertImage,
   fileToUpload,

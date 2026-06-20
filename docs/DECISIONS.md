@@ -611,3 +611,33 @@ validator judges).
 `editor/tests/nested-commands.test.ts` (+9). No SPEC change. Open: a visual drop
 indicator for rail (new-component) drags — `prosemirror-dropcursor` only renders
 for PM-managed drags; internal block moves already indicate correctly.
+
+## ADR-029 — One media modal, routed to openers via React context
+
+**Context.** After the media library (ADR-027), a second entry point was needed:
+`image`-typed prop/frontmatter controls should also open the library to pick a
+path. Controls are rendered deep in the tree (PropPanel/FrontmatterPanel →
+`Control`), far from the `IMDXEditor` that owns the modal, and there will be more
+openers later (e.g. a `link` control). Passing `media` + open/close props down
+through every panel and control would be invasive and couple each control to the
+modal's lifecycle.
+
+**Decision.** The editor owns **one** `MediaLibrary` instance and exposes a
+`requestMedia(onPick)` opener through `MediaPickerContext`. Whoever opens the
+library supplies the callback that should receive the pick; the editor stores it
+(`mediaPick` state, replacing the old `mediaOpen` boolean) and routes the chosen
+asset back to exactly that opener, then clears it. The provider's value is null
+when no `media` source is configured, so a control's "Browse…" button hides
+itself with a one-line `useMediaPicker()` check. This keeps controls decoupled
+from transport (consistent with ADR-027's adapter) and makes a new picker entry
+point a few lines, not a prop-drilling change.
+
+**Alternatives rejected.** Prop-drilling `media`/open/close through panels (couples
+every control to the modal, repetitive); a second modal per control (duplicated
+state, focus/escape handling). A global store would work but context is the
+minimal fit for a single-editor subtree.
+
+**Status.** `editor/src/react/media-context.ts`, `Editor.tsx` (provider +
+`requestMedia`), `controls.tsx` (`image` case); `editor/tests/controls.test.tsx`
+(+4); `examples/demo-next` (`coverImage` field, CSS). Extends ADR-027; no SPEC
+change.
