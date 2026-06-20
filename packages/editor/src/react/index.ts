@@ -11,6 +11,8 @@ export { Rail, IMDX_DRAG_MIME } from "./Rail.js";
 export type { RailProps } from "./Rail.js";
 export { SourcePane } from "./SourcePane.js";
 export type { SourcePaneProps } from "./SourcePane.js";
+export { EditorSidebar } from "./EditorSidebar.js";
+export type { EditorSidebarProps, SidebarMode } from "./EditorSidebar.js";
 export { PropPanel } from "./PropPanel.js";
 export type { PropPanelProps } from "./PropPanel.js";
 export { FrontmatterPanel } from "./FrontmatterPanel.js";

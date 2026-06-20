@@ -34,9 +34,55 @@ body {
 
 .imdx-editor {
   display: grid;
-  grid-template-columns: 220px minmax(0, 1fr) 280px 420px;
+  grid-template-columns: 220px minmax(0, 1fr) var(--imdx-sidebar-width, 380px);
   height: 100vh;
   background: var(--paper);
+}
+
+/* -- Unified right sidebar (Source ⇄ Properties) -------------------------- */
+.imdx-sidebar {
+  grid-column: 3;
+  border-left: 1px solid var(--line);
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+}
+.imdx-sidebar-tabs {
+  display: flex;
+  border-bottom: 1px solid var(--line);
+  background: rgba(251, 251, 253, 0.9);
+}
+.imdx-sidebar-tab {
+  flex: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  font: inherit;
+  font-size: 13px;
+  padding: 10px 8px;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+}
+.imdx-sidebar-tab[aria-selected="true"] {
+  color: var(--ink);
+  border-bottom-color: var(--indigo);
+}
+.imdx-sidebar-body {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  display: flex;
+  flex-direction: column;
+}
+.imdx-sidebar-body > .imdx-source,
+.imdx-sidebar-body > .imdx-props {
+  flex: 1;
+  min-height: 100%;
 }
 
 /* -- Rail ----------------------------------------------------------------- */
@@ -243,12 +289,9 @@ body {
   color: var(--muted);
 }
 
-/* -- Prop panel ----------------------------------------------------------- */
+/* -- Prop panel (rendered inside the sidebar body) ------------------------ */
 .imdx-props {
-  grid-column: 3;
-  border-left: 1px solid var(--line);
   padding: 18px 16px;
-  overflow-y: auto;
 }
 .imdx-props-label {
   font-size: 12px;
@@ -299,12 +342,10 @@ body {
   resize: vertical;
 }
 
-/* -- Source pane ---------------------------------------------------------- */
+/* -- Source pane (rendered inside the sidebar body) ----------------------- */
 .imdx-source {
-  grid-column: 4;
   background: var(--code-bg);
   color: var(--code-ink);
-  overflow-y: auto;
 }
 .imdx-source-label {
   position: sticky;

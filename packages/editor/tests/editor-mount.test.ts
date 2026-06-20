@@ -76,6 +76,15 @@ Hello **world**.
 
 const flush = () => new Promise((r) => setTimeout(r, 0));
 
+/** Click a sidebar tab ("Source" | "Properties") and let React settle. */
+async function switchSidebar(el: HTMLElement, label: "Source" | "Properties") {
+  const tab = el.querySelector(
+    `.imdx-sidebar-tab[aria-label="${label}"]`,
+  ) as HTMLButtonElement;
+  tab.click();
+  for (let i = 0; i < 4; i++) await flush();
+}
+
 let root: Root | null = null;
 let host: HTMLDivElement | null = null;
 
@@ -149,6 +158,34 @@ describe("IMDXEditor mount (jsdom)", () => {
   });
 });
 
+describe("unified sidebar (source ⇄ properties)", () => {
+  it("defaults to the source view and toggles to properties and back", async () => {
+    const el = await mountEditor(SRC);
+    const tabs = el.querySelectorAll(".imdx-sidebar-tab");
+    expect(tabs).toHaveLength(2);
+
+    // Default: source visible, no properties panel.
+    expect(el.querySelector(".imdx-source-pre")).not.toBeNull();
+    expect(el.querySelector(".imdx-props")).toBeNull();
+    expect(
+      el.querySelector('.imdx-sidebar-tab[aria-label="Source"]')!.getAttribute("aria-selected"),
+    ).toBe("true");
+
+    // Toggle to properties: the document panel appears, source is gone.
+    await switchSidebar(el, "Properties");
+    expect(el.querySelector(".imdx-source-pre")).toBeNull();
+    expect(el.querySelector(".imdx-props")).not.toBeNull();
+    expect(
+      el.querySelector('.imdx-sidebar-tab[aria-label="Properties"]')!.getAttribute("aria-selected"),
+    ).toBe("true");
+
+    // Back to source.
+    await switchSidebar(el, "Source");
+    expect(el.querySelector(".imdx-source-pre")).not.toBeNull();
+    expect(el.querySelector(".imdx-props")).toBeNull();
+  });
+});
+
 describe("frontmatter panel (collections)", () => {
   const POST = `---
 title: Hi
@@ -160,6 +197,7 @@ status: draft
 
   it("renders the collection's frontmatter fields as a Document panel", async () => {
     const el = await mountEditor(POST, collection);
+    await switchSidebar(el, "Properties");
     const panel = el.querySelector('[aria-label="Document"]');
     expect(panel).not.toBeNull();
     const select = panel!.querySelector("select") as HTMLSelectElement | null;
@@ -169,11 +207,13 @@ status: draft
 
   it("editing a field rewrites canonical frontmatter in the live source", async () => {
     const el = await mountEditor(POST, collection);
+    await switchSidebar(el, "Properties");
     const select = el.querySelector('[aria-label="Document"] select') as HTMLSelectElement;
     select.value = "published";
     select.dispatchEvent(new Event("change", { bubbles: true }));
     for (let i = 0; i < 4; i++) await flush();
 
+    await switchSidebar(el, "Source");
     const source = Array.from(el.querySelectorAll(".imdx-source-line"))
       .map((n) => n.textContent)
       .join("\n");
