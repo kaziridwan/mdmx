@@ -184,6 +184,24 @@ describe("unified sidebar (source ⇄ properties)", () => {
     expect(el.querySelector(".imdx-source-pre")).not.toBeNull();
     expect(el.querySelector(".imdx-props")).toBeNull();
   });
+
+  it("resizes via the drag handle and persists the width", async () => {
+    localStorage.clear();
+    const el = await mountEditor(SRC);
+    const root = el.querySelector(".imdx-editor") as HTMLElement;
+    const handle = el.querySelector(".imdx-sidebar-resize") as HTMLElement;
+    expect(handle).not.toBeNull();
+
+    handle.dispatchEvent(new MouseEvent("mousedown", { bubbles: true, clientX: 1200 }));
+    // jsdom has no layout (getBoundingClientRect → 0), so right(0) - clientX is
+    // negative → clamps to the minimum width; this still exercises the wiring.
+    window.dispatchEvent(new MouseEvent("mousemove", { clientX: 800 }));
+    window.dispatchEvent(new MouseEvent("mouseup", {}));
+    for (let i = 0; i < 3; i++) await flush();
+
+    expect(root.style.getPropertyValue("--imdx-sidebar-width")).toBe("260px");
+    expect(localStorage.getItem("imdx:sidebar-width")).toBe("260");
+  });
 });
 
 describe("frontmatter panel (collections)", () => {

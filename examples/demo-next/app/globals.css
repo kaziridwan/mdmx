@@ -42,11 +42,29 @@ body {
 /* -- Unified right sidebar (Source ⇄ Properties) -------------------------- */
 .imdx-sidebar {
   grid-column: 3;
+  position: relative;
   border-left: 1px solid var(--line);
   display: flex;
   flex-direction: column;
   min-height: 0;
   overflow: hidden;
+}
+.imdx-sidebar-resize {
+  position: absolute;
+  left: -3px;
+  top: 0;
+  bottom: 0;
+  width: 7px;
+  cursor: col-resize;
+  z-index: 5;
+}
+.imdx-sidebar-resize:hover,
+body.imdx-resizing .imdx-sidebar-resize {
+  background: linear-gradient(to right, transparent 2px, var(--indigo) 2px, var(--indigo) 5px, transparent 5px);
+}
+body.imdx-resizing {
+  cursor: col-resize;
+  user-select: none;
 }
 .imdx-sidebar-tabs {
   display: flex;

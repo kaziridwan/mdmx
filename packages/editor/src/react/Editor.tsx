@@ -5,6 +5,8 @@ import {
   useRef,
   useState,
   type ComponentType,
+  type CSSProperties,
+  type MouseEvent as ReactMouseEvent,
 } from "react";
 import { EditorState, NodeSelection } from "prosemirror-state";
 import { EditorView } from "prosemirror-view";
@@ -23,6 +25,12 @@ import { makeComponentBlock } from "./ComponentBlock.js";
 import { slashPlugin } from "./slash-plugin.js";
 import { Rail, IMDX_DRAG_MIME } from "./Rail.js";
 import { EditorSidebar, type SidebarMode } from "./EditorSidebar.js";
+import {
+  DEFAULT_SIDEBAR_WIDTH,
+  clampSidebarWidth,
+  readStoredWidth,
+  storeSidebarWidth,
+} from "./sidebar-resize.js";
 import { SlashMenu } from "./SlashMenu.js";
 import { MediaLibrary } from "./MediaLibrary.js";
 import { insertImage, type MediaItem, type MediaSource } from "./media.js";
@@ -100,6 +108,10 @@ export function IMDXEditor({
   // The callback awaiting a media pick; non-null ⇒ the library modal is open.
   const [mediaPick, setMediaPick] = useState<((item: MediaItem) => void) | null>(null);
   const [sidebarMode, setSidebarMode] = useState<SidebarMode>("source");
+  const [sidebarWidth, setSidebarWidth] = useState<number>(
+    () => readStoredWidth() ?? DEFAULT_SIDEBAR_WIDTH,
+  );
+  const rootRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const mount = mountRef.current;
@@ -185,6 +197,29 @@ export function IMDXEditor({
     }
   }, [view, onSave, registry]);
 
+  // Drag the sidebar's left edge: width = distance from the editor's right edge
+  // to the cursor, clamped, persisted on release.
+  const startResize = useCallback((e: ReactMouseEvent) => {
+    e.preventDefault();
+    const root = rootRef.current;
+    if (!root) return;
+    let latest = sidebarWidth;
+    const onMove = (ev: MouseEvent) => {
+      const rect = root.getBoundingClientRect();
+      latest = clampSidebarWidth(rect.right - ev.clientX);
+      setSidebarWidth(latest);
+    };
+    const onUp = () => {
+      window.removeEventListener("mousemove", onMove);
+      window.removeEventListener("mouseup", onUp);
+      document.body.classList.remove("imdx-resizing");
+      storeSidebarWidth(latest);
+    };
+    window.addEventListener("mousemove", onMove);
+    window.addEventListener("mouseup", onUp);
+    document.body.classList.add("imdx-resizing");
+  }, [sidebarWidth]);
+
   // Open the library, remembering who asked so its pick is routed back to them.
   const requestMedia = useCallback<RequestMedia>((onPick) => {
     setMediaPick(() => onPick);
@@ -204,7 +239,11 @@ export function IMDXEditor({
 
   return (
     <MediaPickerContext.Provider value={media ? requestMedia : null}>
-    <div className="imdx-editor">
+    <div
+      className="imdx-editor"
+      ref={rootRef}
+      style={{ ["--imdx-sidebar-width"]: `${sidebarWidth}px` } as CSSProperties}
+    >
       <Rail registry={registry} schema={schema} view={view} />
       <div className="imdx-canvas-wrap">
         {showToolbar ? (
@@ -267,6 +306,7 @@ export function IMDXEditor({
         registry={registry}
         collection={collection}
         componentSelected={isComponentSelected(state, registry)}
+        onResizeStart={startResize}
       />
     </div>
     </MediaPickerContext.Provider>

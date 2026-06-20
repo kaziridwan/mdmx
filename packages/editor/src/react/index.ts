@@ -13,6 +13,14 @@ export { SourcePane } from "./SourcePane.js";
 export type { SourcePaneProps } from "./SourcePane.js";
 export { EditorSidebar } from "./EditorSidebar.js";
 export type { EditorSidebarProps, SidebarMode } from "./EditorSidebar.js";
+export {
+  clampSidebarWidth,
+  readStoredWidth,
+  storeSidebarWidth,
+  DEFAULT_SIDEBAR_WIDTH,
+  MIN_SIDEBAR_WIDTH,
+  MAX_SIDEBAR_WIDTH,
+} from "./sidebar-resize.js";
 export { PropPanel } from "./PropPanel.js";
 export type { PropPanelProps } from "./PropPanel.js";
 export { FrontmatterPanel } from "./FrontmatterPanel.js";

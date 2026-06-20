@@ -47,7 +47,7 @@ registry on change; reports `unchanged` when the content hash is identical).
 
 ---
 
-## @imdx/editor — 65 tests
+## @imdx/editor — 73 tests
 
 Registry→ProseMirror, converters, commands (main entry, React-free), plus the
 flat React editor UI behind the `@imdx/editor/react` subpath.
