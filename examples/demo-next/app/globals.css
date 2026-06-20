@@ -1082,3 +1082,75 @@ body.imdx-resizing {
   color: var(--muted);
   font-size: 14px;
 }
+
+/* -- Demo marketing components (LogoCloud, FAQ, Newsletter) ---------------- */
+.mk-logos {
+  text-align: center;
+  padding: 12px 0;
+}
+.mk-logos-title {
+  font-size: 13px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin: 0 0 14px;
+}
+.mk-logos-row {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 12px 28px;
+}
+.mk-logo {
+  font-family: "Space Grotesk", sans-serif;
+  font-weight: 600;
+  font-size: 18px;
+  color: var(--ink);
+  opacity: 0.55;
+}
+.mk-faq {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.mk-faq-item {
+  border-bottom: 1px solid var(--line);
+  padding: 14px 0;
+}
+.mk-faq-q {
+  font-weight: 600;
+  margin: 0 0 6px;
+}
+.mk-faq-a {
+  color: var(--muted);
+  font-size: 15px;
+}
+.mk-newsletter {
+  text-align: center;
+  padding: 32px 24px;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: var(--canvas);
+}
+.mk-newsletter-heading {
+  margin: 0 0 16px;
+}
+.mk-newsletter-form {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+.mk-newsletter-input {
+  font: inherit;
+  font-size: 15px;
+  padding: 10px 14px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  min-width: 240px;
+}
+.mk-newsletter-note {
+  font-size: 13px;
+  color: var(--muted);
+  margin: 12px 0 0;
+}

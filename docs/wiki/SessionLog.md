@@ -11,6 +11,25 @@ initial design-and-build conversation (12 commits).
 
 <!-- APPEND NEW ENTRIES ABOVE THIS LINE -->
 
+### S18 — Demo marketing components: LogoCloud + FAQ + Newsletter
+- **demo-next**: four more Marketing components, completing the new-components
+  phase (S15–S18):
+  - `LogoCloud` — leaf; title + `names` (comma-separated, rendered as logo chips;
+    `textarea` control to dodge the not-yet-editable `list` control).
+  - `FAQ` / `FAQItem` — `blocks` container + `rich-text` slotted item (question
+    prop, answer inline).
+  - `Newsletter` — leaf email-signup band; heading/buttonLabel/placeholder/note.
+  Registered in `lib/components.ts`; demo-next registry now **16** components
+  across 4 categories. Extended `marketing.mdx` with all three sections;
+  canonical + `imdx check`-clean. CSS `.mk-logos`/`.mk-faq`/`.mk-newsletter`.
+- Verification: demo-next `tsc` clean; full repo `pnpm check` + 185 tests green.
+- No package code → no test-count change (185), no ADR, no SPEC change. Plan:
+  `road-to-0.3.0.md` (S18 ✓) — **all S15–S18 demo components done**.
+- Known gap (pre-existing, noted for later): the `list` control type isn't
+  editable in the prop panel (`coerceControlValue`/`Control` fall through to a
+  text input); that's why `LogoCloud.names` uses `textarea`.
+- Next: S19 HTML component (package code — tests + ADR), then S20 0.3.0 bump.
+
 ### S17 — Demo marketing components: Pricing + Testimonial
 - **demo-next**: three more Marketing components:
   - `PricingTable` — `blocks` container, `allowedChildren: ["PricingTier"]`.
