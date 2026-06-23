@@ -1,4 +1,4 @@
-import type { ControlSpec, JsonValue, PropSpec } from "@imdx/core";
+import type { ControlSpec, JsonValue, PropSpec } from "@mdmx/core";
 
 /**
  * Coerce a raw form-input value into the JSON value a prop should hold, given

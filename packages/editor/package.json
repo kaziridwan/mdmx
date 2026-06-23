@@ -1,6 +1,6 @@
 {
-  "name": "@imdx/editor",
-  "version": "0.3.0",
+  "name": "@mdmx/editor",
+  "version": "0.3.1",
   "description": "Block editor (ProseMirror) with registry-driven component nodes, React NodeViews, and prop panels",
   "type": "module",
   "main": "./dist/index.js",
@@ -21,7 +21,7 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@imdx/core": "workspace:*",
+    "@mdmx/core": "workspace:*",
     "prosemirror-model": "~1.25.4",
     "prosemirror-state": "~1.4.3",
     "prosemirror-view": "~1.40.1",

@@ -1,16 +1,16 @@
 {
-  "name": "imdx-demo",
+  "name": "mdmx-demo",
   "private": true,
   "version": "0.0.0",
   "type": "module",
-  "description": "Minimal consumer of the iMDX toolchain: components + content + registry generation",
+  "description": "Minimal consumer of the MDMX toolchain: components + content + registry generation",
   "scripts": {
-    "generate": "imdx generate",
-    "check": "imdx check"
+    "generate": "mdmx generate",
+    "check": "mdmx check"
   },
   "dependencies": {
-    "@imdx/cli": "workspace:*",
-    "@imdx/core": "workspace:*"
+    "@mdmx/cli": "workspace:*",
+    "@mdmx/core": "workspace:*"
   },
   "devDependencies": {
     "@types/react": "~18.3.18"

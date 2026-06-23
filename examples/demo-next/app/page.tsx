@@ -1,58 +1,73 @@
 import Link from "next/link";
 import { join } from "node:path";
-import { getDocuments, type IMDXDocument } from "@imdx/next";
-import { CONTENT_DIR, projectRoot, registry } from "../lib/imdx-config";
+import { getDocuments, type MDMXDocument } from "@mdmx/next";
+import type { CollectionSpec } from "@mdmx/core";
+import { CmsHeader } from "../components/CmsHeader";
+import { CONTENT_DIR, projectRoot, registry } from "../lib/mdmx-config";
 
 // Always read the working tree fresh (saves change it).
 export const dynamic = "force-dynamic";
 
 export default async function Home() {
-  const docs = await getDocuments(join(projectRoot(), CONTENT_DIR), {
-    registry: registry(),
-  });
+  const reg = registry();
+  const docs = await getDocuments(join(projectRoot(), CONTENT_DIR), { registry: reg });
 
-  const published = docs.filter((d) => d.frontmatter.status === "published");
-  const drafts = docs.filter((d) => d.frontmatter.status !== "published");
+  // Group every document under the collection that owns its path.
+  const byCollection = new Map<string, MDMXDocument[]>();
+  for (const doc of docs) {
+    const collection = reg.collectionForPath(`${CONTENT_DIR}/${doc.path}`);
+    if (!collection) continue;
+    const list = byCollection.get(collection.name) ?? [];
+    list.push(doc);
+    byCollection.set(collection.name, list);
+  }
 
   return (
-    <main className="imdx-home">
-      <h1>iMDX — local CMS</h1>
+    <main className="mdmx-home">
+      <CmsHeader />
+      <h1>MDMX — local CMS</h1>
       <p>
-        Your React components are first-class editor blocks. Edits save as
-        canonical iMDX into <code>{CONTENT_DIR}/</code> in this repo — no GitHub,
-        no database. Open a post and use the document panel to set its status.
+        Your React components are first-class editor blocks. Content is organized
+        into <strong>collections</strong> — typed groupings whose entries save as
+        canonical MDMX into <code>{CONTENT_DIR}/</code> in this repo. Pick a
+        collection to browse or add posts.
       </p>
 
-      <Section title="Published" docs={published} empty="Nothing published yet." />
-      <Section title="Drafts" docs={drafts} empty="No drafts." />
+      {reg.collections.length === 0 ? (
+        <p className="mdmx-home-empty">No collections configured.</p>
+      ) : (
+        <ul className="mdmx-collection-grid">
+          {reg.collections.map((collection) => (
+            <CollectionCard
+              key={collection.name}
+              collection={collection}
+              docs={byCollection.get(collection.name) ?? []}
+            />
+          ))}
+        </ul>
+      )}
     </main>
   );
 }
 
-function Section({ title, docs, empty }: { title: string; docs: IMDXDocument[]; empty: string }) {
+function CollectionCard({
+  collection,
+  docs,
+}: {
+  collection: CollectionSpec;
+  docs: MDMXDocument[];
+}) {
+  const published = docs.filter((d) => d.frontmatter.status === "published").length;
   return (
-    <section className="imdx-home-section">
-      <h2 className="imdx-home-section-title">
-        {title} <span className="imdx-home-count">{docs.length}</span>
-      </h2>
-      {docs.length === 0 ? (
-        <p className="imdx-home-empty">{empty}</p>
-      ) : (
-        <ul className="imdx-home-list">
-          {docs.map((doc) => {
-            const hasErrors = doc.diagnostics?.some((d) => d.severity === "error");
-            return (
-              <li key={doc.path} className="imdx-home-item">
-                <Link href={`/edit/${doc.path}`} className="imdx-home-link">
-                  {String(doc.frontmatter.title ?? doc.slug)}
-                </Link>
-                <code className="imdx-home-path">{doc.path}</code>
-                {hasErrors ? <span className="imdx-home-bad">⚠ invalid</span> : null}
-              </li>
-            );
-          })}
-        </ul>
-      )}
-    </section>
+    <li>
+      <Link href={`/collections/${collection.name}`} className="mdmx-collection-card">
+        <span className="mdmx-collection-name">{collection.name}</span>
+        <span className="mdmx-collection-meta">
+          {docs.length} {docs.length === 1 ? "entry" : "entries"}
+          {published > 0 ? ` · ${published} published` : ""}
+        </span>
+        <code className="mdmx-collection-dir">{collection.dir}</code>
+      </Link>
+    </li>
   );
 }

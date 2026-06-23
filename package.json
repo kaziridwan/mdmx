@@ -1,12 +1,12 @@
 {
-  "name": "imdx-monorepo",
+  "name": "mdmx-monorepo",
   "private": true,
-  "version": "0.3.0",
+  "version": "0.3.1",
   "type": "module",
   "scripts": {
-    "build": "pnpm --filter @imdx/core build && pnpm --filter @imdx/provider-github --filter @imdx/cli --filter @imdx/editor --filter @imdx/next build",
-    "test": "pnpm --filter @imdx/core build && pnpm -r test",
-    "check": "pnpm --filter @imdx/core build && pnpm -r typecheck",
+    "build": "pnpm --filter @mdmx/core build && pnpm --filter @mdmx/provider-github --filter @mdmx/cli --filter @mdmx/editor --filter @mdmx/next build",
+    "test": "pnpm --filter @mdmx/core build && pnpm -r test",
+    "check": "pnpm --filter @mdmx/core build && pnpm -r typecheck",
     "verify": "sh scripts/check.sh",
     "generate": "sh scripts/generate.sh",
     "dev:next": "sh scripts/dev-next.sh",

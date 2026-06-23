@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { defineIMDX } from "@imdx/core";
+import { defineMDMX } from "@mdmx/core";
 
 interface FeatureProps {
   title: string;
@@ -22,7 +22,7 @@ function FeatureImpl({ title, icon, children }: FeatureProps) {
   );
 }
 
-export const Feature = defineIMDX(FeatureImpl, {
+export const Feature = defineMDMX(FeatureImpl, {
   name: "Feature",
   category: "Marketing",
   icon: "check-circle",

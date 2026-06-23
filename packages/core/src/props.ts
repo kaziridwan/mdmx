@@ -123,7 +123,7 @@ function programExpression(program: Program | undefined): Expression | undefined
 
 /**
  * Evaluate the attributes of a JSX element into a props object.
- * Emits IMDX002 diagnostics for anything outside the JSON grammar
+ * Emits MDMX002 diagnostics for anything outside the JSON grammar
  * (including spread attributes).
  */
 export function evaluateAttributes(
@@ -136,7 +136,7 @@ export function evaluateAttributes(
   for (const attr of element.attributes) {
     if (attr.type === "mdxJsxExpressionAttribute") {
       diagnostics.push({
-        code: "IMDX002",
+        code: "MDMX002",
         severity: "error",
         message: `Spread attributes are not allowed on <${componentName}>.`,
         span: spanOf(attr as never) ?? spanOf(element),
@@ -158,7 +158,7 @@ export function evaluateAttributes(
     const expr = programExpression(estree);
     if (!expr) {
       diagnostics.push({
-        code: "IMDX002",
+        code: "MDMX002",
         severity: "error",
         message: `Prop "${a.name}" on <${componentName}> has an empty or unparsable expression.`,
         span: spanOf(a as never) ?? spanOf(element),
@@ -168,7 +168,7 @@ export function evaluateAttributes(
     const result = evaluateExpression(expr);
     if (!result.ok) {
       diagnostics.push({
-        code: "IMDX002",
+        code: "MDMX002",
         severity: "error",
         message: `Prop "${a.name}" on <${componentName}> is not statically serializable: ${result.reason}. Props must be JSON values.`,
         span: spanOf(a as never) ?? spanOf(element),

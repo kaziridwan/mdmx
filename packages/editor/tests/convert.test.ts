@@ -4,7 +4,7 @@ import {
   toMDX,
   Registry,
   type RegistrySpec,
-} from "@imdx/core";
+} from "@mdmx/core";
 import {
   buildSchema,
   componentNodeName,
@@ -16,7 +16,7 @@ import type { Node as PMNode } from "prosemirror-model";
 import { Fragment, Slice } from "prosemirror-model";
 
 const registrySpec: RegistrySpec = {
-  imdxRegistryVersion: 1,
+  mdmxRegistryVersion: 1,
   components: [
     {
       name: "Callout",
@@ -72,11 +72,11 @@ function roundtrip(source: string): string {
 }
 
 const FIXTURE = `---
-title: Hello iMDX
+title: Hello MDMX
 status: draft
 ---
 
-# Hello iMDX
+# Hello MDMX
 
 This is **bold with *nested italics***, ~~struck~~, \`inline code\`, and a [link](https://example.com "T").
 
@@ -149,13 +149,13 @@ describe("mdast ⇄ ProseMirror round-trip", () => {
     const tree = parseMDX(FIXTURE);
     const doc = fromMdast(tree, { schema, registry, source: FIXTURE });
 
-    expect(doc.attrs.frontmatter).toContain("title: Hello iMDX");
+    expect(doc.attrs.frontmatter).toContain("title: Hello MDMX");
 
     const types: string[] = [];
     doc.forEach((n) => types.push(n.type.name));
-    expect(types).toContain("imdx_Callout");
-    expect(types).toContain("imdx_Chart");
-    expect(types).toContain("imdx_TwoColumn");
+    expect(types).toContain("mdmx_Callout");
+    expect(types).toContain("mdmx_Chart");
+    expect(types).toContain("mdmx_TwoColumn");
     expect(types).toContain("table");
   });
 
@@ -163,7 +163,7 @@ describe("mdast ⇄ ProseMirror round-trip", () => {
     const doc = fromMdast(parseMDX(FIXTURE), { schema, registry, source: FIXTURE });
     let chart: PMNode | null = null;
     doc.descendants((n) => {
-      if (n.type.name === "imdx_Chart" && n.attrs.props.title) chart = n;
+      if (n.type.name === "mdmx_Chart" && n.attrs.props.title) chart = n;
       return !chart;
     });
     expect(chart).not.toBeNull();
@@ -189,11 +189,11 @@ describe("raw fallback", () => {
     "",
   ].join("\n");
 
-  it("wraps out-of-subset regions as imdx_raw, byte-preserved", () => {
+  it("wraps out-of-subset regions as mdmx_raw, byte-preserved", () => {
     const doc = fromMdast(parseMDX(RAW_DOC), { schema, registry, source: RAW_DOC });
     const raws: string[] = [];
     doc.forEach((n) => {
-      if (n.type.name === "imdx_raw") raws.push(n.attrs.source as string);
+      if (n.type.name === "mdmx_raw") raws.push(n.attrs.source as string);
     });
     expect(raws).toHaveLength(2);
     expect(raws[0]).toBe('import { x } from "y"');
@@ -207,7 +207,7 @@ describe("raw fallback", () => {
   it("falls back to raw for unserializable props on known components", () => {
     const src = "<Chart series={getSeries()} />\n";
     const doc = fromMdast(parseMDX(src), { schema, registry, source: src });
-    expect(doc.child(0).type.name).toBe("imdx_raw");
+    expect(doc.child(0).type.name).toBe("mdmx_raw");
     expect(roundtrip(src)).toBe(src);
   });
 });
@@ -237,7 +237,7 @@ describe("prop editing produces localized diffs", () => {
     // Simulate the property panel: replace the Callout's props attr.
     let calloutPos = -1;
     doc.descendants((n, pos) => {
-      if (n.type.name === "imdx_Callout") calloutPos = pos;
+      if (n.type.name === "mdmx_Callout") calloutPos = pos;
       return calloutPos === -1;
     });
     const callout = doc.nodeAt(calloutPos)!;

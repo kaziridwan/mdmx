@@ -2,14 +2,14 @@ import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { ConflictError, PathSafetyError, Registry, type RegistrySpec } from "@imdx/core";
+import { ConflictError, PathSafetyError, Registry, type RegistrySpec } from "@mdmx/core";
 import { getDocumentBySlug, getDocuments, LocalProvider } from "../src/index.js";
 
 let root: string;
 let provider: LocalProvider;
 
 beforeAll(async () => {
-  root = await mkdtemp(join(tmpdir(), "imdx-local-"));
+  root = await mkdtemp(join(tmpdir(), "mdmx-local-"));
   provider = new LocalProvider(root);
   await provider.commit(
     [
@@ -113,12 +113,12 @@ describe("content readers", () => {
 
   it("attaches diagnostics when a registry is provided", async () => {
     const registry = new Registry({
-      imdxRegistryVersion: 1,
+      mdmxRegistryVersion: 1,
       components: [],
     } satisfies RegistrySpec);
     const doc = await getDocumentBySlug(join(root, "content/posts"), "nested/deep", {
       registry,
     });
-    expect(doc!.diagnostics!.map((d) => d.code)).toContain("IMDX001"); // <Mystery />
+    expect(doc!.diagnostics!.map((d) => d.code)).toContain("MDMX001"); // <Mystery />
   });
 });

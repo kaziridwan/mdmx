@@ -1,11 +1,11 @@
 import type { ReactNode } from "react";
-import { defineIMDX } from "@imdx/core";
+import { defineMDMX } from "@mdmx/core";
 
 function PricingTableImpl({ children }: { children: ReactNode }) {
   return <section className="mk-pricing">{children}</section>;
 }
 
-export const PricingTable = defineIMDX(PricingTableImpl, {
+export const PricingTable = defineMDMX(PricingTableImpl, {
   name: "PricingTable",
   category: "Marketing",
   icon: "credit-card",

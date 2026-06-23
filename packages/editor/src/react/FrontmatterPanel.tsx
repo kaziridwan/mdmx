@@ -6,7 +6,7 @@ import {
   type CollectionSpec,
   type FrontmatterField,
   type JsonValue,
-} from "@imdx/core";
+} from "@mdmx/core";
 import { coerceControlValue } from "./prop-controls.js";
 import { Control } from "./controls.js";
 
@@ -26,9 +26,9 @@ export interface FrontmatterPanelProps {
 export function FrontmatterPanel({ view, state, collection }: FrontmatterPanelProps) {
   if (!view || !state || !collection) {
     return (
-      <aside className="imdx-props" aria-label="Document">
-        <div className="imdx-props-label">Document</div>
-        <div className="imdx-props-empty">No collection schema for this document.</div>
+      <aside className="mdmx-props" aria-label="Document">
+        <div className="mdmx-props-label">Document</div>
+        <div className="mdmx-props-empty">No collection schema for this document.</div>
       </aside>
     );
   }
@@ -47,14 +47,14 @@ export function FrontmatterPanel({ view, state, collection }: FrontmatterPanelPr
   };
 
   return (
-    <aside className="imdx-props" aria-label="Document">
-      <div className="imdx-props-label">Document · {collection.name}</div>
-      <div className="imdx-props-fields">
+    <aside className="mdmx-props" aria-label="Document">
+      <div className="mdmx-props-label">Document · {collection.name}</div>
+      <div className="mdmx-props-fields">
         {collection.fields.map((field) => (
-          <label key={field.name} className="imdx-prop-field">
-            <span className="imdx-prop-name">
+          <label key={field.name} className="mdmx-prop-field">
+            <span className="mdmx-prop-name">
               {field.name}
-              {field.required ? <span className="imdx-prop-req"> *</span> : null}
+              {field.required ? <span className="mdmx-prop-req"> *</span> : null}
             </span>
             <Control
               control={field.control}
@@ -62,7 +62,7 @@ export function FrontmatterPanel({ view, state, collection }: FrontmatterPanelPr
               onChange={(rawValue) => update(field, rawValue)}
             />
             {field.description ? (
-              <span className="imdx-prop-desc">{field.description}</span>
+              <span className="mdmx-prop-desc">{field.description}</span>
             ) : null}
           </label>
         ))}

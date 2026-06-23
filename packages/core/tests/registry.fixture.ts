@@ -1,7 +1,7 @@
 import { Registry, type RegistrySpec } from "../src/index.js";
 
 export const testRegistrySpec: RegistrySpec = {
-  imdxRegistryVersion: 1,
+  mdmxRegistryVersion: 1,
   components: [
     {
       name: "Callout",

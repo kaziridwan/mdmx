@@ -1,8 +1,8 @@
 import ts from "typescript";
-import type { JsonValue } from "@imdx/core";
+import type { JsonValue } from "@mdmx/core";
 
 /**
- * Statically evaluate a TS expression to a JSON value. The defineIMDX config
+ * Statically evaluate a TS expression to a JSON value. The defineMDMX config
  * must be a literal object — identifiers, calls, and computed values are
  * rejected so the CLI never needs to execute user code.
  */

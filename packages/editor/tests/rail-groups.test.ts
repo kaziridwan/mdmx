@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import type { ComponentSpec } from "@imdx/core";
+import type { ComponentSpec } from "@mdmx/core";
 import { filterComponents, groupByCategory, DEFAULT_CATEGORY } from "../src/react/rail-groups.js";
 
 const specs: ComponentSpec[] = [

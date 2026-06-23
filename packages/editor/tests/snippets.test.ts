@@ -37,7 +37,7 @@ describe("snippet store", () => {
   });
 
   it("survives corrupt storage", () => {
-    localStorage.setItem("imdx:snippets", "not json");
+    localStorage.setItem("mdmx:snippets", "not json");
     expect(listSnippets()).toEqual([]);
   });
 });

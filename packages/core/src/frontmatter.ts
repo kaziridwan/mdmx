@@ -47,8 +47,8 @@ export function stringifyFrontmatter(
 /**
  * Validate a document's frontmatter against its collection schema. Declared
  * fields are checked for presence (if required) and value/type; undeclared keys
- * are allowed (reserved keys, per-doc extras). Codes: IMDX008 (required field
- * missing), IMDX009 (value doesn't match the field's control).
+ * are allowed (reserved keys, per-doc extras). Codes: MDMX008 (required field
+ * missing), MDMX009 (value doesn't match the field's control).
  */
 export function validateFrontmatter(
   frontmatter: Record<string, unknown>,
@@ -61,7 +61,7 @@ export function validateFrontmatter(
     if (empty) {
       if (field.required) {
         out.push({
-          code: "IMDX008",
+          code: "MDMX008",
           severity: "error",
           message: `Missing required frontmatter field "${field.name}".`,
         });
@@ -70,7 +70,7 @@ export function validateFrontmatter(
     }
     if (!valueMatchesControl(value, field.control)) {
       out.push({
-        code: "IMDX009",
+        code: "MDMX009",
         severity: "error",
         message: describeMismatch(field.name, field.control, value),
       });

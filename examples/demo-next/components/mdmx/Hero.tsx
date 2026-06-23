@@ -1,4 +1,4 @@
-import { defineIMDX } from "@imdx/core";
+import { defineMDMX } from "@mdmx/core";
 
 interface HeroProps {
   /** Small label above the title */
@@ -45,7 +45,7 @@ function HeroImpl({
   );
 }
 
-export const Hero = defineIMDX(HeroImpl, {
+export const Hero = defineMDMX(HeroImpl, {
   name: "Hero",
   category: "Marketing",
   icon: "layout",
@@ -63,7 +63,7 @@ export const Hero = defineIMDX(HeroImpl, {
   preview: {
     eyebrow: "Now in beta",
     title: "Ship content at the speed of git",
-    subtitle: "Edit your components as blocks. Commit canonical iMDX.",
+    subtitle: "Edit your components as blocks. Commit canonical MDMX.",
     primaryLabel: "Get started",
     secondaryLabel: "Read the docs",
   },

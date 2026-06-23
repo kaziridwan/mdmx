@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { defineIMDX } from "@imdx/core";
+import { defineMDMX } from "@mdmx/core";
 
 interface TestimonialProps {
   author: string;
@@ -24,7 +24,7 @@ function TestimonialImpl({ author, role, avatar, children }: TestimonialProps) {
   );
 }
 
-export const Testimonial = defineIMDX(TestimonialImpl, {
+export const Testimonial = defineMDMX(TestimonialImpl, {
   name: "Testimonial",
   category: "Marketing",
   icon: "message-square",
@@ -38,6 +38,6 @@ export const Testimonial = defineIMDX(TestimonialImpl, {
   preview: {
     author: "Jane Doe",
     role: "CTO, Acme",
-    children: "iMDX let our writers ship landing pages without touching the build.",
+    children: "MDMX let our writers ship landing pages without touching the build.",
   },
 });

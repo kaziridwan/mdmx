@@ -1,8 +1,8 @@
-import { toMDX, type Registry } from "@imdx/core";
+import { toMDX, type Registry } from "@mdmx/core";
 import type { Node as PMNode } from "prosemirror-model";
 import { toMdast } from "../to-mdast.js";
 
-/** Canonical iMDX for the whole document — the live source-pane text. */
+/** Canonical MDMX for the whole document — the live source-pane text. */
 export function serializeDoc(doc: PMNode, registry: Registry): string {
   return toMDX(toMdast(doc, { registry }));
 }

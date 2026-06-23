@@ -11,10 +11,10 @@ if [ ! -d "$ROOT/node_modules" ]; then
 fi
 
 echo "> Building packages the app needs..."
-pnpm --filter @imdx/core build
-pnpm --filter @imdx/cli build
-pnpm --filter @imdx/editor build
-pnpm --filter @imdx/next build
+pnpm --filter @mdmx/core build
+pnpm --filter @mdmx/cli build
+pnpm --filter @mdmx/editor build
+pnpm --filter @mdmx/next build
 
 echo "> Starting demo-next (generates registry, then next dev)..."
 echo "  -> http://localhost:${PORT:-3000}"

@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { defineIMDX } from "@imdx/core";
+import { defineMDMX } from "@mdmx/core";
 
 interface FAQItemProps {
   question: string;
@@ -16,7 +16,7 @@ function FAQItemImpl({ question, children }: FAQItemProps) {
   );
 }
 
-export const FAQItem = defineIMDX(FAQItemImpl, {
+export const FAQItem = defineMDMX(FAQItemImpl, {
   name: "FAQItem",
   category: "Marketing",
   icon: "help-circle",

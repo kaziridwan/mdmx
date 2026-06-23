@@ -8,7 +8,7 @@ import {
   type CSSProperties,
   type MouseEvent as ReactMouseEvent,
 } from "react";
-import { EditorState, NodeSelection } from "prosemirror-state";
+import { EditorState, NodeSelection, Selection } from "prosemirror-state";
 import { EditorView } from "prosemirror-view";
 import type { NodeViewConstructor } from "prosemirror-view";
 import { history, redo, undo } from "prosemirror-history";
@@ -16,14 +16,14 @@ import { keymap } from "prosemirror-keymap";
 import { baseKeymap } from "prosemirror-commands";
 import { dropCursor } from "prosemirror-dropcursor";
 import { gapCursor } from "prosemirror-gapcursor";
-import { parseMDX, type CollectionSpec, type Registry } from "@imdx/core";
+import { parseMDX, type CollectionSpec, type Registry } from "@mdmx/core";
 import { buildSchema, componentNodeName, componentNameFromNode } from "../schema.js";
-import { imdxInputRules, initialProps, resolveComponentDrop } from "../commands.js";
+import { mdmxInputRules, initialProps, resolveComponentDrop } from "../commands.js";
 import { fromMdast } from "../from-mdast.js";
 import { createReactNodeView } from "./react-node-view.js";
 import { makeComponentBlock } from "./ComponentBlock.js";
 import { slashPlugin } from "./slash-plugin.js";
-import { Rail, IMDX_DRAG_MIME } from "./Rail.js";
+import { Rail, MDMX_DRAG_MIME } from "./Rail.js";
 import { EditorSidebar, type SidebarMode } from "./EditorSidebar.js";
 import {
   DEFAULT_SIDEBAR_WIDTH,
@@ -34,7 +34,13 @@ import {
 import { SlashMenu } from "./SlashMenu.js";
 import { CodeIcon, SlidersIcon, LayersIcon } from "./icons.js";
 import { MediaLibrary } from "./MediaLibrary.js";
-import { insertImage, type MediaItem, type MediaSource } from "./media.js";
+import {
+  insertImage,
+  imageFromClipboard,
+  pastedImageUpload,
+  type MediaItem,
+  type MediaSource,
+} from "./media.js";
 import { MediaPickerContext, type RequestMedia } from "./media-context.js";
 import { listSnippets, saveSnippet, type Snippet } from "../snippets.js";
 import { serializeDoc } from "./source-map.js";
@@ -42,21 +48,25 @@ import { serializeDoc } from "./source-map.js";
 /** Map of component name → the author's React component, for live rendering. */
 export type ComponentMap = Record<string, ComponentType<any>>;
 
-export interface IMDXEditorProps {
+export interface MDMXEditorProps {
   registry: Registry;
   /** Author components keyed by registry name; missing → placeholder render. */
   components?: ComponentMap;
-  /** Initial document as iMDX source (parsed + converted on mount). */
+  /** Initial document as MDMX source (parsed + converted on mount). */
   source?: string;
   /** Collection schema for this document; enables the frontmatter panel. */
   collection?: CollectionSpec;
   /**
-   * Persist the document. Receives the current canonical iMDX. When provided, a
+   * Persist the document. Receives the current canonical MDMX. When provided, a
    * save toolbar appears. Reject the promise to surface an error in the toolbar.
    */
   onSave?: (source: string) => void | Promise<void>;
   /** Label shown in the toolbar (e.g. the file path). */
   docTitle?: string;
+  /** When set, a back link renders at the start of the toolbar. */
+  backHref?: string;
+  /** Text for the back link (default: "Back"). */
+  backLabel?: string;
   /**
    * Media storage adapter. When provided, an "Insert image" toolbar button
    * opens the media library; the picked asset is inserted as an image node.
@@ -100,16 +110,18 @@ function selectedHtmlCode(state: EditorState | null): string | null {
   return typeof code === "string" ? code : "";
 }
 
-export function IMDXEditor({
+export function MDMXEditor({
   registry,
   components,
   source,
   collection,
   onSave,
   docTitle,
+  backHref,
+  backLabel = "Back",
   media,
   mediaDir = "public/media",
-}: IMDXEditorProps) {
+}: MDMXEditorProps) {
   const schema = useMemo(() => buildSchema(registry), [registry]);
   const mountRef = useRef<HTMLDivElement>(null);
   const [view, setView] = useState<EditorView | null>(null);
@@ -126,6 +138,14 @@ export function IMDXEditor({
     () => readStoredWidth() ?? DEFAULT_SIDEBAR_WIDTH,
   );
   const rootRef = useRef<HTMLDivElement>(null);
+  // Latest media config, read by the (long-lived) paste handler without making
+  // it a dependency of the view-creation effect (which would rebuild the editor).
+  const mediaRef = useRef(media);
+  const mediaDirRef = useRef(mediaDir);
+  const collectionRef = useRef(collection);
+  mediaRef.current = media;
+  mediaDirRef.current = mediaDir;
+  collectionRef.current = collection;
   // Mobile: which off-canvas sheet is open (desktop ignores this; FABs are
   // hidden by CSS and the rail/sidebar are normal columns).
   const [mobilePanel, setMobilePanel] = useState<"palette" | "sidebar" | null>(null);
@@ -145,9 +165,9 @@ export function IMDXEditor({
       plugins: [
         history(),
         keymap({ "Mod-z": undo, "Mod-y": redo, "Shift-Mod-z": redo }),
-        imdxInputRules(schema),
+        mdmxInputRules(schema),
         keymap(baseKeymap),
-        dropCursor({ class: "imdx-dropcursor", width: 2 }),
+        dropCursor({ class: "mdmx-dropcursor", width: 2 }),
         gapCursor(),
         slashPlugin(),
       ],
@@ -165,9 +185,30 @@ export function IMDXEditor({
           setSaveStatus("idle");
         }
       },
+      handlePaste(view, event) {
+        const adapter = mediaRef.current;
+        const data = (event as ClipboardEvent).clipboardData;
+        if (!adapter || !data) return false;
+        const file = imageFromClipboard(data);
+        if (!file) return false;
+        // We own this paste: stop the browser from also inserting a data-URL.
+        event.preventDefault();
+        const collectionName = collectionRef.current?.name;
+        void (async () => {
+          try {
+            const upload = await pastedImageUpload(file, mediaDirRef.current, collectionName);
+            const item = await adapter.upload(upload);
+            insertImage(view, { src: item.url, alt: "" });
+            view.focus();
+          } catch (err) {
+            console.error("mdmx: pasted image upload failed", err);
+          }
+        })();
+        return true;
+      },
       handleDrop(view, event, _slice, moved) {
         if (moved) return false; // internal block move: let ProseMirror handle it
-        const name = (event as DragEvent).dataTransfer?.getData(IMDX_DRAG_MIME);
+        const name = (event as DragEvent).dataTransfer?.getData(MDMX_DRAG_MIME);
         if (!name) return false;
         const spec = registry.get(name);
         const type = view.state.schema.nodes[componentNodeName(name)];
@@ -229,12 +270,12 @@ export function IMDXEditor({
     const onUp = () => {
       window.removeEventListener("mousemove", onMove);
       window.removeEventListener("mouseup", onUp);
-      document.body.classList.remove("imdx-resizing");
+      document.body.classList.remove("mdmx-resizing");
       storeSidebarWidth(latest);
     };
     window.addEventListener("mousemove", onMove);
     window.addEventListener("mouseup", onUp);
-    document.body.classList.add("imdx-resizing");
+    document.body.classList.add("mdmx-resizing");
   }, [sidebarWidth]);
 
   // Open the library, remembering who asked so its pick is routed back to them.
@@ -276,18 +317,54 @@ export function IMDXEditor({
     setSnippetName(null);
   }, [snippetName, view]);
 
+  // Clicking the canvas padding below (or above) the content lands on the mount
+  // element itself, never on the ProseMirror editable child, so ProseMirror's
+  // own click handling never fires — the cursor appears to "vanish". Place it at
+  // the document edge instead. If the document ends in a non-textblock component
+  // (an atom block you can't type into), append a trailing paragraph so there's
+  // somewhere to put the caret.
+  const handleCanvasPointerDown = useCallback(
+    (e: ReactMouseEvent) => {
+      if (!view || e.target !== mountRef.current) return;
+      const editable = view.dom as HTMLElement;
+      const rect = editable.getBoundingClientRect();
+      const below = e.clientY >= rect.bottom;
+      const above = e.clientY <= rect.top;
+      if (!below && !above) return; // side padding: leave default behavior
+      e.preventDefault();
+      const { state } = view;
+      if (below) {
+        const last = state.doc.lastChild;
+        if (last && !last.isTextblock) {
+          const paragraph = state.schema.nodes.paragraph?.createAndFill();
+          if (paragraph) {
+            const tr = state.tr.insert(state.doc.content.size, paragraph);
+            tr.setSelection(Selection.atEnd(tr.doc)).scrollIntoView();
+            view.dispatch(tr);
+          }
+        } else {
+          view.dispatch(state.tr.setSelection(Selection.atEnd(state.doc)).scrollIntoView());
+        }
+      } else {
+        view.dispatch(state.tr.setSelection(Selection.atStart(state.doc)).scrollIntoView());
+      }
+      view.focus();
+    },
+    [view],
+  );
+
   const showToolbar = onSave != null || media != null || htmlCode != null;
 
   return (
     <MediaPickerContext.Provider value={media ? requestMedia : null}>
     <div
       className={
-        "imdx-editor" +
+        "mdmx-editor" +
         (mobilePanel === "palette" ? " is-palette-open" : "") +
         (mobilePanel === "sidebar" ? " is-sidebar-open" : "")
       }
       ref={rootRef}
-      style={{ ["--imdx-sidebar-width"]: `${sidebarWidth}px` } as CSSProperties}
+      style={{ ["--mdmx-sidebar-width"]: `${sidebarWidth}px` } as CSSProperties}
     >
       <Rail
         registry={registry}
@@ -297,14 +374,19 @@ export function IMDXEditor({
         snippets={snippets}
         onInsertSnippet={insertSnippet}
       />
-      <div className="imdx-canvas-wrap">
+      <div className="mdmx-canvas-wrap">
         {showToolbar ? (
-          <div className="imdx-toolbar">
-            <span className="imdx-toolbar-title">{docTitle ?? "Untitled"}</span>
+          <div className="mdmx-toolbar">
+            {backHref ? (
+              <a className="mdmx-toolbar-back" href={backHref}>
+                ← {backLabel}
+              </a>
+            ) : null}
+            <span className="mdmx-toolbar-title">{docTitle ?? "Untitled"}</span>
             {media ? (
               <button
                 type="button"
-                className="imdx-toolbar-image"
+                className="mdmx-toolbar-image"
                 onClick={() => requestMedia(insertPickedImage)}
                 disabled={!view}
               >
@@ -315,15 +397,15 @@ export function IMDXEditor({
               snippetName == null ? (
                 <button
                   type="button"
-                  className="imdx-toolbar-snippet"
+                  className="mdmx-toolbar-snippet"
                   onClick={() => setSnippetName("")}
                 >
                   Save as snippet
                 </button>
               ) : (
-                <span className="imdx-snippet-save">
+                <span className="mdmx-snippet-save">
                   <input
-                    className="imdx-snippet-input"
+                    className="mdmx-snippet-input"
                     type="text"
                     autoFocus
                     placeholder="Snippet name"
@@ -337,7 +419,7 @@ export function IMDXEditor({
                   />
                   <button
                     type="button"
-                    className="imdx-snippet-confirm"
+                    className="mdmx-snippet-confirm"
                     onClick={commitSnippet}
                     disabled={snippetName.trim() === ""}
                   >
@@ -348,7 +430,7 @@ export function IMDXEditor({
             ) : null}
             {onSave ? (
               <>
-                <span className="imdx-toolbar-status" data-status={saveStatus}>
+                <span className="mdmx-toolbar-status" data-status={saveStatus}>
                   {saveStatus === "saving"
                     ? "Saving…"
                     : saveStatus === "saved" && !dirty
@@ -361,7 +443,7 @@ export function IMDXEditor({
                 </span>
                 <button
                   type="button"
-                  className="imdx-toolbar-save"
+                  className="mdmx-toolbar-save"
                   onClick={handleSave}
                   disabled={saveStatus === "saving" || (!dirty && saveStatus !== "error")}
                 >
@@ -371,7 +453,7 @@ export function IMDXEditor({
             ) : null}
           </div>
         ) : null}
-        <div className="imdx-canvas" ref={mountRef} />
+        <div className="mdmx-canvas" ref={mountRef} onMouseDown={handleCanvasPointerDown} />
         {view && state ? <SlashMenu view={view} state={state} registry={registry} schema={schema} /> : null}
         {media && mediaPick ? (
           <MediaLibrary
@@ -397,20 +479,20 @@ export function IMDXEditor({
       />
 
       {/* Mobile-only floating controls (hidden on desktop via CSS). */}
-      <div className="imdx-mobile-fabs imdx-fabs-left">
+      <div className="mdmx-mobile-fabs mdmx-fabs-left">
         <button
           type="button"
-          className="imdx-fab"
+          className="mdmx-fab"
           aria-label="Open components"
           onClick={() => setMobilePanel((p) => (p === "palette" ? null : "palette"))}
         >
           <LayersIcon size={20} />
         </button>
       </div>
-      <div className="imdx-mobile-fabs imdx-fabs-right">
+      <div className="mdmx-mobile-fabs mdmx-fabs-right">
         <button
           type="button"
-          className="imdx-fab"
+          className="mdmx-fab"
           aria-label="Open source"
           onClick={() => {
             setSidebarMode("source");
@@ -421,7 +503,7 @@ export function IMDXEditor({
         </button>
         <button
           type="button"
-          className="imdx-fab"
+          className="mdmx-fab"
           aria-label="Open properties"
           onClick={() => {
             setSidebarMode("properties");
@@ -433,7 +515,7 @@ export function IMDXEditor({
       </div>
       {mobilePanel ? (
         <div
-          className="imdx-mobile-backdrop"
+          className="mdmx-mobile-backdrop"
           aria-hidden="true"
           onClick={() => setMobilePanel(null)}
         />

@@ -62,18 +62,18 @@ describe("validateFrontmatter", () => {
     ).toEqual([]);
   });
 
-  it("flags a missing required field as IMDX008", () => {
+  it("flags a missing required field as MDMX008", () => {
     const diags = validateFrontmatter({ status: "draft" }, posts);
-    expect(diags.map((d) => d.code)).toEqual(["IMDX008"]);
+    expect(diags.map((d) => d.code)).toEqual(["MDMX008"]);
     expect(diags[0]!.message).toContain("title");
   });
 
-  it("flags a bad select value and wrong type as IMDX009", () => {
+  it("flags a bad select value and wrong type as MDMX009", () => {
     const diags = validateFrontmatter(
       { title: "Hi", status: "live", views: "lots" },
       posts,
     );
-    expect(diags.map((d) => d.code)).toEqual(["IMDX009", "IMDX009"]);
+    expect(diags.map((d) => d.code)).toEqual(["MDMX009", "MDMX009"]);
   });
 
   it("allows undeclared frontmatter keys", () => {
@@ -85,7 +85,7 @@ describe("validateFrontmatter", () => {
 
 describe("Registry.collectionForPath", () => {
   const registry = new Registry({
-    imdxRegistryVersion: 1,
+    mdmxRegistryVersion: 1,
     components: [],
     collections: [
       posts,

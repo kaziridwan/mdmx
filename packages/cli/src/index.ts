@@ -1,5 +1,5 @@
 export { loadConfig, DEFAULT_CONFIG } from "./config.js";
-export type { IMDXConfig } from "./config.js";
+export type { MDMXConfig } from "./config.js";
 export { generate } from "./generate.js";
 export type { GenerateResult } from "./generate.js";
 export { check, formatDiagnostics } from "./check.js";

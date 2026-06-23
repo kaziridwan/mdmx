@@ -2,25 +2,25 @@
   "name": "demo-next",
   "private": true,
   "version": "0.0.0",
-  "description": "Runnable Next.js app dogfooding the full iMDX loop: edit components-as-blocks, save canonical iMDX to the local repo (no GitHub needed)",
+  "description": "Runnable Next.js app dogfooding the full MDMX loop: edit components-as-blocks, save canonical MDMX to the local repo (no GitHub needed)",
   "scripts": {
-    "generate": "imdx generate",
-    "predev": "imdx generate",
+    "generate": "mdmx generate",
+    "predev": "mdmx generate",
     "dev": "next dev",
-    "prebuild": "imdx generate",
+    "prebuild": "mdmx generate",
     "build": "next build",
     "start": "next start"
   },
   "dependencies": {
-    "@imdx/core": "workspace:*",
-    "@imdx/editor": "workspace:*",
-    "@imdx/next": "workspace:*",
+    "@mdmx/core": "workspace:*",
+    "@mdmx/editor": "workspace:*",
+    "@mdmx/next": "workspace:*",
     "next": "14.2.18",
     "react": "~18.3.1",
     "react-dom": "~18.3.1"
   },
   "devDependencies": {
-    "@imdx/cli": "workspace:*",
+    "@mdmx/cli": "workspace:*",
     "@types/node": "~22.10.10",
     "@types/react": "~18.3.18",
     "@types/react-dom": "~18.3.5",

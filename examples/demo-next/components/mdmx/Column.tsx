@@ -1,11 +1,11 @@
 import type { ReactNode } from "react";
-import { defineIMDX } from "@imdx/core";
+import { defineMDMX } from "@mdmx/core";
 
 function Column({ children }: { children: ReactNode }) {
   return <div className="col">{children}</div>;
 }
 
-export default defineIMDX(Column, {
+export default defineMDMX(Column, {
   name: "Column",
   category: "Layout",
   icon: "square",

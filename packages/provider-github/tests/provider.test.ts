@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { ConflictError, PathSafetyError } from "@imdx/core";
+import { ConflictError, PathSafetyError } from "@mdmx/core";
 import { GitHubProvider } from "../src/index.js";
 import { FakeGitHub } from "./fake-github.js";
 
@@ -47,7 +47,7 @@ describe("GitHubProvider", () => {
         { path: "content/posts/new.mdx", content: "# New post\n" },
         { path: "public/media/img.png", content: new Uint8Array([137, 80, 78, 71]) },
       ],
-      "imdx: create posts/new",
+      "mdmx: create posts/new",
     );
 
     // Exactly one new commit, fast-forwarded from the previous head.
@@ -107,7 +107,7 @@ describe("GitHubProvider", () => {
 
   it("deletes files via a tree entry with sha null", async () => {
     const { provider } = setup();
-    await provider.delete("content/posts/old.mdx", "imdx: delete posts/old");
+    await provider.delete("content/posts/old.mdx", "mdmx: delete posts/old");
     const files = await provider.list("content/posts");
     expect(files.map((f) => f.path)).toEqual(["content/posts/hello.mdx"]);
   });

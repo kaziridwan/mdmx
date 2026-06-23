@@ -21,10 +21,10 @@ and ADRs you updated when you summarize your work.
 ## Quick reference
 
 ```sh
-pnpm install && pnpm test      # builds @imdx/core first, then all suites
+pnpm install && pnpm test      # builds @mdmx/core first, then all suites
 pnpm build                     # all packages
 pnpm check                     # typecheck all packages
-# single package after editing core: pnpm --filter @imdx/core build first
+# single package after editing core: pnpm --filter @mdmx/core build first
 ```
 
 - Grammar/registry/provider spec: **SPEC.md**.

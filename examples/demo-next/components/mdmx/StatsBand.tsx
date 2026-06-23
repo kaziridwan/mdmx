@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { defineIMDX } from "@imdx/core";
+import { defineMDMX } from "@mdmx/core";
 
 interface StatsBandProps {
   title?: string;
@@ -15,7 +15,7 @@ function StatsBandImpl({ title, children }: StatsBandProps) {
   );
 }
 
-export const StatsBand = defineIMDX(StatsBandImpl, {
+export const StatsBand = defineMDMX(StatsBandImpl, {
   name: "StatsBand",
   category: "Marketing",
   icon: "bar-chart-2",

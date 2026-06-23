@@ -17,10 +17,10 @@ importers:
 
   examples/demo:
     dependencies:
-      '@imdx/cli':
+      '@mdmx/cli':
         specifier: workspace:*
         version: link:../../packages/cli
-      '@imdx/core':
+      '@mdmx/core':
         specifier: workspace:*
         version: link:../../packages/core
     devDependencies:
@@ -30,13 +30,13 @@ importers:
 
   examples/demo-next:
     dependencies:
-      '@imdx/core':
+      '@mdmx/core':
         specifier: workspace:*
         version: link:../../packages/core
-      '@imdx/editor':
+      '@mdmx/editor':
         specifier: workspace:*
         version: link:../../packages/editor
-      '@imdx/next':
+      '@mdmx/next':
         specifier: workspace:*
         version: link:../../packages/next
       next:
@@ -49,7 +49,7 @@ importers:
         specifier: ~18.3.1
         version: 18.3.1(react@18.3.1)
     devDependencies:
-      '@imdx/cli':
+      '@mdmx/cli':
         specifier: workspace:*
         version: link:../../packages/cli
       '@types/node':
@@ -67,10 +67,10 @@ importers:
 
   examples/editor-playground:
     dependencies:
-      '@imdx/core':
+      '@mdmx/core':
         specifier: workspace:*
         version: link:../../packages/core
-      '@imdx/editor':
+      '@mdmx/editor':
         specifier: workspace:*
         version: link:../../packages/editor
       react:
@@ -98,7 +98,7 @@ importers:
 
   packages/cli:
     dependencies:
-      '@imdx/core':
+      '@mdmx/core':
         specifier: workspace:*
         version: link:../core
       tinyglobby:
@@ -163,7 +163,7 @@ importers:
 
   packages/editor:
     dependencies:
-      '@imdx/core':
+      '@mdmx/core':
         specifier: workspace:*
         version: link:../core
       prosemirror-commands:
@@ -224,7 +224,7 @@ importers:
 
   packages/next:
     dependencies:
-      '@imdx/core':
+      '@mdmx/core':
         specifier: workspace:*
         version: link:../core
     devDependencies:
@@ -234,7 +234,7 @@ importers:
 
   packages/provider-github:
     dependencies:
-      '@imdx/core':
+      '@mdmx/core':
         specifier: workspace:*
         version: link:../core
     devDependencies:

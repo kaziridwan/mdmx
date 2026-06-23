@@ -1,10 +1,10 @@
 {
-  "name": "@imdx/cli",
-  "version": "0.3.0",
-  "description": "iMDX tooling: registry codegen (generate), content linting (check), and watch mode (dev)",
+  "name": "@mdmx/cli",
+  "version": "0.3.1",
+  "description": "MDMX tooling: registry codegen (generate), content linting (check), and watch mode (dev)",
   "type": "module",
   "bin": {
-    "imdx": "./dist/bin.js"
+    "mdmx": "./dist/bin.js"
   },
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -14,7 +14,7 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@imdx/core": "workspace:*",
+    "@mdmx/core": "workspace:*",
     "tinyglobby": "~0.2.15",
     "typescript": "~5.5.4"
   },

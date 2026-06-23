@@ -1,8 +1,8 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
-import { Registry, type RegistrySpec } from "@imdx/core";
+import { Registry, type RegistrySpec } from "@mdmx/core";
 
-// Shared server-side iMDX configuration for the demo app.
+// Shared server-side MDMX configuration for the demo app.
 
 export const CONTENT_DIR = "content";
 export const MEDIA_DIR = "public/media";
@@ -14,7 +14,7 @@ export function projectRoot(): string {
 }
 
 export function registrySpec(): RegistrySpec {
-  const path = join(projectRoot(), ".imdx", "registry.json");
+  const path = join(projectRoot(), ".mdmx", "registry.json");
   return JSON.parse(readFileSync(path, "utf8")) as RegistrySpec;
 }
 

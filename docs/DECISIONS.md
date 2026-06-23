@@ -1,6 +1,6 @@
 # Architecture Decision Record
 
-Every significant decision behind iMDX, with the reasoning and the
+Every significant decision behind MDMX, with the reasoning and the
 alternatives that were rejected. This is the "why" companion to SPEC.md's
 "what". Append new decisions; don't rewrite history — supersede with a new
 entry that references the old one.
@@ -10,14 +10,14 @@ Status.
 
 ---
 
-## ADR-001 — iMDX is a validation layer over MDX, not a new parser
+## ADR-001 — MDMX is a validation layer over MDX, not a new parser
 
 **Context.** We need a content format that round-trips losslessly through a
 block editor while staying plain text in git.
 
-**Decision.** Define iMDX as a strict *subset* of MDX, validated as a
+**Decision.** Define MDMX as a strict *subset* of MDX, validated as a
 whitelist over the standard mdast (+ mdx-jsx) AST. Reuse `@mdx-js`/`remark`
-for parsing; "is this valid iMDX?" is a pure AST-walking function.
+for parsing; "is this valid MDMX?" is a pure AST-walking function.
 
 **Rationale.** Inherits battle-tested parsing; the same parse path serves the
 CLI, editor, and CI; validation runs headlessly in Node.
@@ -26,7 +26,7 @@ CLI, editor, and CI; validation runs headlessly in Node.
 from MDX); allowing full MDX (impossible to round-trip — arbitrary JS
 expressions, imports, spreads).
 
-**Status.** Implemented in `@imdx/core` (`parse.ts`, `validate.ts`).
+**Status.** Implemented in `@mdmx/core` (`parse.ts`, `validate.ts`).
 
 ---
 
@@ -49,7 +49,7 @@ round-trip and security problems). Computed behavior belongs *inside*
 components, configured by JSON props.
 
 **Status.** Enforced in `core/src/props.ts` (content) and
-`cli/src/static-eval.ts` (defineIMDX config). Both must change together.
+`cli/src/static-eval.ts` (defineMDMX config). Both must change together.
 
 ---
 
@@ -82,7 +82,7 @@ one output line.
 hostile to adopting legacy/hand-edited files.
 
 **Decision.** When the editor hits invalid content (an expression, unknown
-component, raw HTML), wrap it in an opaque read-only `imdx_raw` block that
+component, raw HTML), wrap it in an opaque read-only `mdmx_raw` block that
 stores the exact source slice and re-emits it byte-for-byte. The CLI's
 `check`, by contrast, reports these as errors.
 
@@ -90,14 +90,14 @@ stores the exact source slice and re-emits it byte-for-byte. The CLI's
 without compromising the format.
 
 **Status.** `editor/src/from-mdast.ts` (raw wrapping) and `to-mdast.ts`
-(verbatim re-emit); `core/src/validate.ts` (IMDX003).
+(verbatim re-emit); `core/src/validate.ts` (MDMX003).
 
 ---
 
 ## ADR-005 — Diagnostics are structured and code-stable
 
 **Decision.** The validator returns `{code, severity, message, span}` with
-1-indexed line/column spans. Codes IMDX001–007 have fixed meanings (see
+1-indexed line/column spans. Codes MDMX001–007 have fixed meanings (see
 SPEC.md §4); add new codes, never repurpose.
 
 **Rationale.** Spans let the editor highlight the exact raw block, the CLI
@@ -108,18 +108,18 @@ consumers can match on.
 
 ---
 
-## ADR-006 — defineIMDX with type inference, codegen via the TS compiler API
+## ADR-006 — defineMDMX with type inference, codegen via the TS compiler API
 
 **Context.** Authoring component metadata by hand is tedious and drifts from
 the real types.
 
-**Decision.** Developers wrap components in `defineIMDX(Component, config)`.
+**Decision.** Developers wrap components in `defineMDMX(Component, config)`.
 The CLI extracts prop names/types/optionality/JSDoc from the TypeScript type
 and overlays explicit config (explicit wins). Extraction uses the **TS
 compiler API directly**, not react-docgen-typescript.
 
 **Rationale.** react-docgen-typescript breaks on HOC-style
-`export default defineIMDX(...)` wrappers; the compiler API gives exact
+`export default defineMDMX(...)` wrappers; the compiler API gives exact
 control — find the call, read the props type off the component, statically
 evaluate the config literal. The CLI never executes user code.
 
@@ -132,8 +132,8 @@ runtime reflection (requires executing the app).
 
 ## ADR-007 — Two generated artifacts: registry.json + registry.ts
 
-**Decision.** `imdx generate` emits `.imdx/registry.json` (pure data, no
-React — consumed by validator, CLI, CI, palette) and `.imdx/registry.ts`
+**Decision.** `mdmx generate` emits `.mdmx/registry.json` (pure data, no
+React — consumed by validator, CLI, CI, palette) and `.mdmx/registry.ts`
 (imports the actual components and binds them — consumed by the editor and
 the site renderer). The spec is inlined into the .ts to dodge JSON-module
 interop differences across bundlers.
@@ -150,7 +150,7 @@ symmetry is what guarantees WYSIWYG matches production.
 ## ADR-008 — Function props excluded; required function prop is an error
 
 **Decision.** Function-typed props are silently dropped from the editable
-spec (they can't be serialized into iMDX). A *required* function prop is a
+spec (they can't be serialized into MDMX). A *required* function prop is a
 build error — the component could never appear validly in content.
 
 **Status.** `cli/src/extract.ts` (warning vs. error), `infer.ts`
@@ -179,7 +179,7 @@ tests run entirely in Node without a DOM.
 **Decision.** The ProseMirror schema has a fixed markdown core plus one node
 type per registry component, generated at editor boot. Children policies
 compile to content expressions: `none`→atom, `rich-text`→`paragraph*`,
-`blocks`→`block*`, `allowedChildren:[X]`→`imdx_X*`.
+`blocks`→`block*`, `allowedChildren:[X]`→`mdmx_X*`.
 
 **Rationale.** Registry constraints become *physics* — an illegal drop simply
 won't happen because the content expression rejects it (e.g. `Column` outside
@@ -220,8 +220,8 @@ tested and intentional.
 
 ## ADR-013 — Inline (text-level) components excluded from v1
 
-**Decision.** Only block-level JSX (`mdxJsxFlowElement`) is valid iMDX.
-Inline usage like `<Badge/>` mid-sentence (`mdxJsxTextElement`) is IMDX003.
+**Decision.** Only block-level JSX (`mdxJsxFlowElement`) is valid MDMX.
+Inline usage like `<Badge/>` mid-sentence (`mdxJsxTextElement`) is MDMX003.
 
 **Rationale.** Halves editor complexity (no inline NodeViews, simpler
 selection model). Revisit in a later spec version if demanded.
@@ -233,7 +233,7 @@ selection model). Revisit in a later spec version if demanded.
 ## ADR-014 — ContentProvider contract lives in core; two impls ship
 
 **Decision.** The storage interface (`list/read/commit/delete`) lives in
-`@imdx/core` as type-only code. `commit` takes an **array** of changes (atomic
+`@mdmx/core` as type-only code. `commit` takes an **array** of changes (atomic
 multi-file). Two implementations ship: `GitHubProvider` (Git Data API) and
 `LocalProvider` (dev-mode filesystem). Define the interface now even though
 GitLab is deferred, so GitHub assumptions don't leak into core/editor.
@@ -298,9 +298,9 @@ slot in later.
 
 ## ADR-018 — API handlers are web-standard Request→Response
 
-**Decision.** `createIMDXHandlers()` returns `{GET,POST,PUT,DELETE}` functions
+**Decision.** `createMDMXHandlers()` returns `{GET,POST,PUT,DELETE}` functions
 typed as `Request → Response`, mountable directly as an App Router catch-all
-route. Server **re-runs the iMDX validator on every save** (never trusts the
+route. Server **re-runs the MDMX validator on every save** (never trusts the
 editor client), enforces origin checks on mutations, prefix-confines paths,
 maps `ConflictError`→409 / `PathSafetyError`→400 / `AuthError`→status.
 
@@ -340,7 +340,7 @@ delete). It is the **visual/behavioral spec** for the real editor, not
 production code.
 
 **Signature design choice.** The split view — blocks on the left, live
-canonical iMDX on the right with active-block sync — makes the round-trip
+canonical MDMX on the right with active-block sync — makes the round-trip
 *visible*; that's the product thesis. (See `editor/DESIGN_NOTES.txt`.)
 
 **Drag-and-drop model.** Unified `{kind:"move"|"new"}` drag; canvas-level
@@ -354,7 +354,7 @@ it belongs in the real ProseMirror NodeViews (ADR-021).
 
 ---
 
-## ADR-021 — TwoColumn / nested editing belongs in @imdx/editor, not the prototype
+## ADR-021 — TwoColumn / nested editing belongs in @mdmx/editor, not the prototype
 
 **Context.** Making TwoColumn functional requires a recursive tree model,
 nested editable regions, and nested drop targets.
@@ -362,7 +362,7 @@ nested editable regions, and nested drop targets.
 **Decision.** The headless layers (schema content expressions, converters,
 validator) already handle nesting and are tested. The remaining work —
 NodeViews with `contentDOM`-placed editable holes, nested drop detection via
-ProseMirror's `dropPoint` — should be built **directly in `@imdx/editor`**,
+ProseMirror's `dropPoint` — should be built **directly in `@mdmx/editor`**,
 not retrofitted into the flat-list prototype.
 
 **Rationale.** Adding recursive nesting to the prototype means reimplementing
@@ -415,7 +415,7 @@ are React vs. cheap plain DOM. Keeping the tested `buildSchema()` authoritative
 preserves the round-trip invariants with no schema reconciliation. The only
 thing TipTap would have provided — React-in-PM — is the small adapter we wrote.
 
-**Status.** Done for the flat editor (`editor/src/react/*`, `@imdx/editor/react`
+**Status.** Done for the flat editor (`editor/src/react/*`, `@mdmx/editor/react`
 export). Nested editing (TwoColumn) reuses the same adapter via `contentDOM` and
 is the next phase (wiki/TwoColumn, ADR-021).
 
@@ -423,7 +423,7 @@ is the next phase (wiki/TwoColumn, ADR-021).
 
 ## ADR-024 — `localMode` for the API handlers (run without GitHub)
 
-**Context.** `createIMDXHandlers` required GitHub OAuth on every non-auth route.
+**Context.** `createMDMXHandlers` required GitHub OAuth on every non-auth route.
 That's correct for a deployed CMS but blocks the most useful thing for authoring
 and demos: running the editor entirely locally against the working tree. The
 roadmap's "runnable demo Next.js app" needs a no-OAuth path.
@@ -456,14 +456,14 @@ readers happened to filter on. Phase 2 needed typed collections and a real
 editing surface for frontmatter.
 
 **Decision.**
-- **Collections** are authored in `imdx.config.json` (`collections: { name:
+- **Collections** are authored in `mdmx.config.json` (`collections: { name:
   { dir, fields } }`, fields reusing the shared `ControlSpec`) and emitted into
-  the registry by `imdx generate` as `CollectionSpec[]`. The content `hash`
+  the registry by `mdmx generate` as `CollectionSpec[]`. The content `hash`
   covers them. `Registry.collectionForPath()` resolves a path by longest `dir`
   prefix.
-- **Validation**: `validateFrontmatter()` adds **IMDX008** (required field
-  missing) and **IMDX009** (value/type mismatch); undeclared keys are allowed.
-  Wired into `imdx check` and the save API (strict → 422, report → save + return
+- **Validation**: `validateFrontmatter()` adds **MDMX008** (required field
+  missing) and **MDMX009** (value/type mismatch); undeclared keys are allowed.
+  Wired into `mdmx check` and the save API (strict → 422, report → save + return
   diagnostics).
 - **Editing**: the editor gains a `FrontmatterPanel` (sharing the prop panel's
   `Control` renderer). A field edit re-serializes the whole block to **canonical
@@ -486,9 +486,9 @@ a one-line diff.
 `Editor.tsx`; `examples/demo-next`. SPEC §1.1/§4/§5 updated. Tested across all
 four packages.
 
-## ADR-026 — `imdx dev` watch mode: injectable watcher, hash-diff, no outDir
+## ADR-026 — `mdmx dev` watch mode: injectable watcher, hash-diff, no outDir
 
-**Context.** `imdx generate` is a one-shot; authoring components meant re-running
+**Context.** `mdmx generate` is a one-shot; authoring components meant re-running
 it by hand. Phase 2 listed a watch mode ("HMR-style palette refresh"). The risk
 in any watcher is two-fold: (1) it's timing-dependent and therefore hard to test
 deterministically, and (2) regenerating writes `registry.{json,ts}` into the
@@ -497,9 +497,9 @@ back in as a change event — an infinite loop.
 
 **Decision.**
 - **The watch surface is exactly the component glob's static base + the config
-  file, never the `outDir`.** `staticBase("components/imdx/**/*.tsx")` →
-  `components/imdx`; `watchTargets` unions those with `imdx.config.{json,mjs}`
-  and filters to paths that exist. The default `outDir` (`.imdx`) is never under
+  file, never the `outDir`.** `staticBase("components/mdmx/**/*.tsx")` →
+  `components/mdmx`; `watchTargets` unions those with `mdmx.config.{json,mjs}`
+  and filters to paths that exist. The default `outDir` (`.mdmx`) is never under
   a component dir, so generate's own writes don't retrigger it.
 - **The watcher and the debounce scheduler are injectable** (`Watcher` type;
   `fsWatcher` is the `node:fs.watch` default). Tests drive the loop with a fake
@@ -525,17 +525,17 @@ refresh its palette/schema is not yet wired — `dev` regenerates artifacts only
 
 ## ADR-027 — Media library via an editor-side `MediaSource` adapter
 
-**Context.** The `@imdx/next` API already had `POST /media` (upload) and could
+**Context.** The `@mdmx/next` API already had `POST /media` (upload) and could
 list a media dir through `GET /files`, but there was no UI to browse, upload, or
 insert media. The question was where the browser lives and how it talks to
-storage without coupling the editor to `@imdx/next` (Invariant 9 keeps layers
+storage without coupling the editor to `@mdmx/next` (Invariant 9 keeps layers
 from depending upward).
 
 **Decision.**
-- **The editor owns the UI but not the transport.** `IMDXEditor` takes an
+- **The editor owns the UI but not the transport.** `MDMXEditor` takes an
   optional `media: MediaSource` prop — an interface with `list()` and
   `upload()` — mirroring how `onSave` abstracts persistence. The host wires it
-  to `@imdx/next`'s routes, a GitHub provider, or a fake. The editor never
+  to `@mdmx/next`'s routes, a GitHub provider, or a fake. The editor never
   fetches directly; the `MediaLibrary` modal calls only through the adapter.
 - **Insertion reuses the existing CommonMark `image` node** (already in the
   schema, converters, and SPEC §2). `insertImage` drops an inline image at the
@@ -546,13 +546,13 @@ from depending upward).
   repo-safe basename, `mediaPath` joins under the media dir, `bytesToBase64`
   builds the `POST /media` payload). The library component is the only
   DOM-coupled piece; jsdom covers list/filter/pick/upload.
-- **The upload type-whitelist stays a server concern.** `@imdx/next`'s
+- **The upload type-whitelist stays a server concern.** `@mdmx/next`'s
   `MEDIA_EXTENSIONS` (png/jpg/jpeg/gif/webp/avif — deliberately *not* svg, which
   can carry scripts) is the authority; the editor's `IMAGE_EXTENSIONS` governs
   only thumbnail *preview*. A rejected upload surfaces the server error in the
   modal rather than being pre-validated client-side, keeping one source of truth.
 
-**Why an adapter over a built-in fetch client.** Hard-coding `fetch("/api/imdx/
+**Why an adapter over a built-in fetch client.** Hard-coding `fetch("/api/mdmx/
 media")` into the editor would couple it to one mount path and one backend, and
 break the "main entry is React/Next-free" boundary. The adapter keeps the editor
 testable with an in-memory fake and reusable outside Next.
@@ -572,7 +572,7 @@ component *out* of the Column the cursor was in up to the document top level; an
 ProseMirror schema — every component node is in the `block` group, so the schema
 happily lets a `Column` be a direct child of `doc` (or of another Column). A
 slash insert or rail drop could therefore build a schema-valid but
-iMDX-*invalid* document (IMDX005) with no immediate feedback. This **refines
+MDMX-*invalid* document (MDMX005) with no immediate feedback. This **refines
 ADR-010**: registry constraints are "physics" only on the *children* axis
 (`allowedChildren` → the parent's content expression, so `TwoColumn` rejects a
 bare paragraph); the *parents* axis (`allowedParents`) is policy the editor must
@@ -617,7 +617,7 @@ for PM-managed drags; internal block moves already indicate correctly.
 **Context.** After the media library (ADR-027), a second entry point was needed:
 `image`-typed prop/frontmatter controls should also open the library to pick a
 path. Controls are rendered deep in the tree (PropPanel/FrontmatterPanel →
-`Control`), far from the `IMDXEditor` that owns the modal, and there will be more
+`Control`), far from the `MDMXEditor` that owns the modal, and there will be more
 openers later (e.g. a `link` control). Passing `media` + open/close props down
 through every panel and control would be invasive and couple each control to the
 modal's lifecycle.
@@ -652,16 +652,16 @@ room for a comfortable editing column.
 
 **Decision.** Collapse the two side panels into **one** right sidebar
 (`EditorSidebar`) with a header that toggles between **Source** (the live
-canonical iMDX view — the product's signature) and **Properties** (the selected
+canonical MDMX view — the product's signature) and **Properties** (the selected
 component's prop panel, or the document frontmatter panel when nothing is
 selected). The editor owns a `sidebarMode` state; default is **source** so the
 round-trip view — and the existing source-oriented tests — stay the landing view.
 The grid becomes three columns with the sidebar width behind a
-`--imdx-sidebar-width` CSS variable (the seam for a future drag-to-resize, S12).
+`--mdmx-sidebar-width` CSS variable (the seam for a future drag-to-resize, S12).
 
 **Consumer impact.** This changes the markup consumers style: the always-on
 `grid-column: 3/4` panels are gone; CSS moves to a 3-column grid plus
-`.imdx-sidebar*` classes. Both bundled stylesheets (`examples/demo-next`,
+`.mdmx-sidebar*` classes. Both bundled stylesheets (`examples/demo-next`,
 `examples/editor-playground`) were updated in lockstep; downstream consumers must
 do the same. `SourcePane`/`PropPanel`/`FrontmatterPanel` keep their own markup and
 classes — they're just mounted inside the sidebar body — so their styles carry
@@ -712,8 +712,8 @@ width (`min(440px, 92vw)`) and breakpoint are tunable; resize is desktop-only.
 **Context.** Users want an escape hatch — drop in custom HTML — and to "save it
 as a new component in the picker." Two hard constraints shape the design: (1)
 rendering arbitrary HTML is an XSS vector, and the same component renders at
-**build time** (no DOM) and in the editor; (2) iMDX components are *code*
-(`.tsx`) compiled into the registry by `imdx generate`, so the in-browser editor
+**build time** (no DOM) and in the editor; (2) MDMX components are *code*
+(`.tsx`) compiled into the registry by `mdmx generate`, so the in-browser editor
 cannot mint a real new component at runtime without a build step.
 
 **Decision.**
@@ -721,21 +721,21 @@ cannot mint a real new component at runtime without a build step.
   prop (textarea control). No grammar/registry/diagnostic change — it round-trips
   like any other component, so SPEC is untouched.
 - **Sanitize on render with a pure, dependency-free `sanitizeHtml`** living in
-  `@imdx/editor`'s React-free main entry (so the build-time render can import it
+  `@mdmx/editor`'s React-free main entry (so the build-time render can import it
   without a DOM). It strips active-content elements, `on*` handlers, and
   `javascript:` URLs. It is explicitly **best-effort** (a regex pass, not a
   parser) and documented as such — production untrusted input should use a real
   sanitizer (DOMPurify). Chosen over a DOM-based sanitizer because there is no DOM
   at build time and we won't add a heavy dep to the demo path.
 - **"Save as component" is a snippet, not codegen.** Saved HTML is persisted to
-  `localStorage` (`imdx:snippets`) and surfaced as a **Snippets** group in the
+  `localStorage` (`mdmx:snippets`) and surfaced as a **Snippets** group in the
   rail; inserting one drops an `<Html>` block carrying the saved markup. This is
   the pragmatic stand-in for `.tsx` codegen (which would require writing a file
-  and re-running `imdx generate` — a CLI/dev-server job, not an editor one).
+  and re-running `mdmx generate` — a CLI/dev-server job, not an editor one).
   Flagged to the user; revisit if true file-writing codegen is wanted.
 
-**Alternatives rejected.** Allowing raw HTML in the iMDX grammar (reopens the
-round-trip/security surface IMDX003 deliberately closes — raw HTML stays *out* of
+**Alternatives rejected.** Allowing raw HTML in the MDMX grammar (reopens the
+round-trip/security surface MDMX003 deliberately closes — raw HTML stays *out* of
 the subset; `<Html code="…">` keeps it as JSON-prop data instead). Runtime
 `.tsx` generation from the browser (no safe build step). A DOM/iframe sandbox
 (doesn't help the no-DOM build render).
@@ -743,6 +743,50 @@ the subset; `<Html code="…">` keeps it as JSON-prop data instead). Runtime
 **Status.** `editor/src/sanitize-html.ts`, `snippets.ts`, `Rail.tsx` (snippets
 group), `Editor.tsx` (insert + save affordance), main `index.ts` exports;
 `editor/tests/sanitize-html.test.ts` + `snippets.test.ts` + rail/editor-mount
-(+16). `examples/demo-next/components/imdx/Html.tsx`, showcase, CSS. No SPEC
+(+16). `examples/demo-next/components/mdmx/Html.tsx`, showcase, CSS. No SPEC
 change. Open: snippet rename/delete UI; selection-gated save trigger isn't
 jsdom-tested.
+
+## ADR-033 — Caret at the canvas edge + paste-image upload into the collection dir
+
+**Context.** Two editor gaps surfaced from authoring. (1) The canvas mount has
+large bottom padding; clicking it lands on the mount element, never the inner
+`.ProseMirror` editable, so ProseMirror's own click-to-place handling never
+fires and the caret appears to vanish below the last block — worse when that
+block is a non-textblock component (an atom you can't type into). (2) Authors
+expect to **paste a screenshot** and have it stored and inserted, and want
+pasted assets organized per post, not dumped in one flat media folder.
+
+**Decision.**
+- **Caret-at-edge is a host-level `mousedown` on the mount, not a ProseMirror
+  plugin.** When the target *is* the mount (so the click hit padding, not
+  content), compare the pointer Y to the editable's bounding box: below → select
+  doc end, above → doc start; side padding is left to default. If the doc ends in
+  a non-textblock node, append an empty paragraph first so there's a caret
+  target. Chosen over a "trailing-node" plugin that always keeps an empty
+  paragraph — that would risk dirtying canonical output (Invariant 1) and only an
+  explicit user click should mutate the doc.
+- **Paste-to-upload reuses the existing `MediaSource` adapter** (same seam as the
+  media library; no new transport). `handlePaste` pulls the first image from
+  `clipboardData` and uploads it; the destination is
+  `<mediaDir>/<collection-name>/pasted-<iso-timestamp>.<ext>`. The collection
+  subdir stays **within the API's media-dir containment check**, so path-safety
+  (Invariant 7) is unchanged; timestamped names avoid the never-overwrite
+  (`expectedShas: null`) media-commit path colliding. The collection name comes
+  from the editor's existing `collection` prop, read through a ref so the
+  long-lived ProseMirror view isn't rebuilt when it changes.
+
+**Alternatives rejected.** A trailing-paragraph plugin (canonical-output risk,
+above). Embedding pasted images as data-URLs (bloats content, not a repo asset).
+A new upload endpoint (the `/media` route + `MediaSource` already cover it).
+Putting the back link in the demo's chrome instead of the editor toolbar (the
+editor takes the full viewport; a toolbar affordance is the natural slot and
+stays framework-agnostic via a plain `backHref`).
+
+**Status.** `editor/src/react/Editor.tsx` (caret handler, `handlePaste`,
+`backHref`/`backLabel`), `editor/src/react/media.ts` (`imageFromClipboard`,
+`timestampedMediaName`, `pastedMediaPath`, `pastedImageUpload`);
+`editor/tests/media.test.ts` (+9). Example CMS UI (collections home,
+`/collections/[name]`, `CmsHeader`/`DocList`/`NewPostButton`, `lib/scaffold.ts`)
+is host-app scope, not core. No SPEC change. Open: media `list()` doesn't recurse
+into collection subdirs; caret-at-edge is layout-dependent so not jsdom-tested.

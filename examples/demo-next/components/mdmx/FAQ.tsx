@@ -1,11 +1,11 @@
 import type { ReactNode } from "react";
-import { defineIMDX } from "@imdx/core";
+import { defineMDMX } from "@mdmx/core";
 
 function FAQImpl({ children }: { children: ReactNode }) {
   return <section className="mk-faq">{children}</section>;
 }
 
-export const FAQ = defineIMDX(FAQImpl, {
+export const FAQ = defineMDMX(FAQImpl, {
   name: "FAQ",
   category: "Marketing",
   icon: "help-circle",

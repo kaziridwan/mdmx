@@ -12,7 +12,7 @@ export interface Snippet {
   html: string;
 }
 
-const STORAGE_KEY = "imdx:snippets";
+const STORAGE_KEY = "mdmx:snippets";
 
 function read(): Snippet[] {
   try {

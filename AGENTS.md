@@ -5,8 +5,8 @@ This file is the source of truth for agents working in this repository.
 
 ## What this project is
 
-**iMDX** is a git-native CMS for Next.js built around a strict, round-trippable
-subset of MDX ("iMDX") where the user's own React components are first-class
+**MDMX** is a git-native CMS for Next.js built around a strict, round-trippable
+subset of MDX ("MDMX") where the user's own React components are first-class
 editor blocks. Content lives as `.mdx` files in the user's repo; the editor is
 a Notion-style block editor; a codegen step turns the user's components into a
 typed registry that drives validation, the editor palette, and prop panels.
@@ -18,11 +18,11 @@ the package READMEs and commit messages.
 
 | Package | Path | Status | Contents |
 | --- | --- | --- | --- |
-| `@imdx/core` | `packages/core` | done | Parser (`parseMDX`/`parseDocument`), validator (`validateTree`, codes IMDX001–009), canonical serializer (`toMDX`), `Registry`, `defineIMDX`, provider contract (`ContentProvider`, `ConflictError`, `assertSafePath`). Zero React/Next deps — keep it that way. |
-| `@imdx/cli` | `packages/cli` | done | `imdx generate` (TS compiler API extraction → `.imdx/registry.json` + `.imdx/registry.ts`), `imdx check` (content lint), and `imdx dev` (watch components/config → debounced, hash-diffed regenerate; ADR-026). |
-| `@imdx/editor` | `packages/editor` | done | `buildSchema(registry)` (registry → ProseMirror schema), `fromMdast`/`toMdast` converters, mark canonicalization, `imdx_raw` fallback, `printPropValue`. React editor under `@imdx/editor/react` — React NodeViews on **raw ProseMirror** (ADR-023, supersedes ADR-019's TipTap), rail/slash menu/prop panel/live-source pane, nested editing (TwoColumn, ADR-021), and a media library (`MediaSource` adapter + `MediaLibrary`, ADR-027). Main entry stays React-free. Drop-indicator polish pending. |
-| `@imdx/next` | `packages/next` | done | `LocalProvider`, content readers, sealed sessions (`session.ts`), GitHub OAuth + push-permission authz (`auth.ts`), `createIMDXHandlers` content/media API (`api.ts`) with an opt-in `localMode` (no OAuth; ADR-024). The editor mount page + a runnable app are in `examples/demo-next`. |
-| `@imdx/provider-github` | `packages/provider-github` | done | `GitHubProvider` over the Git Data API: atomic multi-file commits (blobs→tree→commit→ref), optimistic concurrency, fast-forward-only ref updates. Tested against `tests/fake-github.ts`. |
+| `@mdmx/core` | `packages/core` | done | Parser (`parseMDX`/`parseDocument`), validator (`validateTree`, codes MDMX001–009), canonical serializer (`toMDX`), `Registry`, `defineMDMX`, provider contract (`ContentProvider`, `ConflictError`, `assertSafePath`). Zero React/Next deps — keep it that way. |
+| `@mdmx/cli` | `packages/cli` | done | `mdmx generate` (TS compiler API extraction → `.mdmx/registry.json` + `.mdmx/registry.ts`), `mdmx check` (content lint), and `mdmx dev` (watch components/config → debounced, hash-diffed regenerate; ADR-026). |
+| `@mdmx/editor` | `packages/editor` | done | `buildSchema(registry)` (registry → ProseMirror schema), `fromMdast`/`toMdast` converters, mark canonicalization, `mdmx_raw` fallback, `printPropValue`. React editor under `@mdmx/editor/react` — React NodeViews on **raw ProseMirror** (ADR-023, supersedes ADR-019's TipTap), rail/slash menu/prop panel/live-source pane, nested editing (TwoColumn, ADR-021), and a media library (`MediaSource` adapter + `MediaLibrary`, ADR-027). Main entry stays React-free. Drop-indicator polish pending. |
+| `@mdmx/next` | `packages/next` | done | `LocalProvider`, content readers, sealed sessions (`session.ts`), GitHub OAuth + push-permission authz (`auth.ts`), `createMDMXHandlers` content/media API (`api.ts`) with an opt-in `localMode` (no OAuth; ADR-024). The editor mount page + a runnable app are in `examples/demo-next`. |
+| `@mdmx/provider-github` | `packages/provider-github` | done | `GitHubProvider` over the Git Data API: atomic multi-file commits (blobs→tree→commit→ref), optimistic concurrency, fast-forward-only ref updates. Tested against `tests/fake-github.ts`. |
 
 `examples/demo` is a miniature consumer project used for end-to-end CLI runs.
 
@@ -37,28 +37,28 @@ cd packages/<name> && pnpm exec vitest run   # one package
 # convenience wrappers (scripts/, POSIX sh) — see scripts/README.md
 pnpm dev:next               # build deps + run examples/demo-next (local CMS)
 pnpm dev:playground         # build deps + run the Vite editor playground
-pnpm generate               # regenerate .imdx/registry.* for example apps
+pnpm generate               # regenerate .mdmx/registry.* for example apps
 pnpm verify                 # typecheck + test
 pnpm clean                  # remove build artifacts (--all wipes node_modules)
 ```
 
-**Build-order:** dependent packages resolve `@imdx/core` through its built
+**Build-order:** dependent packages resolve `@mdmx/core` through its built
 `dist/`. The root `pnpm test`, `pnpm build`, and `pnpm check` scripts all
 build core first, so a clean `pnpm install && pnpm test` works. If you run a
 single dependent package's vitest directly (`cd packages/editor && pnpm exec vitest`)
-after editing core, rebuild core first (`pnpm --filter @imdx/core build`) or you'll
+after editing core, rebuild core first (`pnpm --filter @mdmx/core build`) or you'll
 see phantom "has no exported member" errors.
 
 ## Conventions
 
 - ESM throughout; `module: NodeNext`. Relative imports **must** use the `.js`
   suffix (`import x from "./types.js"`), even from `.ts` files.
-- Internal `@imdx/*` deps use the **`workspace:*`** protocol, never a plain
+- Internal `@mdmx/*` deps use the **`workspace:*`** protocol, never a plain
   version. pnpm 10 won't reliably link plain-versioned siblings, so a plain
-  `"@imdx/x": "0.1.0"` makes `pnpm install` try (and fail) to fetch it from npm.
+  `"@mdmx/x": "0.1.0"` makes `pnpm install` try (and fail) to fetch it from npm.
 - Strict TS, `noUncheckedIndexedAccess` is on — index access yields `T | undefined`.
 - Tests live in `packages/*/tests`, fixtures under `tests/fixtures`.
-- Generated artifacts go to `.imdx/` (gitignored).
+- Generated artifacts go to `.mdmx/` (gitignored).
 - The container shell is `dash`: **no brace expansion** in scripts.
 
 ## Invariants — do not break these
@@ -81,8 +81,8 @@ see phantom "has no exported member" errors.
    - text → mdast → ProseMirror → mdast → text is byte-identical for canonical
      input (editor `convert.test.ts`)
    - editing one prop changes exactly one output line (both suites)
-   - `imdx_raw` regions serialize back **verbatim**
-4. **Diagnostic codes are stable API.** IMDX001–009 meanings are fixed (008/009 = frontmatter) (see
+   - `mdmx_raw` regions serialize back **verbatim**
+4. **Diagnostic codes are stable API.** MDMX001–009 meanings are fixed (008/009 = frontmatter) (see
    SPEC.md). Add new codes; never repurpose existing ones.
 5. **Mark priority** (`MARK_PRIORITY` in `packages/editor/src/schema.ts`):
    link outermost (links must never split), `code` innermost (mdast
@@ -97,7 +97,7 @@ see phantom "has no exported member" errors.
    `expectedShas` (with `null` = must-not-exist) and throws `ConflictError` on
    mismatch. `LocalProvider` intentionally mirrors `GitHubProvider` here — it
    is the reference implementation. Keep them in lockstep.
-9. **`@imdx/core` stays dependency-light** (no React, no Node-only APIs except
+9. **`@mdmx/core` stays dependency-light** (no React, no Node-only APIs except
    in provider *types*, which are type-only). The CLI/editor/next layers
    depend on core, never the reverse; no cross-dependencies between siblings
    except via core.
@@ -124,7 +124,7 @@ see phantom "has no exported member" errors.
 
 - MDX whitespace inside JSX children: indented markdown can parse as code
   blocks; rich-text children are modeled as `paragraph*` for this reason.
-- Inline (text-level) JSX is deliberately **not** in iMDX v1 (IMDX003).
+- Inline (text-level) JSX is deliberately **not** in MDMX v1 (MDMX003).
 - `remark-stringify` minor bumps can change output bytes — see invariant 1.
 - `strong` wrapping an entire `link` re-nests as link>strong once
   (canonicalization); idempotent thereafter. Covered by a test; don't "fix" it.

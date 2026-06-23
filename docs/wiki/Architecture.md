@@ -2,13 +2,13 @@
 
 ## The pipeline
 
-iMDX is a pipeline with three representations of a document and a codegen
+MDMX is a pipeline with three representations of a document and a codegen
 side-channel that types it all.
 
 ```
-                 imdx generate (CLI)
-   components/*.tsx ─────────────────────►  .imdx/registry.json  (data)
-        │  defineIMDX()                      .imdx/registry.ts    (bindings)
+                 mdmx generate (CLI)
+   components/*.tsx ─────────────────────►  .mdmx/registry.json  (data)
+        │  defineMDMX()                      .mdmx/registry.ts    (bindings)
         │                                          │
         │                                          ▼  drives
         ▼                              ┌───────────────────────────┐
@@ -19,7 +19,7 @@ side-channel that types it all.
    MDX text  ⇄  mdast  ⇄  ProseMirror doc
    (storage)    (hub)       (editing)
       │           │
-      │           └── validate.ts → diagnostics (IMDX001–007)
+      │           └── validate.ts → diagnostics (MDMX001–007)
       │
       ▼
    ContentProvider (GitHub Git Data API | local FS)  →  git repo
@@ -36,11 +36,11 @@ validator, CLI, and editor, and round-trip tests run headlessly.
 
 | Package | Depends on | Role |
 | --- | --- | --- |
-| `@imdx/core` | (nothing heavy) | The format: parse, validate, serialize; Registry; defineIMDX; ContentProvider contract + path safety. Zero React/Next. |
-| `@imdx/cli` | core | `imdx generate` (type extraction → registry), `imdx check` (lint). |
-| `@imdx/editor` | core | Registry→ProseMirror schema; mdast⇄PM converters; command/palette layer. React UI chrome pending. |
-| `@imdx/next` | core | LocalProvider, build-time readers, sealed sessions, GitHub OAuth, content/media API handlers. Editor mount page pending. |
-| `@imdx/provider-github` | core | GitHubProvider over the Git Data API: atomic multi-file commits, conflict detection. |
+| `@mdmx/core` | (nothing heavy) | The format: parse, validate, serialize; Registry; defineMDMX; ContentProvider contract + path safety. Zero React/Next. |
+| `@mdmx/cli` | core | `mdmx generate` (type extraction → registry), `mdmx check` (lint). |
+| `@mdmx/editor` | core | Registry→ProseMirror schema; mdast⇄PM converters; command/palette layer. React UI chrome pending. |
+| `@mdmx/next` | core | LocalProvider, build-time readers, sealed sessions, GitHub OAuth, content/media API handlers. Editor mount page pending. |
+| `@mdmx/provider-github` | core | GitHubProvider over the Git Data API: atomic multi-file commits, conflict detection. |
 
 Dependency discipline (ADR, Invariant #9): everything depends on `core`;
 `core` depends on nothing heavy; siblings never depend on each other except
@@ -61,8 +61,8 @@ use possible.
 
 ## Request lifecycle (editor save)
 
-1. Editor serializes its ProseMirror doc → canonical iMDX (`toMdast`→`toMDX`).
-2. `PUT /api/imdx/file` with `{path, content, expectedSha}`.
+1. Editor serializes its ProseMirror doc → canonical MDMX (`toMdast`→`toMDX`).
+2. `PUT /api/mdmx/file` with `{path, content, expectedSha}`.
 3. Handler: check session → re-verify repo permission (≤5 min cache) →
    origin check → `assertSafePath` + prefix confinement → **re-run validator**
    → `provider.commit([...], msg, {expectedShas})`.

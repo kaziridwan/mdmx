@@ -2,7 +2,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { createElement } from "react";
 import { createRoot, type Root } from "react-dom/client";
-import type { ControlSpec, JsonValue } from "@imdx/core";
+import type { ControlSpec, JsonValue } from "@mdmx/core";
 import { Control } from "../src/react/controls.js";
 import { MediaPickerContext, type RequestMedia } from "../src/react/media-context.js";
 import type { MediaItem } from "../src/react/media.js";
@@ -56,7 +56,7 @@ describe("Control — image type", () => {
       requestMedia,
     });
 
-    const browse = el.querySelector(".imdx-control-browse") as HTMLButtonElement;
+    const browse = el.querySelector(".mdmx-control-browse") as HTMLButtonElement;
     expect(browse).not.toBeNull();
     browse.click();
     expect(captured).not.toBeNull();
@@ -66,20 +66,20 @@ describe("Control — image type", () => {
 
   it("hides Browse when no media picker is wired", async () => {
     const el = await renderControl({ control: { type: "image" }, value: "" });
-    expect(el.querySelector(".imdx-control-browse")).toBeNull();
+    expect(el.querySelector(".mdmx-control-browse")).toBeNull();
     // Still a usable text input.
-    expect(el.querySelector("input.imdx-control")).not.toBeNull();
+    expect(el.querySelector("input.mdmx-control")).not.toBeNull();
   });
 
   it("renders a thumbnail preview for an image-looking value", async () => {
     const el = await renderControl({ control: { type: "image" }, value: "/media/hero.jpg" });
-    const preview = el.querySelector("img.imdx-control-preview") as HTMLImageElement;
+    const preview = el.querySelector("img.mdmx-control-preview") as HTMLImageElement;
     expect(preview).not.toBeNull();
     expect(preview.getAttribute("src")).toBe("/media/hero.jpg");
   });
 
   it("does not preview a non-image value", async () => {
     const el = await renderControl({ control: { type: "image" }, value: "not-an-image" });
-    expect(el.querySelector("img.imdx-control-preview")).toBeNull();
+    expect(el.querySelector("img.mdmx-control-preview")).toBeNull();
   });
 });

@@ -8,14 +8,14 @@ page is the working plan; update it as steps land.
 The headless layers handle nesting today, and it's tested:
 
 - **Schema** (`editor/schema.ts`): `allowedChildren:["Column"]` →
-  content expression `imdx_Column*`; `Column`'s `blocks` policy → `block*`.
+  content expression `mdmx_Column*`; `Column`'s `blocks` policy → `block*`.
   Illegal nesting is rejected by ProseMirror construction. Proven by the
   "schema physics" test in `convert.test.ts` (creating a TwoColumn with a bare
   paragraph throws).
 - **Converters** (`from-mdast.ts`/`to-mdast.ts`): recurse through `blocks`
   children, so `<TwoColumn><Column>…</Column></TwoColumn>` round-trips
   canonically.
-- **Validator** (`core/validate.ts`): emits IMDX004/IMDX005 for slot
+- **Validator** (`core/validate.ts`): emits MDMX004/MDMX005 for slot
   violations.
 
 So TwoColumn already *parses, validates, and serializes*. The gap is purely
@@ -23,7 +23,7 @@ the interactive editing surface.
 
 ## Decision (ADR-021)
 
-Build this in the **real `@imdx/editor` with ProseMirror NodeViews**, not in
+Build this in the **real `@mdmx/editor` with ProseMirror NodeViews**, not in
 the flat-list prototype. Adding recursive nesting to the prototype means
 reimplementing what ProseMirror already does, then discarding it.
 
@@ -32,7 +32,7 @@ reimplementing what ProseMirror already does, then discarding it.
 1. **Register `Column` and seed the subtree.** Ensure `Column` is in the
    registry (`children:"blocks"`, `allowedParents:["TwoColumn"]`). Inserting a
    TwoColumn must auto-create two Columns — an empty TwoColumn is invalid under
-   `imdx_Column+`. Insertion creates a subtree, not a single node. (Extend
+   `mdmx_Column+`. Insertion creates a subtree, not a single node. (Extend
    `insertComponent` or add `insertComponentTree`.)
 
 2. **NodeViews with `contentDOM`.** Implement a React NodeView (TipTap's
@@ -68,7 +68,7 @@ reimplementing what ProseMirror already does, then discarding it.
 - Type and insert blocks independently in each Column.
 - Drag a block from one Column into the other, and from the document body into
   a Column, with correct drop indicators.
-- The live source pane shows canonical nested iMDX, and it round-trips
+- The live source pane shows canonical nested MDMX, and it round-trips
   byte-for-byte (extend `convert.test.ts` fixtures with a populated TwoColumn).
 - Attempting an illegal nest (Column into Column) is impossible via DnD and
   flagged by `check` if hand-written.

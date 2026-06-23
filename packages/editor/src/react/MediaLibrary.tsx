@@ -83,11 +83,11 @@ export function MediaLibrary({ media, mediaDir, onPick, onClose }: MediaLibraryP
   );
 
   return (
-    <div className="imdx-media-overlay" role="dialog" aria-label="Media library">
-      <div className="imdx-media-modal">
-        <div className="imdx-media-header">
+    <div className="mdmx-media-overlay" role="dialog" aria-label="Media library">
+      <div className="mdmx-media-modal">
+        <div className="mdmx-media-header">
           <input
-            className="imdx-media-search"
+            className="mdmx-media-search"
             type="search"
             placeholder="Search media…"
             aria-label="Search media"
@@ -96,7 +96,7 @@ export function MediaLibrary({ media, mediaDir, onPick, onClose }: MediaLibraryP
           />
           <button
             type="button"
-            className="imdx-media-upload"
+            className="mdmx-media-upload"
             disabled={uploading}
             onClick={() => fileRef.current?.click()}
           >
@@ -110,40 +110,40 @@ export function MediaLibrary({ media, mediaDir, onPick, onClose }: MediaLibraryP
             style={{ display: "none" }}
             onChange={onFileChange}
           />
-          <button type="button" className="imdx-media-close" aria-label="Close" onClick={onClose}>
+          <button type="button" className="mdmx-media-close" aria-label="Close" onClick={onClose}>
             ×
           </button>
         </div>
 
-        {uploadError ? <div className="imdx-media-error">{uploadError}</div> : null}
+        {uploadError ? <div className="mdmx-media-error">{uploadError}</div> : null}
 
-        <div className="imdx-media-body">
+        <div className="mdmx-media-body">
           {load.status === "loading" ? (
-            <div className="imdx-media-empty">Loading…</div>
+            <div className="mdmx-media-empty">Loading…</div>
           ) : load.status === "error" ? (
-            <div className="imdx-media-error">{load.message}</div>
+            <div className="mdmx-media-error">{load.message}</div>
           ) : filtered.length === 0 ? (
-            <div className="imdx-media-empty">
+            <div className="mdmx-media-empty">
               {items.length === 0 ? "No media yet — upload one." : "No matches."}
             </div>
           ) : (
-            <ul className="imdx-media-grid">
+            <ul className="mdmx-media-grid">
               {filtered.map((item) => (
                 <li key={item.path}>
                   <button
                     type="button"
-                    className="imdx-media-item"
+                    className="mdmx-media-item"
                     title={item.path}
                     onClick={() => onPick(item)}
                   >
                     {isImagePath(item.path) ? (
-                      <img className="imdx-media-thumb" src={item.url} alt="" />
+                      <img className="mdmx-media-thumb" src={item.url} alt="" />
                     ) : (
-                      <span className="imdx-media-fileicon" aria-hidden="true">
+                      <span className="mdmx-media-fileicon" aria-hidden="true">
                         ▦
                       </span>
                     )}
-                    <span className="imdx-media-name">{item.path.split("/").pop()}</span>
+                    <span className="mdmx-media-name">{item.path.split("/").pop()}</span>
                   </button>
                 </li>
               ))}

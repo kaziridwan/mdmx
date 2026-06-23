@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { defineIMDX } from "@imdx/core";
+import { defineMDMX } from "@mdmx/core";
 
 interface CallToActionProps {
   heading: string;
@@ -30,7 +30,7 @@ function CallToActionImpl({
   );
 }
 
-export const CallToAction = defineIMDX(CallToActionImpl, {
+export const CallToAction = defineMDMX(CallToActionImpl, {
   name: "CallToAction",
   category: "Marketing",
   icon: "megaphone",

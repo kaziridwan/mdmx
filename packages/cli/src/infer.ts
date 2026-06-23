@@ -1,5 +1,5 @@
 import ts from "typescript";
-import type { ControlSpec } from "@imdx/core";
+import type { ControlSpec } from "@mdmx/core";
 
 /** Infer an editor control from a TypeScript type. */
 export function inferControl(type: ts.Type, checker: ts.TypeChecker): ControlSpec {

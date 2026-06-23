@@ -1,17 +1,17 @@
 # Glossary
 
-**iMDX** — "interactive MDX". A strict, round-trippable subset of MDX:
+**MDMX** — "interactive MDX". A strict, round-trippable subset of MDX:
 CommonMark + a GFM slice, block-level JSX for registered components only,
 props-as-JSON, no imports/expressions/raw-HTML/inline-JSX. Defined normatively
 in `SPEC.md`.
 
 **Registry** — the generated catalog of editable components. Two artifacts:
 `registry.json` (pure data) and `registry.ts` (binds real components).
-Produced by `imdx generate`. Drives validation, the editor palette, prop
+Produced by `mdmx generate`. Drives validation, the editor palette, prop
 panels, and the production render.
 
-**defineIMDX** — the authoring wrapper: `defineIMDX(Component, config)`. Tags
-a component with iMDX metadata; the CLI reads it statically.
+**defineMDMX** — the authoring wrapper: `defineMDMX(Component, config)`. Tags
+a component with MDMX metadata; the CLI reads it statically.
 
 **ComponentSpec** — one component's entry in the registry: name, category,
 icon, children policy, props (each with a control), constraints, render mode.
@@ -21,7 +21,7 @@ number, boolean, select, multiselect, color, date, image, link, json, list,
 object. Inferred from TS types, overridable in config.
 
 **Children policy** — what a component may contain: `none` (atom/self-closing),
-`rich-text` (paragraphs of phrasing only), `blocks` (any iMDX flow,
+`rich-text` (paragraphs of phrasing only), `blocks` (any MDMX flow,
 recursively).
 
 **Slot constraints** — `allowedParents` / `allowedChildren` on a ComponentSpec.
@@ -32,10 +32,10 @@ construction (e.g. `Column` only inside `TwoColumn`).
 Editors always emit it; hand-written files normalize on first save. Changing
 it is semver-major.
 
-**Raw node (`imdx_raw`)** — the escape hatch. Out-of-subset content becomes an
+**Raw node (`mdmx_raw`)** — the escape hatch. Out-of-subset content becomes an
 opaque read-only block storing the exact source slice, re-emitted verbatim.
 
-**Diagnostic** — `{code, severity, message, span}`. Codes IMDX001–007 (see
+**Diagnostic** — `{code, severity, message, span}`. Codes MDMX001–007 (see
 SPEC.md §4) are stable API.
 
 **mdast** — the markdown AST (from remark). The interchange hub: text and
@@ -57,8 +57,8 @@ component), `placeholder` (labeled card; for server-only/heavy components),
 `static` (render once, freeze).
 
 **Collection** — a content grouping with typed frontmatter (e.g. `posts`,
-`pages`), authored in `imdx.config.json` and emitted into the registry. Drives
-frontmatter validation (IMDX008/009) and the editor's document panel. A path
+`pages`), authored in `mdmx.config.json` and emitted into the registry. Drives
+frontmatter validation (MDMX008/009) and the editor's document panel. A path
 resolves to a collection by longest `dir` prefix. (ADR-025)
 
 **Canonical frontmatter** — when frontmatter is edited through the panel it is

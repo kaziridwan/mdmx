@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import type { EditorState } from "prosemirror-state";
-import type { Registry } from "@imdx/core";
+import type { Registry } from "@mdmx/core";
 import { activeBlockRange, serializeDoc, type LineRange } from "./source-map.js";
 
 export interface SourcePaneProps {
@@ -9,7 +9,7 @@ export interface SourcePaneProps {
 }
 
 /**
- * The signature pane: live canonical iMDX on the right, the active block's lines
+ * The signature pane: live canonical MDMX on the right, the active block's lines
  * marked. Watching the round-trip happen is the product thesis (DESIGN_NOTES).
  */
 export function SourcePane({ state, registry }: SourcePaneProps) {
@@ -28,16 +28,16 @@ export function SourcePane({ state, registry }: SourcePaneProps) {
   const lines = text.split("\n");
 
   return (
-    <aside className="imdx-source" aria-label="Canonical iMDX source">
-      <div className="imdx-source-label">source · iMDX</div>
-      <pre className="imdx-source-pre">
+    <aside className="mdmx-source" aria-label="Canonical MDMX source">
+      <div className="mdmx-source-label">source · MDMX</div>
+      <pre className="mdmx-source-pre">
         <code>
           {lines.map((line, i) => (
             <div
               // eslint-disable-next-line react/no-array-index-key
               key={i}
               className={
-                "imdx-source-line" +
+                "mdmx-source-line" +
                 (range && i >= range.startLine && i <= range.endLine ? " is-active" : "")
               }
             >

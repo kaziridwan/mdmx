@@ -14,7 +14,7 @@ import {
   type Node as PMNode,
   type Schema,
 } from "prosemirror-model";
-import { evaluateAttributes, toMDX, type Registry } from "@imdx/core";
+import { evaluateAttributes, toMDX, type Registry } from "@mdmx/core";
 import { componentNodeName } from "./schema.js";
 
 export interface FromMdastOptions {
@@ -161,7 +161,7 @@ class Ctx {
     } else {
       source = toMDX({ type: "root", children: [node as Content] }).replace(/\n$/, "");
     }
-    return this.schema.nodes.imdx_raw!.create({ source });
+    return this.schema.nodes.mdmx_raw!.create({ source });
   }
 
   // -- inline ---------------------------------------------------------------

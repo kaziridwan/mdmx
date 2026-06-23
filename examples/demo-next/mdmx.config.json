@@ -1,7 +1,7 @@
 {
-  "components": "components/imdx/**/*.tsx",
+  "components": "components/mdmx/**/*.tsx",
   "contentDir": "content",
-  "outDir": ".imdx",
+  "outDir": ".mdmx",
   "collections": {
     "posts": {
       "dir": "content/posts",

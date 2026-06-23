@@ -1,9 +1,9 @@
-# iMDX Specification — v1
+# MDMX Specification — v1
 
-**Status:** draft, implemented by `@imdx/core` 0.1.x.
-**Spec version:** `IMDX_SPEC_VERSION = 1`.
+**Status:** draft, implemented by `@mdmx/core` 0.1.x.
+**Spec version:** `MDMX_SPEC_VERSION = 1`.
 
-iMDX ("interactive MDX") is a strict subset of MDX designed to be losslessly
+MDMX ("interactive MDX") is a strict subset of MDX designed to be losslessly
 round-trippable through a block editor while remaining a plain, reviewable
 text format in a git repository. It is defined as a **validation layer over
 the standard MDX AST** (mdast + mdx-jsx nodes): any conforming MDX parser
@@ -12,7 +12,7 @@ serialize.
 
 ## 1. Document structure
 
-An iMDX document is UTF-8 text consisting of optional YAML frontmatter
+An MDMX document is UTF-8 text consisting of optional YAML frontmatter
 followed by flow content.
 
 ### 1.1 Frontmatter
@@ -36,7 +36,7 @@ CommonMark plus the following GFM slice. **Allowed mdast node types:**
 `blockquote`, `code`, `thematicBreak`, `break`, `table`, `tableRow`,
 `tableCell`, `yaml`, `mdxJsxFlowElement`.
 
-**Excluded** (diagnostic IMDX003): raw HTML (`html`), ESM (`mdxjsEsm` — no
+**Excluded** (diagnostic MDMX003): raw HTML (`html`), ESM (`mdxjsEsm` — no
 `import`/`export`), expressions (`mdxFlowExpression`, `mdxTextExpression`),
 inline JSX (`mdxJsxTextElement`), reference-style links/images
 (`definition`, `linkReference`, `imageReference`), footnotes, and anything
@@ -46,8 +46,8 @@ else not listed above.
 
 1. Only **block-level** JSX elements (`mdxJsxFlowElement`).
 2. The element name must be **PascalCase** (`/^[A-Z][A-Za-z0-9]*$/`) and
-   present in the registry (IMDX001). Fragments (`<>…</>`) are invalid.
-3. **Props are JSON** (IMDX002). Allowed attribute forms:
+   present in the registry (MDMX001). Fragments (`<>…</>`) are invalid.
+3. **Props are JSON** (MDMX002). Allowed attribute forms:
    - string attribute: `title="Revenue"`
    - boolean shorthand: `stacked` (value `true`)
    - expression containers limited to: string/number/boolean/null literals,
@@ -58,17 +58,17 @@ else not listed above.
    - `none` — element must be childless (self-closing in canonical form)
    - `rich-text` — children are paragraphs of phrasing content only
      (`text`, `emphasis`, `strong`, `delete`, `inlineCode`, `link`, `break`);
-     no headings, lists, or nested components (IMDX004)
-   - `blocks` — any valid iMDX flow content, recursively, including components
+     no headings, lists, or nested components (MDMX004)
+   - `blocks` — any valid MDMX flow content, recursively, including components
 5. Slot constraints: a component may declare `allowedChildren` (direct
-   children must be those components — IMDX004) and/or `allowedParents`
-   (it may only appear inside those components — IMDX005).
-6. Required props without a registry default must be present (IMDX006);
-   undeclared props are a warning (IMDX007).
+   children must be those components — MDMX004) and/or `allowedParents`
+   (it may only appear inside those components — MDMX005).
+6. Required props without a registry default must be present (MDMX006);
+   undeclared props are a warning (MDMX007).
 
 ## 2. Canonical form
 
-Every iMDX tree has exactly one canonical serialization. Editors and tooling
+Every MDMX tree has exactly one canonical serialization. Editors and tooling
 always emit canonical form; hand-written files are normalized on first save.
 Guarantees:
 
@@ -94,7 +94,7 @@ Canonical choices (normative; changing any is a **major** version of this spec):
 
 Validators reject out-of-subset content; **editors must not destroy it**.
 A conforming editor wraps each invalid region in an opaque read-only raw
-block holding the exact source slice and re-emits it byte-for-byte. `imdx
+block holding the exact source slice and re-emits it byte-for-byte. `mdmx
 check` still reports such regions, so CI stays strict while the editor stays
 forgiving.
 
@@ -105,28 +105,28 @@ line/column spans. Codes are stable API:
 
 | Code | Severity | Meaning |
 | --- | --- | --- |
-| IMDX001 | error | JSX element not in the registry |
-| IMDX002 | error | Prop value not statically serializable / spread attribute |
-| IMDX003 | error | Node type outside the iMDX subset |
-| IMDX004 | error | Child violates children policy or allowedChildren |
-| IMDX005 | error | Component outside its allowedParents |
-| IMDX006 | error | Required prop missing (and no registry default) |
-| IMDX007 | warning | Prop not declared by the component spec |
-| IMDX008 | error | Required frontmatter field missing (per the collection schema) |
-| IMDX009 | error | Frontmatter field value does not match its declared control/type |
+| MDMX001 | error | JSX element not in the registry |
+| MDMX002 | error | Prop value not statically serializable / spread attribute |
+| MDMX003 | error | Node type outside the MDMX subset |
+| MDMX004 | error | Child violates children policy or allowedChildren |
+| MDMX005 | error | Component outside its allowedParents |
+| MDMX006 | error | Required prop missing (and no registry default) |
+| MDMX007 | warning | Prop not declared by the component spec |
+| MDMX008 | error | Required frontmatter field missing (per the collection schema) |
+| MDMX009 | error | Frontmatter field value does not match its declared control/type |
 
 ## 5. Registry
 
-The registry is generated by `imdx generate` from `defineIMDX` calls; prop
+The registry is generated by `mdmx generate` from `defineMDMX` calls; prop
 metadata is inferred from TypeScript types and overlaid with explicit config
 (explicit wins). Two artifacts:
 
-- `.imdx/registry.json` — pure data (shape below)
-- `.imdx/registry.ts` — imports the actual components and binds them
+- `.mdmx/registry.json` — pure data (shape below)
+- `.mdmx/registry.ts` — imports the actual components and binds them
 
 ```jsonc
 {
-  "imdxRegistryVersion": 1,
+  "mdmxRegistryVersion": 1,
   "generatedAt": "ISO-8601",
   "hash": "16-hex content hash of the component specs",
   "components": [{
@@ -134,7 +134,7 @@ metadata is inferred from TypeScript types and overlaid with explicit config
     "category": "Content",              // optional palette grouping
     "icon": "alert-circle",             // optional
     "description": "…",                 // optional
-    "source": "components/imdx/Callout.tsx",
+    "source": "components/mdmx/Callout.tsx",
     "version": 1,                        // optional, for future migrations
     "children": { "policy": "none" | "rich-text" | "blocks" },
     "props": [{
@@ -163,10 +163,10 @@ metadata is inferred from TypeScript types and overlaid with explicit config
 
 **Collections** group content under a `dir` and give it a typed frontmatter
 schema (`fields`, reusing the control taxonomy). They are authored in
-`imdx.config.json` and emitted into the registry by `imdx generate`. The `hash`
+`mdmx.config.json` and emitted into the registry by `mdmx generate`. The `hash`
 covers components **and** collections. Frontmatter is validated against the
-matching collection (longest `dir` prefix) by `imdx check` and on save:
-required fields → IMDX008, value/type mismatches → IMDX009; undeclared keys are
+matching collection (longest `dir` prefix) by `mdmx check` and on save:
+required fields → MDMX008, value/type mismatches → MDMX009; undeclared keys are
 allowed. Draft/publish is modeled with a `status` field (e.g.
 `select` over `["draft", "published"]`); readers filter by it.
 
@@ -181,7 +181,7 @@ error — the component could never appear in content.
 
 ## 6. Provider contract
 
-Content storage implements `ContentProvider` (`@imdx/core`):
+Content storage implements `ContentProvider` (`@mdmx/core`):
 
 - `list(dir)` → recursive blob listing `{path, sha, size}`
 - `read(path)` → `{content, sha}` where `sha` is the **git blob sha**
@@ -198,11 +198,11 @@ semantics, doubles as the reference implementation).
 
 ## 7. Versioning
 
-- Documents may declare the spec they target (`imdx: 1` in frontmatter or a
+- Documents may declare the spec they target (`mdmx: 1` in frontmatter or a
   repo-level config); absent means "current".
-- The registry carries `imdxRegistryVersion` and a content `hash`; editors
+- The registry carries `mdmxRegistryVersion` and a content `hash`; editors
   must detect hash drift between a loaded document's session and the current
-  registry. Per-component `version` fields reserve room for `imdx migrate`
+  registry. Per-component `version` fields reserve room for `mdmx migrate`
   codemods.
 
 ## Appendix: deliberate exclusions in v1

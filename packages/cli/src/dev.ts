@@ -1,11 +1,11 @@
 import { existsSync, watch } from "node:fs";
 import { join, relative } from "node:path";
 import { generate, type GenerateResult } from "./generate.js";
-import type { IMDXConfig } from "./config.js";
+import type { MDMXConfig } from "./config.js";
 
 export interface DevSummary {
   result: GenerateResult;
-  /** One-line human status, e.g. "imdx: 4 component(s), no issues [a1b2c3d4e5f6a7b8]". */
+  /** One-line human status, e.g. "mdmx: 4 component(s), no issues [a1b2c3d4e5f6a7b8]". */
   line: string;
 }
 
@@ -14,18 +14,18 @@ export interface DevSummary {
  * writing the registry artifacts (same as `generate`); everything else is pure,
  * which is what makes the watch loop testable.
  */
-export async function runGenerate(cwd: string, config: IMDXConfig): Promise<DevSummary> {
+export async function runGenerate(cwd: string, config: MDMXConfig): Promise<DevSummary> {
   const result = await generate(cwd, config);
   const n = result.spec.components.length;
   const errors = result.issues.filter((i) => i.severity === "error").length;
   const warnings = result.issues.filter((i) => i.severity === "warning").length;
   const issues =
     errors || warnings ? `${errors} error(s), ${warnings} warning(s)` : "no issues";
-  const line = `imdx: ${n} component(s), ${issues} [${result.spec.hash}]`;
+  const line = `mdmx: ${n} component(s), ${issues} [${result.spec.hash}]`;
   return { result, line };
 }
 
-/** The non-glob prefix of a glob pattern (`components/imdx/**` → `components/imdx`). */
+/** The non-glob prefix of a glob pattern (`components/mdmx/**` → `components/mdmx`). */
 export function staticBase(pattern: string): string {
   const out: string[] = [];
   for (const part of pattern.split("/")) {
@@ -40,13 +40,13 @@ export function staticBase(pattern: string): string {
  * glob, plus the config file itself. The `outDir` is deliberately never
  * watched — `generate` writes the registry there, so watching it would loop.
  */
-export function watchTargets(cwd: string, config: IMDXConfig): string[] {
+export function watchTargets(cwd: string, config: MDMXConfig): string[] {
   const patterns = Array.isArray(config.components)
     ? config.components
     : [config.components];
   const targets = new Set<string>();
   for (const p of patterns) targets.add(join(cwd, staticBase(p)));
-  for (const name of ["imdx.config.json", "imdx.config.mjs"]) {
+  for (const name of ["mdmx.config.json", "mdmx.config.mjs"]) {
     const file = join(cwd, name);
     if (existsSync(file)) targets.add(file);
   }
@@ -93,7 +93,7 @@ export interface DevHandle {
  */
 export async function dev(
   cwd: string,
-  config: IMDXConfig,
+  config: MDMXConfig,
   options: DevOptions = {},
 ): Promise<DevHandle> {
   const log = options.log ?? ((m) => console.log(m));
@@ -122,7 +122,7 @@ export async function dev(
       const { result, line } = await runGenerate(cwd, config);
       const hash = result.spec.hash ?? "";
       if (hash === lastHash) {
-        log(`imdx: unchanged [${hash}]`);
+        log(`mdmx: unchanged [${hash}]`);
       } else {
         lastHash = hash;
         log(line);
@@ -132,7 +132,7 @@ export async function dev(
         error(`  ${issue.severity} ${loc} ${issue.message}`);
       }
     } catch (err) {
-      error(`imdx: generate failed — ${err instanceof Error ? err.message : String(err)}`);
+      error(`mdmx: generate failed — ${err instanceof Error ? err.message : String(err)}`);
     } finally {
       running = false;
       if (rerun) {
@@ -144,7 +144,7 @@ export async function dev(
 
   const targets = watchTargets(cwd, config);
   const shown = targets.map((t) => relative(cwd, t) || ".").join(", ");
-  log(`imdx dev: watching ${shown || "(nothing)"}`);
+  log(`mdmx dev: watching ${shown || "(nothing)"}`);
   await regenerate();
 
   let cancelDebounce: (() => void) | null = null;

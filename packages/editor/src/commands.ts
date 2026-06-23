@@ -3,11 +3,11 @@ import { inputRules, textblockTypeInputRule, wrappingInputRule } from "prosemirr
 import { insertPoint } from "prosemirror-transform";
 import type { Command, EditorState, Transaction } from "prosemirror-state";
 import { Fragment, type Node as PMNode, type NodeType, type Schema } from "prosemirror-model";
-import type { ComponentSpec, Registry } from "@imdx/core";
+import type { ComponentSpec, Registry } from "@mdmx/core";
 import { componentNodeName, componentNameFromNode } from "./schema.js";
 
 /** Markdown input rules: type the shortcut, the block transforms. */
-export function imdxInputRules(schema: Schema) {
+export function mdmxInputRules(schema: Schema) {
   const rules = [];
   if (schema.nodes.heading) {
     rules.push(
