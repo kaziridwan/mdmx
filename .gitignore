@@ -3,3 +3,5 @@ dist/
 .mdmx/
 *.tsbuildinfo
 .DS_Store
+.claude/
+.dev-context/
