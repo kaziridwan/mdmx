@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>iMDX Editor</title>
+<title>MDMX Editor</title>
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Newsreader:opsz,wght@6..72,400;6..72,500;6..72,600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
@@ -220,7 +220,7 @@ const I = {
 const Icon = ({n,...p}) => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...p}>{I[n]||I.type}</svg>;
 
 /* ----------------------------------------------------------------------------
-   The registry — exactly the shape @imdx/cli emits (registry.json)
+   The registry — exactly the shape @mdmx/cli emits (registry.json)
 ---------------------------------------------------------------------------- */
 const REGISTRY = {
   Callout: {
@@ -251,7 +251,7 @@ const REGISTRY = {
 const ICON_FOR = { Callout:"alert", Stat:"trend", TwoColumn:"cols" };
 
 /* ----------------------------------------------------------------------------
-   Canonical iMDX serialization — mirrors printPropValue + the serializer
+   Canonical MDMX serialization — mirrors printPropValue + the serializer
 ---------------------------------------------------------------------------- */
 const IDENT = /^[A-Za-z_$][A-Za-z0-9_$]*$/;
 function printVal(v){
@@ -383,10 +383,10 @@ function mdInline(s){
 ---------------------------------------------------------------------------- */
 let UID = 1; const uid = () => "b"+(UID++);
 const initialDoc = {
-  title:"Welcome to iMDX", slug:"welcome", status:"published",
+  title:"Welcome to MDMX", slug:"welcome", status:"published",
   blocks:[
-    { id:uid(), type:"h1", spans:[{text:"Welcome to iMDX"}] },
-    { id:uid(), type:"p", spans:[{text:"Your components are now "},{text:"first-class blocks",strong:true},{text:". Edit on the left — watch clean, canonical iMDX appear on the right."}] },
+    { id:uid(), type:"h1", spans:[{text:"Welcome to MDMX"}] },
+    { id:uid(), type:"p", spans:[{text:"Your components are now "},{text:"first-class blocks",strong:true},{text:". Edit on the left — watch clean, canonical MDMX appear on the right."}] },
     { id:uid(), type:"Callout", props:{variant:"info",title:"How this works"}, spans:[{text:"This file lives in "},{text:"your",em:true},{text:" repo and round-trips through the editor losslessly."}] },
     { id:uid(), type:"Stat", props:{value:"27ms",label:"median save-to-commit",trend:"up",delta:4} },
     { id:uid(), type:"p", spans:[{text:"Press "},{text:"/",code:true},{text:" on an empty line to insert anything from the palette."}] },
@@ -776,7 +776,7 @@ function App(){
     {/* SOURCE */}
     <section className="source-pane">
       <div className="source-head">
-        <span className="lbl">Canonical iMDX</span>
+        <span className="lbl">Canonical MDMX</span>
         <span className="live"><span className="pulse"/>live · {errors===0?"valid":errors+" issue"+(errors>1?"s":"")}</span>
       </div>
       <div className="source-scroll" ref={srcRef}>

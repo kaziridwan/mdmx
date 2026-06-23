@@ -18,7 +18,7 @@ import {
   type ContentProvider,
   type FileChange,
   type FileMeta,
-} from "@imdx/core";
+} from "@mdmx/core";
 
 /**
  * Development-mode ContentProvider backed by the local filesystem.

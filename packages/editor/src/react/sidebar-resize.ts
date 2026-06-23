@@ -1,9 +1,9 @@
-/** Default sidebar width (px); matches the CSS `--imdx-sidebar-width` fallback. */
+/** Default sidebar width (px); matches the CSS `--mdmx-sidebar-width` fallback. */
 export const DEFAULT_SIDEBAR_WIDTH = 380;
 export const MIN_SIDEBAR_WIDTH = 260;
 export const MAX_SIDEBAR_WIDTH = 640;
 
-const STORAGE_KEY = "imdx:sidebar-width";
+const STORAGE_KEY = "mdmx:sidebar-width";
 
 /** Clamp a desired width into the allowed range. Pure; unit-tested. */
 export function clampSidebarWidth(

@@ -53,10 +53,10 @@ class ReactNodeView implements NodeView {
   ) {
     this.node = node;
     this.dom = document.createElement("div");
-    this.dom.className = "imdx-nodeview";
+    this.dom.className = "mdmx-nodeview";
     if (hasContent) {
       this.contentDOM = document.createElement("div");
-      this.contentDOM.className = "imdx-contentdom";
+      this.contentDOM.className = "mdmx-contentdom";
     }
     this.root = createRoot(this.dom);
     this.renderReact();
@@ -90,13 +90,13 @@ class ReactNodeView implements NodeView {
 
   selectNode() {
     this.selected = true;
-    this.dom.classList.add("imdx-selected");
+    this.dom.classList.add("mdmx-selected");
     this.renderReact();
   }
 
   deselectNode() {
     this.selected = false;
-    this.dom.classList.remove("imdx-selected");
+    this.dom.classList.remove("mdmx-selected");
     this.renderReact();
   }
 

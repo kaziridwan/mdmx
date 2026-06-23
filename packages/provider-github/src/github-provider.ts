@@ -7,7 +7,7 @@ import {
   type ContentProvider,
   type FileChange,
   type FileMeta,
-} from "@imdx/core";
+} from "@mdmx/core";
 
 export interface GitHubProviderOptions {
   owner: string;

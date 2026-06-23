@@ -1,8 +1,8 @@
 export {
-  IMDX_SPEC_VERSION,
-  IMDX_META,
+  MDMX_SPEC_VERSION,
+  MDMX_META,
   Registry,
-  defineIMDX,
+  defineMDMX,
 } from "./types.js";
 export type {
   ChildrenPolicy,
@@ -10,7 +10,7 @@ export type {
   ComponentConstraints,
   ComponentSpec,
   ControlSpec,
-  DefineIMDXConfig,
+  DefineMDMXConfig,
   Diagnostic,
   DiagnosticCode,
   FrontmatterField,

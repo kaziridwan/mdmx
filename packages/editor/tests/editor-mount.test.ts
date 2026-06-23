@@ -2,8 +2,8 @@
 import { afterEach, describe, expect, it } from "vitest";
 import { createElement, type ReactNode } from "react";
 import { createRoot, type Root } from "react-dom/client";
-import { Registry, type CollectionSpec, type RegistrySpec } from "@imdx/core";
-import { IMDXEditor } from "../src/react/index.js";
+import { Registry, type CollectionSpec, type RegistrySpec } from "@mdmx/core";
+import { MDMXEditor } from "../src/react/index.js";
 
 const collection: CollectionSpec = {
   name: "posts",
@@ -19,7 +19,7 @@ const collection: CollectionSpec = {
 };
 
 const registrySpec: RegistrySpec = {
-  imdxRegistryVersion: 1,
+  mdmxRegistryVersion: 1,
   components: [
     {
       name: "Note",
@@ -84,7 +84,7 @@ const flush = () => new Promise((r) => setTimeout(r, 0));
 /** Click a sidebar tab ("Source" | "Properties") and let React settle. */
 async function switchSidebar(el: HTMLElement, label: "Source" | "Properties") {
   const tab = el.querySelector(
-    `.imdx-sidebar-tab[aria-label="${label}"]`,
+    `.mdmx-sidebar-tab[aria-label="${label}"]`,
   ) as HTMLButtonElement;
   tab.click();
   for (let i = 0; i < 4; i++) await flush();
@@ -108,7 +108,7 @@ async function mountEditor(
   document.body.appendChild(host);
   root = createRoot(host);
   root.render(
-    createElement(IMDXEditor, {
+    createElement(MDMXEditor, {
       registry: new Registry(registrySpec),
       components: { Note, Stat, TwoColumn, Column },
       source,
@@ -120,14 +120,14 @@ async function mountEditor(
   return host;
 }
 
-describe("IMDXEditor mount (jsdom)", () => {
+describe("MDMXEditor mount (jsdom)", () => {
   it("renders the document into a ProseMirror canvas", async () => {
     const el = await mountEditor(SRC);
     const pm = el.querySelector(".ProseMirror");
     expect(pm).not.toBeNull();
     expect(pm!.querySelector("h1")?.textContent).toBe("Hi");
-    expect(el.querySelector('[data-imdx-component="Note"]')).not.toBeNull();
-    expect(el.querySelector('[data-imdx-component="Stat"]')).not.toBeNull();
+    expect(el.querySelector('[data-mdmx-component="Note"]')).not.toBeNull();
+    expect(el.querySelector('[data-mdmx-component="Stat"]')).not.toBeNull();
   });
 
   it("places the editable contentDOM inside a rich-text component's render", async () => {
@@ -135,7 +135,7 @@ describe("IMDXEditor mount (jsdom)", () => {
     const note = el.querySelector('[data-role="note"]');
     expect(note).not.toBeNull();
     // The author component received the hole as children; PM's contentDOM lives there.
-    const contentdom = note!.querySelector(".imdx-contentdom");
+    const contentdom = note!.querySelector(".mdmx-contentdom");
     expect(contentdom).not.toBeNull();
     expect(contentdom!.textContent).toContain("Inside the note.");
   });
@@ -145,17 +145,17 @@ describe("IMDXEditor mount (jsdom)", () => {
     const stat = el.querySelector('[data-role="stat"]');
     expect(stat?.textContent).toBe("42");
     expect(
-      el.querySelector('[data-imdx-component="Stat"] .imdx-contentdom'),
+      el.querySelector('[data-mdmx-component="Stat"] .mdmx-contentdom'),
     ).toBeNull();
   });
 
   it("shows live canonical source matching the input byte-for-byte", async () => {
     const el = await mountEditor(SRC);
-    const source = el.querySelector(".imdx-source-pre");
+    const source = el.querySelector(".mdmx-source-pre");
     expect(source).not.toBeNull();
     // Each line is its own div; blank lines render a cosmetic space placeholder.
     // Normalize whitespace-only lines and trailing blanks, then compare.
-    const lines = Array.from(source!.querySelectorAll(".imdx-source-line")).map((n) =>
+    const lines = Array.from(source!.querySelectorAll(".mdmx-source-line")).map((n) =>
       (n.textContent ?? "").trim() === "" ? "" : n.textContent!,
     );
     const rendered = lines.join("\n").replace(/\n+$/, "");
@@ -166,35 +166,35 @@ describe("IMDXEditor mount (jsdom)", () => {
 describe("unified sidebar (source ⇄ properties)", () => {
   it("defaults to the source view and toggles to properties and back", async () => {
     const el = await mountEditor(SRC);
-    const tabs = el.querySelectorAll(".imdx-sidebar-tab");
+    const tabs = el.querySelectorAll(".mdmx-sidebar-tab");
     expect(tabs).toHaveLength(2);
 
     // Default: source visible, no properties panel.
-    expect(el.querySelector(".imdx-source-pre")).not.toBeNull();
-    expect(el.querySelector(".imdx-props")).toBeNull();
+    expect(el.querySelector(".mdmx-source-pre")).not.toBeNull();
+    expect(el.querySelector(".mdmx-props")).toBeNull();
     expect(
-      el.querySelector('.imdx-sidebar-tab[aria-label="Source"]')!.getAttribute("aria-selected"),
+      el.querySelector('.mdmx-sidebar-tab[aria-label="Source"]')!.getAttribute("aria-selected"),
     ).toBe("true");
 
     // Toggle to properties: the document panel appears, source is gone.
     await switchSidebar(el, "Properties");
-    expect(el.querySelector(".imdx-source-pre")).toBeNull();
-    expect(el.querySelector(".imdx-props")).not.toBeNull();
+    expect(el.querySelector(".mdmx-source-pre")).toBeNull();
+    expect(el.querySelector(".mdmx-props")).not.toBeNull();
     expect(
-      el.querySelector('.imdx-sidebar-tab[aria-label="Properties"]')!.getAttribute("aria-selected"),
+      el.querySelector('.mdmx-sidebar-tab[aria-label="Properties"]')!.getAttribute("aria-selected"),
     ).toBe("true");
 
     // Back to source.
     await switchSidebar(el, "Source");
-    expect(el.querySelector(".imdx-source-pre")).not.toBeNull();
-    expect(el.querySelector(".imdx-props")).toBeNull();
+    expect(el.querySelector(".mdmx-source-pre")).not.toBeNull();
+    expect(el.querySelector(".mdmx-props")).toBeNull();
   });
 
   it("resizes via the drag handle and persists the width", async () => {
     localStorage.clear();
     const el = await mountEditor(SRC);
-    const root = el.querySelector(".imdx-editor") as HTMLElement;
-    const handle = el.querySelector(".imdx-sidebar-resize") as HTMLElement;
+    const root = el.querySelector(".mdmx-editor") as HTMLElement;
+    const handle = el.querySelector(".mdmx-sidebar-resize") as HTMLElement;
     expect(handle).not.toBeNull();
 
     handle.dispatchEvent(new MouseEvent("mousedown", { bubbles: true, clientX: 1200 }));
@@ -204,56 +204,56 @@ describe("unified sidebar (source ⇄ properties)", () => {
     window.dispatchEvent(new MouseEvent("mouseup", {}));
     for (let i = 0; i < 3; i++) await flush();
 
-    expect(root.style.getPropertyValue("--imdx-sidebar-width")).toBe("260px");
-    expect(localStorage.getItem("imdx:sidebar-width")).toBe("260");
+    expect(root.style.getPropertyValue("--mdmx-sidebar-width")).toBe("260px");
+    expect(localStorage.getItem("mdmx:sidebar-width")).toBe("260");
   });
 });
 
 describe("mobile layout (floating panels)", () => {
   it("opens the palette sheet and dismisses via the backdrop", async () => {
     const el = await mountEditor(SRC);
-    const root = el.querySelector(".imdx-editor") as HTMLElement;
-    expect(el.querySelector(".imdx-mobile-backdrop")).toBeNull();
+    const root = el.querySelector(".mdmx-editor") as HTMLElement;
+    expect(el.querySelector(".mdmx-mobile-backdrop")).toBeNull();
 
     (el.querySelector('[aria-label="Open components"]') as HTMLButtonElement).click();
     for (let i = 0; i < 2; i++) await flush();
     expect(root.classList.contains("is-palette-open")).toBe(true);
-    const backdrop = el.querySelector(".imdx-mobile-backdrop") as HTMLElement;
+    const backdrop = el.querySelector(".mdmx-mobile-backdrop") as HTMLElement;
     expect(backdrop).not.toBeNull();
 
     backdrop.click();
     for (let i = 0; i < 2; i++) await flush();
     expect(root.classList.contains("is-palette-open")).toBe(false);
-    expect(el.querySelector(".imdx-mobile-backdrop")).toBeNull();
+    expect(el.querySelector(".mdmx-mobile-backdrop")).toBeNull();
   });
 
   it("the Source/Properties FABs open the sidebar sheet in the right mode", async () => {
     const el = await mountEditor(SRC);
-    const root = el.querySelector(".imdx-editor") as HTMLElement;
+    const root = el.querySelector(".mdmx-editor") as HTMLElement;
 
     (el.querySelector('[aria-label="Open properties"]') as HTMLButtonElement).click();
     for (let i = 0; i < 2; i++) await flush();
     expect(root.classList.contains("is-sidebar-open")).toBe(true);
     // Properties mode → the document/prop panel is shown, not the source pane.
-    expect(el.querySelector(".imdx-props")).not.toBeNull();
-    expect(el.querySelector(".imdx-source-pre")).toBeNull();
+    expect(el.querySelector(".mdmx-props")).not.toBeNull();
+    expect(el.querySelector(".mdmx-source-pre")).toBeNull();
 
     (el.querySelector('[aria-label="Open source"]') as HTMLButtonElement).click();
     for (let i = 0; i < 2; i++) await flush();
     expect(root.classList.contains("is-sidebar-open")).toBe(true);
-    expect(el.querySelector(".imdx-source-pre")).not.toBeNull();
-    expect(el.querySelector(".imdx-props")).toBeNull();
+    expect(el.querySelector(".mdmx-source-pre")).not.toBeNull();
+    expect(el.querySelector(".mdmx-props")).toBeNull();
   });
 });
 
 describe("snippets (insert saved HTML)", () => {
   it("shows a saved snippet in the rail and inserts it as an Html block", async () => {
     localStorage.setItem(
-      "imdx:snippets",
+      "mdmx:snippets",
       JSON.stringify([{ name: "Card", html: "<div>saved card</div>" }]),
     );
     const el = await mountEditor(SRC);
-    const snippet = Array.from(el.querySelectorAll(".imdx-rail-snippet")).find((b) =>
+    const snippet = Array.from(el.querySelectorAll(".mdmx-rail-snippet")).find((b) =>
       b.textContent?.includes("Card"),
     ) as HTMLButtonElement;
     expect(snippet).not.toBeNull();
@@ -262,7 +262,7 @@ describe("snippets (insert saved HTML)", () => {
     for (let i = 0; i < 4; i++) await flush();
 
     // Default sidebar is source; the inserted Html block serializes there.
-    const source = Array.from(el.querySelectorAll(".imdx-source-line"))
+    const source = Array.from(el.querySelectorAll(".mdmx-source-line"))
       .map((n) => n.textContent)
       .join("\n");
     expect(source).toContain("<Html");
@@ -299,7 +299,7 @@ status: draft
     for (let i = 0; i < 4; i++) await flush();
 
     await switchSidebar(el, "Source");
-    const source = Array.from(el.querySelectorAll(".imdx-source-line"))
+    const source = Array.from(el.querySelectorAll(".mdmx-source-line"))
       .map((n) => n.textContent)
       .join("\n");
     expect(source).toContain("status: published");
@@ -326,14 +326,14 @@ describe("nested editing (TwoColumn)", () => {
     expect(cols).toHaveLength(2);
     // Each column's editable hole holds its own paragraph text.
     const texts = Array.from(cols).map(
-      (c) => c.querySelector(".imdx-contentdom")?.textContent?.trim(),
+      (c) => c.querySelector(".mdmx-contentdom")?.textContent?.trim(),
     );
     expect(texts).toEqual(["Left text.", "Right text."]);
   });
 
   it("keeps the nested structure in the live source", async () => {
     const el = await mountEditor(NESTED);
-    const source = Array.from(el.querySelectorAll(".imdx-source-line"))
+    const source = Array.from(el.querySelectorAll(".mdmx-source-line"))
       .map((n) => n.textContent)
       .join("\n");
     expect(source).toContain("<TwoColumn>");

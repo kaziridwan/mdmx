@@ -7,7 +7,7 @@ const validate = (source: string) =>
 
 const codes = (source: string) => validate(source).map((d) => d.code);
 
-describe("subset enforcement (IMDX003)", () => {
+describe("subset enforcement (MDMX003)", () => {
   it("accepts a fully valid document", () => {
     const diags = validate(
       [
@@ -25,61 +25,61 @@ describe("subset enforcement (IMDX003)", () => {
   });
 
   it("rejects import/export statements", () => {
-    expect(codes('import { x } from "y"\n\n# Hi\n')).toContain("IMDX003");
+    expect(codes('import { x } from "y"\n\n# Hi\n')).toContain("MDMX003");
   });
 
   it("rejects flow expressions", () => {
-    expect(codes("{new Date().getFullYear()}\n")).toContain("IMDX003");
+    expect(codes("{new Date().getFullYear()}\n")).toContain("MDMX003");
   });
 
   it("rejects inline text expressions", () => {
-    expect(codes("The year is {2026}.\n")).toContain("IMDX003");
+    expect(codes("The year is {2026}.\n")).toContain("MDMX003");
   });
 
   it("rejects inline (text-level) components", () => {
     expect(codes('Hello <Callout variant="info">x</Callout> world\n')).toContain(
-      "IMDX003",
+      "MDMX003",
     );
   });
 
   it("rejects JSX fragments", () => {
-    expect(codes("<>\n  hi\n</>\n")).toContain("IMDX003");
+    expect(codes("<>\n  hi\n</>\n")).toContain("MDMX003");
   });
 });
 
-describe("registry membership (IMDX001)", () => {
+describe("registry membership (MDMX001)", () => {
   it("rejects unknown components", () => {
-    expect(codes("<Mystery />\n")).toEqual(["IMDX001"]);
+    expect(codes("<Mystery />\n")).toEqual(["MDMX001"]);
   });
 });
 
-describe("prop serializability (IMDX002)", () => {
+describe("prop serializability (MDMX002)", () => {
   it("rejects identifier props", () => {
-    expect(codes("<Chart series={someVar} />\n")).toContain("IMDX002");
+    expect(codes("<Chart series={someVar} />\n")).toContain("MDMX002");
   });
 
   it("rejects call expressions", () => {
-    expect(codes("<Chart series={getSeries()} />\n")).toContain("IMDX002");
+    expect(codes("<Chart series={getSeries()} />\n")).toContain("MDMX002");
   });
 
   it("rejects template literals", () => {
-    expect(codes("<Chart series={[`q${1}`]} />\n")).toContain("IMDX002");
+    expect(codes("<Chart series={[`q${1}`]} />\n")).toContain("MDMX002");
   });
 
   it("rejects spread attributes", () => {
-    expect(codes('<Chart {...rest} series={["a"]} />\n')).toContain("IMDX002");
+    expect(codes('<Chart {...rest} series={["a"]} />\n')).toContain("MDMX002");
   });
 });
 
-describe("children policy (IMDX004)", () => {
+describe("children policy (MDMX004)", () => {
   it("rejects children on a children:none component", () => {
-    expect(codes('<Chart series={["a"]}>\n  hi\n</Chart>\n')).toContain("IMDX004");
+    expect(codes('<Chart series={["a"]}>\n  hi\n</Chart>\n')).toContain("MDMX004");
   });
 
   it("rejects block content inside rich-text children", () => {
     expect(
       codes('<Callout variant="info">\n  ## A heading\n</Callout>\n'),
-    ).toContain("IMDX004");
+    ).toContain("MDMX004");
   });
 
   it("rejects nested components inside rich-text children", () => {
@@ -87,12 +87,12 @@ describe("children policy (IMDX004)", () => {
       codes(
         '<Callout variant="info">\n  <Chart series={["a"]} />\n</Callout>\n',
       ),
-    ).toContain("IMDX004");
+    ).toContain("MDMX004");
   });
 
   it("enforces allowedChildren slots", () => {
     expect(codes("<TwoColumn>\n  just a paragraph\n</TwoColumn>\n")).toContain(
-      "IMDX004",
+      "MDMX004",
     );
   });
 
@@ -115,15 +115,15 @@ describe("children policy (IMDX004)", () => {
   });
 });
 
-describe("parent constraints (IMDX005)", () => {
+describe("parent constraints (MDMX005)", () => {
   it("rejects a slot child outside its parent", () => {
-    expect(codes("<Column>\n  hi\n</Column>\n")).toContain("IMDX005");
+    expect(codes("<Column>\n  hi\n</Column>\n")).toContain("MDMX005");
   });
 });
 
-describe("prop schema (IMDX006 / IMDX007)", () => {
+describe("prop schema (MDMX006 / MDMX007)", () => {
   it("flags a missing required prop without a default", () => {
-    expect(codes("<Chart />\n")).toContain("IMDX006");
+    expect(codes("<Chart />\n")).toContain("MDMX006");
   });
 
   it("does not flag a missing required prop that has a default", () => {
@@ -134,7 +134,7 @@ describe("prop schema (IMDX006 / IMDX007)", () => {
   it("warns on undeclared props", () => {
     const diags = validate('<Chart series={["a"]} bogus="x" />\n');
     expect(diags).toHaveLength(1);
-    expect(diags[0]!.code).toBe("IMDX007");
+    expect(diags[0]!.code).toBe("MDMX007");
     expect(diags[0]!.severity).toBe("warning");
   });
 });

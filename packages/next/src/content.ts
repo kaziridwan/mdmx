@@ -5,7 +5,7 @@ import {
   validateTree,
   type Diagnostic,
   type Registry,
-} from "@imdx/core";
+} from "@mdmx/core";
 
 /**
  * Read-side helpers. Because content lives in the same repo as the site,
@@ -13,13 +13,13 @@ import {
  * filesystem at build time (SSG/ISR-friendly).
  */
 
-export interface IMDXDocument {
+export interface MDMXDocument {
   /** Collection-relative slug (filename without extension, unless frontmatter overrides). */
   slug: string;
   /** Path relative to the collection directory. */
   path: string;
   frontmatter: Record<string, unknown>;
-  /** Raw iMDX body including frontmatter (hand to the renderer / editor). */
+  /** Raw MDMX body including frontmatter (hand to the renderer / editor). */
   source: string;
   /** Present only when a registry was supplied to validate against. */
   diagnostics?: Diagnostic[];
@@ -37,9 +37,9 @@ const CONTENT_EXTENSIONS = /\.(mdx|md)$/;
 export async function getDocuments(
   collectionDir: string,
   options: GetDocumentsOptions = {},
-): Promise<IMDXDocument[]> {
+): Promise<MDMXDocument[]> {
   const files = await listContentFiles(collectionDir);
-  const docs: IMDXDocument[] = [];
+  const docs: MDMXDocument[] = [];
   for (const rel of files) {
     docs.push(await loadDocument(collectionDir, rel, options));
   }
@@ -57,7 +57,7 @@ export async function getDocumentBySlug(
   collectionDir: string,
   slug: string,
   options: GetDocumentsOptions = {},
-): Promise<IMDXDocument | null> {
+): Promise<MDMXDocument | null> {
   const docs = await getDocuments(collectionDir, options);
   return docs.find((d) => d.slug === slug) ?? null;
 }
@@ -66,7 +66,7 @@ async function loadDocument(
   collectionDir: string,
   rel: string,
   options: GetDocumentsOptions,
-): Promise<IMDXDocument> {
+): Promise<MDMXDocument> {
   const source = await readFile(join(collectionDir, rel), "utf8");
   const { tree, frontmatter } = parseDocument(source);
   const slug =

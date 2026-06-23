@@ -41,12 +41,12 @@ describe("storeSidebarWidth / readStoredWidth", () => {
   });
 
   it("clamps an out-of-range stored value on read", () => {
-    localStorage.setItem("imdx:sidebar-width", "99999");
+    localStorage.setItem("mdmx:sidebar-width", "99999");
     expect(readStoredWidth()).toBe(MAX_SIDEBAR_WIDTH);
   });
 
   it("returns null for a non-numeric stored value", () => {
-    localStorage.setItem("imdx:sidebar-width", "wide");
+    localStorage.setItem("mdmx:sidebar-width", "wide");
     expect(readStoredWidth()).toBeNull();
   });
 });

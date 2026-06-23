@@ -21,7 +21,7 @@ export interface MediaUpload {
 
 /**
  * The editor's view of media storage. Kept deliberately API-agnostic (like
- * `onSave`): a host app implements it against `@imdx/next`'s `/files` (list)
+ * `onSave`): a host app implements it against `@mdmx/next`'s `/files` (list)
  * and `/media` (upload) routes, a GitHub provider, or an in-memory fake.
  */
 export interface MediaSource {
@@ -98,6 +98,75 @@ export async function fileToUpload(
   const buf = await file.arrayBuffer();
   return {
     path: mediaPath(mediaDir, file.name),
+    dataBase64: bytesToBase64(new Uint8Array(buf)),
+  };
+}
+
+/** MIME type → file extension for the image types MDMX media accepts. */
+const MIME_TO_EXT: Record<string, string> = {
+  "image/png": "png",
+  "image/jpeg": "jpg",
+  "image/gif": "gif",
+  "image/webp": "webp",
+  "image/avif": "avif",
+  "image/svg+xml": "svg",
+};
+
+/** Sanitize one path segment (e.g. a collection name) into `[a-z0-9-]`. */
+function safeSegment(name: string): string {
+  return name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "") || "media";
+}
+
+/**
+ * A sortable, collision-resistant filename for a pasted image, derived from its
+ * MIME type and the current time, e.g. `pasted-2026-06-21t12-34-56-789z.png`.
+ */
+export function timestampedMediaName(mime: string, now: Date = new Date()): string {
+  const ext = MIME_TO_EXT[mime] ?? "png";
+  const ts = now.toISOString().toLowerCase().replace(/[:.]/g, "-");
+  return `pasted-${ts}.${ext}`;
+}
+
+/**
+ * Repo-relative destination for a pasted asset: a directory named after the
+ * post's collection (when known) under the media dir, with a timestamped
+ * filename, e.g. `public/media/posts/pasted-2026-06-21t12-34-56-789z.png`.
+ */
+export function pastedMediaPath(
+  mediaDir: string,
+  mime: string,
+  collection?: string,
+  now?: Date,
+): string {
+  const dir = mediaDir.replace(/\/+$/, "");
+  const base = collection ? `${dir}/${safeSegment(collection)}` : dir;
+  return `${base}/${timestampedMediaName(mime, now)}`;
+}
+
+/** Extract the first image file from a clipboard payload, or null. */
+export function imageFromClipboard(data: DataTransfer): File | null {
+  for (const file of Array.from(data.files ?? [])) {
+    if (file.type.startsWith("image/")) return file;
+  }
+  // Some browsers expose pasted screenshots only via items, not files.
+  for (const item of Array.from(data.items ?? [])) {
+    if (item.kind === "file" && item.type.startsWith("image/")) {
+      const file = item.getAsFile();
+      if (file) return file;
+    }
+  }
+  return null;
+}
+
+/** Turn a pasted image `File` into an upload destined for its collection dir. */
+export async function pastedImageUpload(
+  file: File,
+  mediaDir: string,
+  collection?: string,
+): Promise<MediaUpload> {
+  const buf = await file.arrayBuffer();
+  return {
+    path: pastedMediaPath(mediaDir, file.type, collection),
     dataBase64: bytesToBase64(new Uint8Array(buf)),
   };
 }

@@ -1,16 +1,16 @@
-import { createIMDXHandlers, LocalProvider } from "@imdx/next";
+import { createMDMXHandlers, LocalProvider } from "@mdmx/next";
 import {
   CONTENT_DIR,
   MEDIA_DIR,
   REPO,
   projectRoot,
   registry,
-} from "../../../../lib/imdx-config";
+} from "../../../../lib/mdmx-config";
 
-// The content/media API, mounted at /api/imdx/*. localMode skips GitHub OAuth
+// The content/media API, mounted at /api/mdmx/*. localMode skips GitHub OAuth
 // and runs as a synthetic "local" session; saves go to the working tree via
 // LocalProvider. Validation, path-safety, CSRF, and conflict checks still apply.
-export const { GET, POST, PUT, DELETE } = createIMDXHandlers({
+export const { GET, POST, PUT, DELETE } = createMDMXHandlers({
   repo: REPO,
   contentDir: CONTENT_DIR,
   mediaDir: MEDIA_DIR,

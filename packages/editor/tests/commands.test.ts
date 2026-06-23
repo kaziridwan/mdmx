@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { EditorState } from "prosemirror-state";
-import { Registry, type RegistrySpec } from "@imdx/core";
+import { Registry, type RegistrySpec } from "@mdmx/core";
 import {
   buildSchema,
   buildComponentNode,
@@ -11,7 +11,7 @@ import {
 } from "../src/index.js";
 
 const spec: RegistrySpec = {
-  imdxRegistryVersion: 1,
+  mdmxRegistryVersion: 1,
   components: [
     {
       name: "Callout",
@@ -91,7 +91,7 @@ describe("insertComponent", () => {
 
     let found = null as null | { props: Record<string, unknown> };
     state.doc.descendants((n) => {
-      if (n.type.name === "imdx_Callout") found = { props: n.attrs.props };
+      if (n.type.name === "mdmx_Callout") found = { props: n.attrs.props };
       return !found;
     });
     expect(found).not.toBeNull();
@@ -106,7 +106,7 @@ describe("insertComponent", () => {
 
 describe("buildComponentNode (subtree seeding)", () => {
   const containerSpec: RegistrySpec = {
-    imdxRegistryVersion: 1,
+    mdmxRegistryVersion: 1,
     components: [
       {
         name: "TwoColumn",
@@ -132,7 +132,7 @@ describe("buildComponentNode (subtree seeding)", () => {
     expect(node).not.toBeNull();
     expect(node.childCount).toBe(2);
     node.forEach((col) => {
-      expect(col.type.name).toBe("imdx_Column");
+      expect(col.type.name).toBe("mdmx_Column");
       expect(col.childCount).toBe(1);
       expect(col.child(0).type.name).toBe("paragraph");
     });
@@ -156,7 +156,7 @@ describe("buildComponentNode (subtree seeding)", () => {
     });
     let cols = 0;
     state.doc.descendants((n) => {
-      if (n.type.name === "imdx_Column") cols += 1;
+      if (n.type.name === "mdmx_Column") cols += 1;
     });
     expect(cols).toBe(2);
   });

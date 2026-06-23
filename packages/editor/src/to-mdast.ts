@@ -12,7 +12,7 @@ import type {
   MdxJsxFlowElement,
 } from "mdast-util-mdx-jsx";
 import type { Mark, Node as PMNode } from "prosemirror-model";
-import { parseMDX, type JsonValue, type Registry } from "@imdx/core";
+import { parseMDX, type JsonValue, type Registry } from "@mdmx/core";
 import { componentNameFromNode, MARK_PRIORITY } from "./schema.js";
 
 export interface ToMdastOptions {
@@ -67,7 +67,7 @@ function blockToMdast(node: PMNode): RootContent[] {
       return [{ type: "thematicBreak" }];
     case "table":
       return [tableToMdast(node)];
-    case "imdx_raw": {
+    case "mdmx_raw": {
       const source = node.attrs.source as string;
       return parseMDX(source).children;
     }
@@ -160,7 +160,7 @@ function componentToMdast(node: PMNode, name: string): MdxJsxFlowElement {
 const IDENTIFIER = /^[A-Za-z_$][A-Za-z0-9_$]*$/;
 
 /**
- * Canonical printing for prop expressions. Part of the iMDX canonical form:
+ * Canonical printing for prop expressions. Part of the MDMX canonical form:
  * `, ` separators, unquoted identifier keys, double-quoted strings.
  */
 export function printPropValue(value: JsonValue): string {

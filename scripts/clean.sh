@@ -1,5 +1,5 @@
 #!/usr/bin/env sh
-# Remove build artifacts (dist, .next, generated .imdx, tsbuildinfo).
+# Remove build artifacts (dist, .next, generated .mdmx, tsbuildinfo).
 # Pass --all to also remove every node_modules.
 set -e
 ROOT=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
@@ -14,7 +14,7 @@ echo "> Removing example build outputs..."
 rm -rf "$ROOT/examples/editor-playground/dist"
 rm -rf "$ROOT/examples/demo-next/.next"
 for app in demo demo-next; do
-  rm -rf "$ROOT/examples/$app/.imdx"
+  rm -rf "$ROOT/examples/$app/.mdmx"
 done
 
 find "$ROOT/packages" "$ROOT/examples" -name "*.tsbuildinfo" -delete 2>/dev/null || true

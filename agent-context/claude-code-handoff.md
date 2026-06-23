@@ -1,13 +1,13 @@
 # Claude Code Handoff
 
-Start-here briefing for an agent taking over iMDX in Claude Code. Read this
+Start-here briefing for an agent taking over MDMX in Claude Code. Read this
 first, then `AGENTS.md`, then `docs/wiki/Home.md`. Budget five minutes for
 orientation before writing code.
 
 ## What you're inheriting
 
-**iMDX** is a git-native CMS toolkit for Next.js. Core idea: a strict,
-round-trippable subset of MDX ("iMDX") where the user's own React components
+**MDMX** is a git-native CMS toolkit for Next.js. Core idea: a strict,
+round-trippable subset of MDX ("MDMX") where the user's own React components
 are first-class blocks in a Notion-style editor. Content is committed to the
 user's GitHub repo; a codegen step turns their components into a typed registry
 that drives validation, the editor palette, and prop panels.
@@ -26,20 +26,20 @@ own React components are first-class blocks.*
 2. `docs/wiki/Home.md` — the documentation hub; branch out from there.
 3. `docs/DECISIONS.md` — the "why" behind every architectural choice
    (the ADR log). Read before proposing changes to settled designs.
-4. `SPEC.md` — the normative iMDX grammar and registry schema.
+4. `SPEC.md` — the normative MDMX grammar and registry schema.
 
 ## Get it running
 
 ```sh
 pnpm install
-pnpm test        # builds @imdx/core first, then all suites — expect 86 passing
+pnpm test        # builds @mdmx/core first, then all suites — expect 86 passing
 pnpm build       # all packages
 pnpm check       # typecheck all packages
 
 # see the CLI pipeline end-to-end:
 pnpm build
 cd examples/demo
-node ../../packages/cli/dist/bin.js generate   # → .imdx/registry.{json,ts}
+node ../../packages/cli/dist/bin.js generate   # → .mdmx/registry.{json,ts}
 node ../../packages/cli/dist/bin.js check       # lints content/ against it
 ```
 
@@ -52,17 +52,17 @@ for the real editor — it is not production code.
 
 | Layer | State |
 | --- | --- |
-| `@imdx/core` (format) | ✅ done, 27 tests |
-| `@imdx/cli` (codegen + lint) | ✅ done, 10 tests |
-| `@imdx/editor` (schema + converters + commands) | ✅ headless done, 15 tests; **React UI pending** |
-| `@imdx/next` (providers, sessions, OAuth, API) | ✅ server done, 27 tests; **mount page pending** |
-| `@imdx/provider-github` | ✅ done, 7 tests |
+| `@mdmx/core` (format) | ✅ done, 27 tests |
+| `@mdmx/cli` (codegen + lint) | ✅ done, 10 tests |
+| `@mdmx/editor` (schema + converters + commands) | ✅ headless done, 15 tests; **React UI pending** |
+| `@mdmx/next` (providers, sessions, OAuth, API) | ✅ server done, 27 tests; **mount page pending** |
+| `@mdmx/provider-github` | ✅ done, 7 tests |
 
 Full breakdown: `docs/wiki/Roadmap.md`.
 
 ## The recommended next milestone
 
-Port the prototype into `@imdx/editor` as **React NodeViews** (TipTap) over the
+Port the prototype into `@mdmx/editor` as **React NodeViews** (TipTap) over the
 existing, already-tested schema and converters — then build **TwoColumn** as
 the first nested component. The headless layers already handle nesting; the
 remaining work is NodeViews with `contentDOM`-placed editable regions and
@@ -70,7 +70,7 @@ nested drop targets. The concrete plan is in `docs/wiki/TwoColumn.md`
 (and the decision to build it in the real editor, not the prototype, is
 ADR-021).
 
-After that: the editor mount page in `@imdx/next` (a catch-all App Router route
+After that: the editor mount page in `@mdmx/next` (a catch-all App Router route
 wiring the editor to the API handlers), then turn `examples/demo` into a
 runnable Next.js app to dogfood the full loop.
 
@@ -88,8 +88,8 @@ These are non-negotiable; details and rationale in `AGENTS.md` /
   provider or route keeps both.
 - **core stays dependency-light** (no React); dependents import core, never the
   reverse.
-- **Build order**: after editing `@imdx/core`, rebuild it before running a
-  single dependent package's tests (`pnpm --filter @imdx/core build`). The root
+- **Build order**: after editing `@mdmx/core`, rebuild it before running a
+  single dependent package's tests (`pnpm --filter @mdmx/core build`). The root
   scripts already do this for you.
 - **`return await` in `next/src/api.ts`** is intentional — don't simplify it.
 - ESM `.js` import suffixes even from `.ts`; the container shell is `dash`

@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { defineIMDX } from "@imdx/core";
+import { defineMDMX } from "@mdmx/core";
 
 interface CalloutProps {
   /** Short label shown in the header */
@@ -17,7 +17,7 @@ function Callout({ title, variant, children }: CalloutProps) {
   );
 }
 
-export default defineIMDX(Callout, {
+export default defineMDMX(Callout, {
   name: "Callout",
   category: "Content",
   icon: "alert-circle",

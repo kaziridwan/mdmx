@@ -12,7 +12,7 @@ export type { FromMdastOptions } from "./from-mdast.js";
 export { toMdast, printPropValue } from "./to-mdast.js";
 export type { ToMdastOptions } from "./to-mdast.js";
 export {
-  imdxInputRules,
+  mdmxInputRules,
   markCommands,
   setHeading,
   setParagraph,

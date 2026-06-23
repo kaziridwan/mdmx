@@ -4,7 +4,7 @@ import { Buffer } from "node:buffer";
 /**
  * Stateless session support: data is sealed into an AES-256-GCM encrypted,
  * authenticated cookie. No server-side store — the package stays deployable
- * anywhere. The key is derived from IMDX_SESSION_SECRET.
+ * anywhere. The key is derived from MDMX_SESSION_SECRET.
  */
 
 export interface SessionData {
@@ -21,7 +21,7 @@ const VERSION = "v1";
 
 function keyFor(secret: string): Buffer {
   if (secret.length < 16) {
-    throw new Error("IMDX session secret must be at least 16 characters");
+    throw new Error("MDMX session secret must be at least 16 characters");
   }
   return createHash("sha256").update(secret).digest();
 }

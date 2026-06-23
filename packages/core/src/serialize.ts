@@ -6,7 +6,7 @@ import remarkStringify from "remark-stringify";
 import { unified } from "unified";
 
 /**
- * Canonical serialization options. These are part of the iMDX spec:
+ * Canonical serialization options. These are part of the MDMX spec:
  * changing any of them dirties every file in every user's repo on next
  * save, so treat changes here as semver-major.
  */
@@ -41,7 +41,7 @@ function createSerializer() {
     .use(remarkMdx, CANONICAL_MDX_OPTIONS);
 }
 
-/** Serialize an mdast tree to canonical iMDX text. */
+/** Serialize an mdast tree to canonical MDMX text. */
 export function toMDX(tree: Root): string {
   const out = createSerializer().stringify(tree) as unknown as string;
   // Canonical form: exactly one trailing newline.

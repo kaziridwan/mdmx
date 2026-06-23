@@ -1,9 +1,9 @@
 import { existsSync, readFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { pathToFileURL } from "node:url";
-import type { ControlSpec, JsonValue } from "@imdx/core";
+import type { ControlSpec, JsonValue } from "@mdmx/core";
 
-/** Frontmatter field as authored in `imdx.config.json` (keyed by field name). */
+/** Frontmatter field as authored in `mdmx.config.json` (keyed by field name). */
 export interface FieldConfig {
   control: ControlSpec;
   required?: boolean;
@@ -18,10 +18,10 @@ export interface CollectionConfig {
   fields: Record<string, FieldConfig>;
 }
 
-export interface IMDXConfig {
+export interface MDMXConfig {
   /** Glob(s) for component definition files, relative to the project root. */
   components: string | string[];
-  /** Directory holding iMDX content files. */
+  /** Directory holding MDMX content files. */
   contentDir: string;
   /** Directory the generated registry artifacts are written to. */
   outDir: string;
@@ -29,26 +29,26 @@ export interface IMDXConfig {
   collections?: Record<string, CollectionConfig>;
 }
 
-export const DEFAULT_CONFIG: IMDXConfig = {
-  components: "components/imdx/**/*.{ts,tsx}",
+export const DEFAULT_CONFIG: MDMXConfig = {
+  components: "components/mdmx/**/*.{ts,tsx}",
   contentDir: "content",
-  outDir: ".imdx",
+  outDir: ".mdmx",
 };
 
 /**
- * Load imdx.config.json or imdx.config.mjs from the project root.
+ * Load mdmx.config.json or mdmx.config.mjs from the project root.
  * (TS config files are a planned addition — they need a transpile step.)
  */
-export async function loadConfig(cwd: string): Promise<IMDXConfig> {
-  const jsonPath = join(cwd, "imdx.config.json");
+export async function loadConfig(cwd: string): Promise<MDMXConfig> {
+  const jsonPath = join(cwd, "mdmx.config.json");
   if (existsSync(jsonPath)) {
-    const raw = JSON.parse(readFileSync(jsonPath, "utf8")) as Partial<IMDXConfig>;
+    const raw = JSON.parse(readFileSync(jsonPath, "utf8")) as Partial<MDMXConfig>;
     return { ...DEFAULT_CONFIG, ...raw };
   }
-  const mjsPath = join(cwd, "imdx.config.mjs");
+  const mjsPath = join(cwd, "mdmx.config.mjs");
   if (existsSync(mjsPath)) {
     const mod = (await import(pathToFileURL(resolve(mjsPath)).href)) as {
-      default?: Partial<IMDXConfig>;
+      default?: Partial<MDMXConfig>;
     };
     return { ...DEFAULT_CONFIG, ...(mod.default ?? {}) };
   }

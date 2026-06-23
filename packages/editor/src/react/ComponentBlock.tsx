@@ -1,5 +1,5 @@
 import { Component, createElement, type ComponentType, type ReactNode } from "react";
-import type { ComponentSpec, JsonValue } from "@imdx/core";
+import type { ComponentSpec, JsonValue } from "@mdmx/core";
 import type { NodeViewComponent, NodeViewComponentProps } from "./react-node-view.js";
 
 /** Error boundary that degrades a thrown live render to a placeholder card. */
@@ -18,7 +18,7 @@ class RenderBoundary extends Component<
 
 /** The PM-managed editable hole, placed where children belong. */
 function ContentHole({ contentRef }: { contentRef: NodeViewComponentProps["contentRef"] }) {
-  return <div className="imdx-content" ref={contentRef} />;
+  return <div className="mdmx-content" ref={contentRef} />;
 }
 
 function PlaceholderCard({
@@ -34,10 +34,10 @@ function PlaceholderCard({
     .map(([k, v]) => `${k}=${typeof v === "string" ? v : JSON.stringify(v)}`)
     .join("  ");
   return (
-    <div className="imdx-placeholder" data-imdx-placeholder={spec.name}>
-      <div className="imdx-placeholder-head">
-        <span className="imdx-placeholder-name">{spec.name}</span>
-        {summary ? <span className="imdx-placeholder-props">{summary}</span> : null}
+    <div className="mdmx-placeholder" data-mdmx-placeholder={spec.name}>
+      <div className="mdmx-placeholder-head">
+        <span className="mdmx-placeholder-name">{spec.name}</span>
+        {summary ? <span className="mdmx-placeholder-props">{summary}</span> : null}
       </div>
       {children}
     </div>
@@ -77,8 +77,8 @@ export function makeComponentBlock(
 
     return (
       <div
-        className={"imdx-component" + (selected ? " is-selected" : "")}
-        data-imdx-component={spec.name}
+        className={"mdmx-component" + (selected ? " is-selected" : "")}
+        data-mdmx-component={spec.name}
       >
         {body}
       </div>

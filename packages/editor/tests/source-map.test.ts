@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { parseMDX, toMDX, Registry, type RegistrySpec } from "@imdx/core";
+import { parseMDX, toMDX, Registry, type RegistrySpec } from "@mdmx/core";
 import { buildSchema, fromMdast } from "../src/index.js";
 import {
   activeBlockRange,
@@ -8,7 +8,7 @@ import {
 } from "../src/react/source-map.js";
 
 const registrySpec: RegistrySpec = {
-  imdxRegistryVersion: 1,
+  mdmxRegistryVersion: 1,
   components: [
     {
       name: "Callout",

@@ -1,4 +1,4 @@
-import { defineIMDX } from "@imdx/core";
+import { defineMDMX } from "@mdmx/core";
 
 interface NewsletterProps {
   heading: string;
@@ -26,7 +26,7 @@ function NewsletterImpl({ heading, buttonLabel, placeholder, note }: NewsletterP
   );
 }
 
-export const Newsletter = defineIMDX(NewsletterImpl, {
+export const Newsletter = defineMDMX(NewsletterImpl, {
   name: "Newsletter",
   category: "Marketing",
   icon: "mail",

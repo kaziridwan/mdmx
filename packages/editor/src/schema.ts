@@ -1,15 +1,15 @@
 import { Schema, type NodeSpec, type MarkSpec } from "prosemirror-model";
-import type { ComponentSpec, Registry } from "@imdx/core";
+import type { ComponentSpec, Registry } from "@mdmx/core";
 
 /** Name of the ProseMirror node generated for a registered component. */
 export function componentNodeName(componentName: string): string {
-  return `imdx_${componentName}`;
+  return `mdmx_${componentName}`;
 }
 
 /** Inverse of componentNodeName; null if the node is not a component node. */
 export function componentNameFromNode(nodeName: string): string | null {
-  return nodeName.startsWith("imdx_") && nodeName !== "imdx_raw"
-    ? nodeName.slice("imdx_".length)
+  return nodeName.startsWith("mdmx_") && nodeName !== "mdmx_raw"
+    ? nodeName.slice("mdmx_".length)
     : null;
 }
 
@@ -100,12 +100,12 @@ const coreNodes: Record<string, NodeSpec> = {
   },
   text: { group: "inline" },
   /** Escape hatch: preserves out-of-subset source byte-for-byte. */
-  imdx_raw: {
+  mdmx_raw: {
     group: "block",
     atom: true,
     selectable: true,
     attrs: { source: { default: "" } },
-    toDOM: () => ["div", { class: "imdx-raw", "data-imdx-raw": "true" }],
+    toDOM: () => ["div", { class: "mdmx-raw", "data-mdmx-raw": "true" }],
   },
 };
 
@@ -160,7 +160,7 @@ function nodeSpecFor(spec: ComponentSpec): NodeSpec {
     },
     selectable: true,
     draggable: true,
-    toDOM: () => ["div", { "data-imdx-component": spec.name }, ...(content ? [0] : [])],
+    toDOM: () => ["div", { "data-mdmx-component": spec.name }, ...(content ? [0] : [])],
   };
 }
 

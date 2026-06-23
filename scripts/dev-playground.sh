@@ -1,5 +1,5 @@
 #!/usr/bin/env sh
-# Run the Vite editor playground (develop @imdx/editor/react in isolation).
+# Run the Vite editor playground (develop @mdmx/editor/react in isolation).
 # Builds core + editor, generates the demo registry the playground imports.
 set -e
 ROOT=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
@@ -10,10 +10,10 @@ if [ ! -d "$ROOT/node_modules" ]; then
   pnpm install
 fi
 
-echo "> Building @imdx/core, @imdx/cli, @imdx/editor..."
-pnpm --filter @imdx/core build
-pnpm --filter @imdx/cli build
-pnpm --filter @imdx/editor build
+echo "> Building @mdmx/core, @mdmx/cli, @mdmx/editor..."
+pnpm --filter @mdmx/core build
+pnpm --filter @mdmx/cli build
+pnpm --filter @mdmx/editor build
 
 echo "> Generating the demo registry..."
 ( cd "$ROOT/examples/demo" && node "$ROOT/packages/cli/dist/bin.js" generate )

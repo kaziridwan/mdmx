@@ -1,6 +1,6 @@
 import { NodeSelection, type EditorState } from "prosemirror-state";
 import type { EditorView } from "prosemirror-view";
-import type { JsonValue, PropSpec, Registry } from "@imdx/core";
+import type { JsonValue, PropSpec, Registry } from "@mdmx/core";
 import { componentNameFromNode } from "../schema.js";
 import { setPropValue } from "./prop-controls.js";
 import { Control } from "./controls.js";
@@ -17,9 +17,9 @@ export function PropPanel({ view, state, registry }: PropPanelProps) {
 
   if (!view || !selected) {
     return (
-      <aside className="imdx-props" aria-label="Properties">
-        <div className="imdx-props-label">Properties</div>
-        <div className="imdx-props-empty">Select a component to edit its props.</div>
+      <aside className="mdmx-props" aria-label="Properties">
+        <div className="mdmx-props-label">Properties</div>
+        <div className="mdmx-props-empty">Select a component to edit its props.</div>
       </aside>
     );
   }
@@ -34,17 +34,17 @@ export function PropPanel({ view, state, registry }: PropPanelProps) {
   };
 
   return (
-    <aside className="imdx-props" aria-label="Properties">
-      <div className="imdx-props-label">{spec.name}</div>
-      <div className="imdx-props-fields">
+    <aside className="mdmx-props" aria-label="Properties">
+      <div className="mdmx-props-label">{spec.name}</div>
+      <div className="mdmx-props-fields">
         {spec.props.map((prop) => (
-          <label key={prop.name} className="imdx-prop-field">
-            <span className="imdx-prop-name">
+          <label key={prop.name} className="mdmx-prop-field">
+            <span className="mdmx-prop-name">
               {prop.name}
-              {prop.required ? <span className="imdx-prop-req"> *</span> : null}
+              {prop.required ? <span className="mdmx-prop-req"> *</span> : null}
             </span>
             <Control control={prop.control} value={props[prop.name]} onChange={(raw) => update(prop, raw)} />
-            {prop.description ? <span className="imdx-prop-desc">{prop.description}</span> : null}
+            {prop.description ? <span className="mdmx-prop-desc">{prop.description}</span> : null}
           </label>
         ))}
       </div>
@@ -53,7 +53,7 @@ export function PropPanel({ view, state, registry }: PropPanelProps) {
 }
 
 interface Selected {
-  spec: import("@imdx/core").ComponentSpec;
+  spec: import("@mdmx/core").ComponentSpec;
   props: Record<string, JsonValue>;
   pos: number;
   attrs: Record<string, unknown>;

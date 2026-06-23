@@ -8,8 +8,8 @@ import {
   validateSource,
   type Diagnostic,
   type RegistrySpec,
-} from "@imdx/core";
-import type { IMDXConfig } from "./config.js";
+} from "@mdmx/core";
+import type { MDMXConfig } from "./config.js";
 
 export interface FileDiagnostics {
   file: string;
@@ -22,11 +22,11 @@ export interface CheckResult {
   warningCount: number;
 }
 
-export async function check(cwd: string, config: IMDXConfig): Promise<CheckResult> {
+export async function check(cwd: string, config: MDMXConfig): Promise<CheckResult> {
   const registryPath = join(cwd, config.outDir, "registry.json");
   if (!existsSync(registryPath)) {
     throw new Error(
-      `No registry found at ${relative(cwd, registryPath)}. Run \`imdx generate\` first.`,
+      `No registry found at ${relative(cwd, registryPath)}. Run \`mdmx generate\` first.`,
     );
   }
   const spec = JSON.parse(readFileSync(registryPath, "utf8")) as RegistrySpec;

@@ -7,7 +7,7 @@ import { unified, type Processor } from "unified";
 import YAML from "yaml";
 
 /**
- * The single parser configuration for iMDX. The serializer mirrors these
+ * The single parser configuration for MDMX. The serializer mirrors these
  * plugins (see serialize.ts) so parse/serialize stay symmetric.
  */
 export function createParser(): Processor<Root> {
@@ -18,7 +18,7 @@ export function createParser(): Processor<Root> {
     .use(remarkMdx) as unknown as Processor<Root>;
 }
 
-/** Parse iMDX/MDX source text into an mdast tree. */
+/** Parse MDMX/MDX source text into an mdast tree. */
 export function parseMDX(source: string): Root {
   const processor = createParser();
   return processor.runSync(processor.parse(source)) as Root;

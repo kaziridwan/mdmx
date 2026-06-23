@@ -1,4 +1,4 @@
-import type { ControlSpec, JsonValue } from "@imdx/core";
+import type { ControlSpec, JsonValue } from "@mdmx/core";
 import { displayControlValue } from "./prop-controls.js";
 import { isImagePath } from "./media.js";
 import { useMediaPicker } from "./media-context.js";
@@ -23,10 +23,10 @@ export function Control({
   switch (control.type) {
     case "image":
       return (
-        <div className="imdx-control-image">
+        <div className="mdmx-control-image">
           <input
             type="text"
-            className="imdx-control"
+            className="mdmx-control"
             value={v}
             placeholder="path or URL"
             onChange={(e) => onChange(e.target.value)}
@@ -34,20 +34,20 @@ export function Control({
           {requestMedia ? (
             <button
               type="button"
-              className="imdx-control-browse"
+              className="mdmx-control-browse"
               onClick={() => requestMedia((item) => onChange(item.url))}
             >
               Browse…
             </button>
           ) : null}
           {v && isImagePath(v) ? (
-            <img className="imdx-control-preview" src={v} alt="" />
+            <img className="mdmx-control-preview" src={v} alt="" />
           ) : null}
         </div>
       );
     case "select":
       return (
-        <select className="imdx-control" value={v} onChange={(e) => onChange(e.target.value)}>
+        <select className="mdmx-control" value={v} onChange={(e) => onChange(e.target.value)}>
           <option value="">—</option>
           {control.options.map((opt) => (
             <option key={opt} value={opt}>
@@ -60,7 +60,7 @@ export function Control({
       return (
         <input
           type="checkbox"
-          className="imdx-control imdx-control-checkbox"
+          className="mdmx-control mdmx-control-checkbox"
           checked={value === true}
           onChange={(e) => onChange(e.target.checked ? "true" : "false")}
         />
@@ -69,7 +69,7 @@ export function Control({
       return (
         <input
           type="number"
-          className="imdx-control"
+          className="mdmx-control"
           value={v}
           min={control.min}
           max={control.max}
@@ -81,7 +81,7 @@ export function Control({
     case "json":
       return (
         <textarea
-          className="imdx-control imdx-control-textarea"
+          className="mdmx-control mdmx-control-textarea"
           value={v}
           rows={3}
           onChange={(e) => onChange(e.target.value)}
@@ -91,7 +91,7 @@ export function Control({
       return (
         <input
           type="text"
-          className="imdx-control"
+          className="mdmx-control"
           value={v}
           placeholder={"placeholder" in control ? control.placeholder : undefined}
           onChange={(e) => onChange(e.target.value)}

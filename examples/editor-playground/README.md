@@ -1,6 +1,6 @@
 # editor-playground
 
-Standalone Vite harness for developing the `@imdx/editor` React UI in isolation
+Standalone Vite harness for developing the `@mdmx/editor` React UI in isolation
 (no auth, no providers, no Next.js). It loads the **demo** project's generated
 registry and renders `content/posts/welcome.mdx` in the editor.
 
@@ -8,8 +8,8 @@ registry and renders `content/posts/welcome.mdx` in the editor.
 
 ```sh
 # 1. Build the workspace packages the editor depends on
-pnpm --filter @imdx/core build
-pnpm --filter @imdx/editor build
+pnpm --filter @mdmx/core build
+pnpm --filter @mdmx/editor build
 
 # 2. Generate the demo registry (the playground imports it)
 cd examples/demo
@@ -28,8 +28,8 @@ Then open the printed URL. You should see:
   components), edit a `Callout`'s rich-text children inline;
 - the **prop panel** — select a component to edit its props (each edit is one
   transaction; the render and source update live);
-- the **source pane** on the right — live canonical iMDX, the active block's
+- the **source pane** on the right — live canonical MDMX, the active block's
   lines marked amber. On load it matches `welcome.mdx` byte-for-byte.
 
-The editor is imported from `@imdx/editor/react` (built `dist`), so rebuild
-`@imdx/editor` after changing it.
+The editor is imported from `@mdmx/editor/react` (built `dist`), so rebuild
+`@mdmx/editor` after changing it.

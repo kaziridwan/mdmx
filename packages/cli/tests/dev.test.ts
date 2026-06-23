@@ -2,7 +2,7 @@ import { cpSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { loadConfig, type IMDXConfig } from "../src/config.js";
+import { loadConfig, type MDMXConfig } from "../src/config.js";
 import {
   dev,
   runGenerate,
@@ -14,10 +14,10 @@ import {
 const FIXTURE = join(__dirname, "fixture-app");
 
 let app: string;
-let config: IMDXConfig;
+let config: MDMXConfig;
 
 beforeEach(async () => {
-  app = mkdtempSync(join(tmpdir(), "imdx-dev-"));
+  app = mkdtempSync(join(tmpdir(), "mdmx-dev-"));
   cpSync(FIXTURE, app, { recursive: true });
   config = await loadConfig(app);
 });
@@ -28,19 +28,19 @@ afterEach(() => {
 
 describe("staticBase", () => {
   it("strips the glob portion of a pattern", () => {
-    expect(staticBase("components/imdx/**/*.tsx")).toBe("components/imdx");
+    expect(staticBase("components/mdmx/**/*.tsx")).toBe("components/mdmx");
     expect(staticBase("src/**/{a,b}.ts")).toBe("src");
     expect(staticBase("*.tsx")).toBe(".");
-    expect(staticBase("components/imdx")).toBe("components/imdx");
+    expect(staticBase("components/mdmx")).toBe("components/mdmx");
   });
 });
 
 describe("watchTargets", () => {
   it("watches the component dir and config file, never the outDir", () => {
     const targets = watchTargets(app, config);
-    expect(targets).toContain(join(app, "components/imdx"));
-    expect(targets).toContain(join(app, "imdx.config.json"));
-    expect(targets.some((t) => t.includes(".imdx"))).toBe(false);
+    expect(targets).toContain(join(app, "components/mdmx"));
+    expect(targets).toContain(join(app, "mdmx.config.json"));
+    expect(targets.some((t) => t.includes(".mdmx"))).toBe(false);
   });
 });
 
@@ -78,7 +78,7 @@ describe("dev watch loop", () => {
       log: (m) => logs.push(m),
       error: () => {},
     });
-    expect(logs.some((l) => l.startsWith("imdx dev: watching"))).toBe(true);
+    expect(logs.some((l) => l.startsWith("mdmx dev: watching"))).toBe(true);
     expect(logs.some((l) => l.includes("2 component(s)"))).toBe(true);
     expect(handle.lastHash).toMatch(/^[0-9a-f]{16}$/);
     handle.close();
@@ -147,13 +147,13 @@ describe("dev watch loop", () => {
     logs.length = 0;
 
     writeFileSync(
-      join(app, "components/imdx/Note.tsx"),
+      join(app, "components/mdmx/Note.tsx"),
       [
-        `import { defineIMDX } from "@imdx/core";`,
+        `import { defineMDMX } from "@mdmx/core";`,
         `function NoteImpl({ text }: { text: string }) {`,
         `  return <aside>{text}</aside>;`,
         `}`,
-        `export const Note = defineIMDX(NoteImpl, { name: "Note" });`,
+        `export const Note = defineMDMX(NoteImpl, { name: "Note" });`,
         ``,
       ].join("\n"),
     );

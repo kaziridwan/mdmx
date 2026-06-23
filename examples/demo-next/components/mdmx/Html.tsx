@@ -1,5 +1,5 @@
-import { defineIMDX } from "@imdx/core";
-import { sanitizeHtml } from "@imdx/editor";
+import { defineMDMX } from "@mdmx/core";
+import { sanitizeHtml } from "@mdmx/editor";
 
 interface HtmlProps {
   /** Raw HTML, sanitized before render */
@@ -12,7 +12,7 @@ function HtmlImpl({ code }: HtmlProps) {
   );
 }
 
-export const Html = defineIMDX(HtmlImpl, {
+export const Html = defineMDMX(HtmlImpl, {
   name: "Html",
   category: "Advanced",
   icon: "code",

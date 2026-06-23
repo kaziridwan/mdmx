@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { defineIMDX } from "@imdx/core";
+import { defineMDMX } from "@mdmx/core";
 
 interface FeatureGridProps {
   columns?: "2" | "3" | "4";
@@ -14,7 +14,7 @@ function FeatureGridImpl({ columns = "3", children }: FeatureGridProps) {
   );
 }
 
-export const FeatureGrid = defineIMDX(FeatureGridImpl, {
+export const FeatureGrid = defineMDMX(FeatureGridImpl, {
   name: "FeatureGrid",
   category: "Marketing",
   icon: "grid",

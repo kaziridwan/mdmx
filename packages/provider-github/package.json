@@ -1,6 +1,6 @@
 {
-  "name": "@imdx/provider-github",
-  "version": "0.3.0",
+  "name": "@mdmx/provider-github",
+  "version": "0.3.1",
   "description": "ContentProvider implementation over the GitHub Git Data API (atomic multi-file commits)",
   "type": "module",
   "main": "./dist/index.js",
@@ -11,7 +11,7 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@imdx/core": "workspace:*"
+    "@mdmx/core": "workspace:*"
   },
   "devDependencies": {
     "@types/node": "~22.10.10"

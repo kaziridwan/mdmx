@@ -1,12 +1,12 @@
 import { useMemo, useState } from "react";
 import type { EditorView } from "prosemirror-view";
 import type { Schema } from "prosemirror-model";
-import type { Registry } from "@imdx/core";
+import type { Registry } from "@mdmx/core";
 import { insertComponent } from "../commands.js";
 import { filterComponents, groupByCategory } from "./rail-groups.js";
 import type { Snippet } from "../snippets.js";
 
-export const IMDX_DRAG_MIME = "application/x-imdx-component";
+export const MDMX_DRAG_MIME = "application/x-mdmx-component";
 
 export interface RailProps {
   registry: Registry;
@@ -59,10 +59,10 @@ export function Rail({
   };
 
   return (
-    <nav className="imdx-rail" aria-label="Component palette">
-      <div className="imdx-rail-title">Components</div>
+    <nav className="mdmx-rail" aria-label="Component palette">
+      <div className="mdmx-rail-title">Components</div>
       <input
-        className="imdx-rail-filter"
+        className="mdmx-rail-filter"
         type="search"
         placeholder="Filter components…"
         aria-label="Filter components"
@@ -70,20 +70,20 @@ export function Rail({
         onChange={(e) => setQuery(e.target.value)}
       />
       {groups.length === 0 ? (
-        <div className="imdx-rail-empty">No matches.</div>
+        <div className="mdmx-rail-empty">No matches.</div>
       ) : (
         groups.map(([category, specs]) => {
           // A filter query auto-expands all groups so matches are visible.
           const isCollapsed = query.trim() === "" && collapsed.has(category);
           return (
-            <div key={category} className="imdx-rail-group">
+            <div key={category} className="mdmx-rail-group">
               <button
                 type="button"
-                className="imdx-rail-group-label"
+                className="mdmx-rail-group-label"
                 aria-expanded={!isCollapsed}
                 onClick={() => toggle(category)}
               >
-                <span className="imdx-rail-group-chevron" aria-hidden>
+                <span className="mdmx-rail-group-chevron" aria-hidden>
                   {isCollapsed ? "▸" : "▾"}
                 </span>
                 {category}
@@ -94,17 +94,17 @@ export function Rail({
                     <button
                       key={spec.name}
                       type="button"
-                      className="imdx-rail-item"
+                      className="mdmx-rail-item"
                       draggable
                       onDragStart={(e) => {
-                        e.dataTransfer.setData(IMDX_DRAG_MIME, spec.name);
+                        e.dataTransfer.setData(MDMX_DRAG_MIME, spec.name);
                         e.dataTransfer.effectAllowed = "copy";
                       }}
                       onClick={() => insert(spec.name)}
                       title={spec.description}
                     >
-                      <span className="imdx-rail-icon" data-icon={spec.icon} aria-hidden />
-                      <span className="imdx-rail-name">{spec.name}</span>
+                      <span className="mdmx-rail-icon" data-icon={spec.icon} aria-hidden />
+                      <span className="mdmx-rail-name">{spec.name}</span>
                     </button>
                   ))}
             </div>
@@ -112,21 +112,21 @@ export function Rail({
         })
       )}
       {onInsertSnippet && matchedSnippets.length > 0 ? (
-        <div className="imdx-rail-group">
-          <div className="imdx-rail-group-label imdx-rail-group-static">Snippets</div>
+        <div className="mdmx-rail-group">
+          <div className="mdmx-rail-group-label mdmx-rail-group-static">Snippets</div>
           {matchedSnippets.map((snippet) => (
             <button
               key={snippet.name}
               type="button"
-              className="imdx-rail-item imdx-rail-snippet"
+              className="mdmx-rail-item mdmx-rail-snippet"
               onClick={() => {
                 onInsertSnippet(snippet);
                 onAfterInsert?.();
               }}
               title="Insert saved HTML snippet"
             >
-              <span className="imdx-rail-icon" data-icon="code" aria-hidden />
-              <span className="imdx-rail-name">{snippet.name}</span>
+              <span className="mdmx-rail-icon" data-icon="code" aria-hidden />
+              <span className="mdmx-rail-name">{snippet.name}</span>
             </button>
           ))}
         </div>

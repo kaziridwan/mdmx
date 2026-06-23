@@ -1,12 +1,12 @@
 /**
- * @imdx/core — shared types for the iMDX spec, diagnostics, and registry.
+ * @mdmx/core — shared types for the MDMX spec, diagnostics, and registry.
  *
  * This module is intentionally free of React and Node dependencies so it can
  * be consumed by the CLI, the editor, the Next.js renderer, and CI alike.
  */
 
-/** Version of the iMDX grammar implemented by this package. */
-export const IMDX_SPEC_VERSION = 1;
+/** Version of the MDMX grammar implemented by this package. */
+export const MDMX_SPEC_VERSION = 1;
 
 // ---------------------------------------------------------------------------
 // JSON values (the "props are JSON" rule)
@@ -28,23 +28,23 @@ export type PropsObject = Record<string, JsonValue>;
 
 export type DiagnosticCode =
   /** JSX element whose name is not in the registry. */
-  | "IMDX001"
+  | "MDMX001"
   /** Prop value is not statically serializable (not a JSON literal). */
-  | "IMDX002"
-  /** Node type outside the iMDX subset (raw HTML, expressions, ESM, …). */
-  | "IMDX003"
+  | "MDMX002"
+  /** Node type outside the MDMX subset (raw HTML, expressions, ESM, …). */
+  | "MDMX003"
   /** Child not allowed by the component's children policy / constraints. */
-  | "IMDX004"
+  | "MDMX004"
   /** Component placed under a parent that its spec does not allow. */
-  | "IMDX005"
+  | "MDMX005"
   /** Required prop missing. */
-  | "IMDX006"
+  | "MDMX006"
   /** Prop provided that the component spec does not declare. */
-  | "IMDX007"
+  | "MDMX007"
   /** Required frontmatter field (per the collection schema) is missing. */
-  | "IMDX008"
+  | "MDMX008"
   /** Frontmatter field value does not match its declared control/type. */
-  | "IMDX009";
+  | "MDMX009";
 
 export interface SourcePosition {
   line: number; // 1-indexed
@@ -100,7 +100,7 @@ export interface PropSpec {
 export interface ComponentConstraints {
   /** Component names this may appear under; null = anywhere. */
   allowedParents: readonly string[] | null;
-  /** Component names allowed as direct children; null = any valid iMDX. */
+  /** Component names allowed as direct children; null = any valid MDMX. */
   allowedChildren: readonly string[] | null;
 }
 
@@ -142,7 +142,7 @@ export interface CollectionSpec {
 }
 
 export interface RegistrySpec {
-  imdxRegistryVersion: number;
+  mdmxRegistryVersion: number;
   generatedAt?: string;
   hash?: string;
   components: ComponentSpec[];
@@ -200,12 +200,12 @@ export class Registry {
 }
 
 // ---------------------------------------------------------------------------
-// defineIMDX (runtime side; codegen reads the same call statically)
+// defineMDMX (runtime side; codegen reads the same call statically)
 // ---------------------------------------------------------------------------
 
-export const IMDX_META: unique symbol = Symbol.for("imdx.meta");
+export const MDMX_META: unique symbol = Symbol.for("mdmx.meta");
 
-export interface DefineIMDXConfig {
+export interface DefineMDMXConfig {
   name: string;
   category?: string;
   icon?: string;
@@ -223,17 +223,17 @@ export interface DefineIMDXConfig {
   render?: { mode: RenderMode };
 }
 
-export interface IMDXTagged {
-  [IMDX_META]: DefineIMDXConfig;
+export interface MDMXTagged {
+  [MDMX_META]: DefineMDMXConfig;
 }
 
 /**
- * Tag a component with iMDX metadata. Framework-agnostic: `component` is
+ * Tag a component with MDMX metadata. Framework-agnostic: `component` is
  * opaque to core. The CLI extracts this config statically; the editor reads
- * it at runtime via the IMDX_META symbol.
+ * it at runtime via the MDMX_META symbol.
  */
-export function defineIMDX<C>(component: C, config: DefineIMDXConfig): C & IMDXTagged {
-  const tagged = component as C & IMDXTagged;
-  tagged[IMDX_META] = config;
+export function defineMDMX<C>(component: C, config: DefineMDMXConfig): C & MDMXTagged {
+  const tagged = component as C & MDMXTagged;
+  tagged[MDMX_META] = config;
   return tagged;
 }

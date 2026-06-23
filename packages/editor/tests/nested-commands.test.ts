@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { EditorState, TextSelection } from "prosemirror-state";
 import type { Node as PMNode } from "prosemirror-model";
-import { Registry, type RegistrySpec } from "@imdx/core";
+import { Registry, type RegistrySpec } from "@mdmx/core";
 import { buildSchema, componentNodeName } from "../src/schema.js";
 import {
   buildComponentNode,
@@ -13,7 +13,7 @@ import {
 } from "../src/commands.js";
 
 const spec: RegistrySpec = {
-  imdxRegistryVersion: 1,
+  mdmxRegistryVersion: 1,
   components: [
     { name: "Stat", children: { policy: "none" }, props: [] },
     {

@@ -1,4 +1,4 @@
-import { defineIMDX } from "@imdx/core";
+import { defineMDMX } from "@mdmx/core";
 
 interface LogoCloudProps {
   title?: string;
@@ -25,7 +25,7 @@ function LogoCloudImpl({ title, names }: LogoCloudProps) {
   );
 }
 
-export const LogoCloud = defineIMDX(LogoCloudImpl, {
+export const LogoCloud = defineMDMX(LogoCloudImpl, {
   name: "LogoCloud",
   category: "Marketing",
   icon: "image",

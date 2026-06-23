@@ -1,7 +1,7 @@
 import type { MouseEvent as ReactMouseEvent } from "react";
 import type { EditorState } from "prosemirror-state";
 import type { EditorView } from "prosemirror-view";
-import type { CollectionSpec, Registry } from "@imdx/core";
+import type { CollectionSpec, Registry } from "@mdmx/core";
 import { SourcePane } from "./SourcePane.js";
 import { PropPanel } from "./PropPanel.js";
 import { FrontmatterPanel } from "./FrontmatterPanel.js";
@@ -39,21 +39,21 @@ export function EditorSidebar({
   onResizeStart,
 }: EditorSidebarProps) {
   return (
-    <aside className="imdx-sidebar" aria-label="Editor sidebar">
+    <aside className="mdmx-sidebar" aria-label="Editor sidebar">
       {onResizeStart ? (
         <div
-          className="imdx-sidebar-resize"
+          className="mdmx-sidebar-resize"
           role="separator"
           aria-orientation="vertical"
           aria-label="Resize sidebar"
           onMouseDown={onResizeStart}
         />
       ) : null}
-      <div className="imdx-sidebar-tabs" role="tablist">
+      <div className="mdmx-sidebar-tabs" role="tablist">
         <button
           type="button"
           role="tab"
-          className="imdx-sidebar-tab"
+          className="mdmx-sidebar-tab"
           aria-selected={mode === "source"}
           aria-label="Source"
           onClick={() => onModeChange("source")}
@@ -64,7 +64,7 @@ export function EditorSidebar({
         <button
           type="button"
           role="tab"
-          className="imdx-sidebar-tab"
+          className="mdmx-sidebar-tab"
           aria-selected={mode === "properties"}
           aria-label="Properties"
           onClick={() => onModeChange("properties")}
@@ -73,7 +73,7 @@ export function EditorSidebar({
           <span>Properties</span>
         </button>
       </div>
-      <div className="imdx-sidebar-body">
+      <div className="mdmx-sidebar-body">
         {mode === "source" ? (
           <SourcePane state={state} registry={registry} />
         ) : componentSelected ? (

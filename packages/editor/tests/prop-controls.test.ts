@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import type { PropSpec } from "@imdx/core";
+import type { PropSpec } from "@mdmx/core";
 import {
   coerceControlValue,
   displayControlValue,

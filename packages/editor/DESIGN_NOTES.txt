@@ -1,10 +1,10 @@
-iMDX EDITOR — design notes
+MDMX EDITOR — design notes
 
 Subject: a writing tool where the author's own React components are blocks,
-and every edit produces clean, canonical iMDX text in their git repo.
+and every edit produces clean, canonical MDMX text in their git repo.
 
 Thesis / signature: the visible seam. A split view — composed blocks on the
-left, the canonical iMDX source materializing on the right as you type, with
+left, the canonical MDMX source materializing on the right as you type, with
 the active block highlighted in BOTH panes. The product's whole reason to
 exist (WYSIWYG that round-trips to reviewable text) is the thing you watch
 happen. No other block editor shows you its output as a first-class surface.
@@ -37,7 +37,7 @@ Layout:
   [ rail ][ ——— canvas ——— ][ source pane ]   prop panel slides over canvas
   Rail = component palette (grouped by category, icon + name).
   Canvas = blocks; hovering shows a drag handle + "+"; "/" opens slash menu.
-  Source = dark, live canonical iMDX, active block's lines marked amber.
+  Source = dark, live canonical MDMX, active block's lines marked amber.
 
 Signature interaction: selecting a block scrolls + glows its counterpart in
 the source pane (and vice-versa is implied). Prop panel edits update the live

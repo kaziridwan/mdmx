@@ -2,10 +2,10 @@ import ts from "typescript";
 import { relative } from "node:path";
 import type {
   ComponentSpec,
-  DefineIMDXConfig,
+  DefineMDMXConfig,
   JsonValue,
   PropSpec,
-} from "@imdx/core";
+} from "@mdmx/core";
 import { inferControl, isFunctionType } from "./infer.js";
 import { staticEval } from "./static-eval.js";
 
@@ -18,7 +18,7 @@ export interface ExtractionIssue {
 
 export interface ExtractedComponent {
   spec: ComponentSpec;
-  /** Absolute path of the file containing the defineIMDX call. */
+  /** Absolute path of the file containing the defineMDMX call. */
   file: string;
   /** How the tagged component is exported: "default" or a named export. */
   exportName: string;
@@ -51,7 +51,7 @@ export function extractComponents(files: string[], cwd: string): ExtractionResul
     visit(sf);
 
     function visit(node: ts.Node): void {
-      if (isDefineIMDXCall(node)) {
+      if (isDefineMDMXCall(node)) {
         handleCall(node, sf);
       }
       ts.forEachChild(node, visit);
@@ -75,22 +75,22 @@ export function extractComponents(files: string[], cwd: string): ExtractionResul
 
     const [componentArg, configArg] = call.arguments;
     if (!componentArg || !configArg) {
-      fail("defineIMDX(component, config) requires both arguments.");
+      fail("defineMDMX(component, config) requires both arguments.");
       return;
     }
     if (!ts.isObjectLiteralExpression(configArg)) {
-      fail("defineIMDX config must be an inline object literal.", configArg);
+      fail("defineMDMX config must be an inline object literal.", configArg);
       return;
     }
 
     const evaluated = staticEval(configArg);
     if (!evaluated.ok) {
-      fail(`defineIMDX config is not statically evaluable: ${evaluated.reason}.`, evaluated.node as ts.Node);
+      fail(`defineMDMX config is not statically evaluable: ${evaluated.reason}.`, evaluated.node as ts.Node);
       return;
     }
-    const config = evaluated.value as unknown as DefineIMDXConfig;
+    const config = evaluated.value as unknown as DefineMDMXConfig;
     if (!config.name || typeof config.name !== "string") {
-      fail('defineIMDX config must declare a string "name".', configArg);
+      fail('defineMDMX config must declare a string "name".', configArg);
       return;
     }
     if (!/^[A-Z][A-Za-z0-9]*$/.test(config.name)) {
@@ -101,7 +101,7 @@ export function extractComponents(files: string[], cwd: string): ExtractionResul
     const exportName = resolveExportName(call);
     if (!exportName) {
       warn(
-        `The defineIMDX result for "${config.name}" is not exported; it cannot be imported into the registry.`,
+        `The defineMDMX result for "${config.name}" is not exported; it cannot be imported into the registry.`,
       );
     }
 
@@ -127,7 +127,7 @@ export function extractComponents(files: string[], cwd: string): ExtractionResul
         if (isFunctionType(type)) {
           if (required) {
             fail(
-              `Prop "${name}" of "${config.name}" is a required function — it can never be expressed in iMDX content. Make it optional or remove it.`,
+              `Prop "${name}" of "${config.name}" is a required function — it can never be expressed in MDMX content. Make it optional or remove it.`,
             );
           } else {
             warn(
@@ -204,11 +204,11 @@ export function extractComponents(files: string[], cwd: string): ExtractionResul
   }
 }
 
-function isDefineIMDXCall(node: ts.Node): node is ts.CallExpression {
+function isDefineMDMXCall(node: ts.Node): node is ts.CallExpression {
   return (
     ts.isCallExpression(node) &&
     ts.isIdentifier(node.expression) &&
-    node.expression.text === "defineIMDX"
+    node.expression.text === "defineMDMX"
   );
 }
 

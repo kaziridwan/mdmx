@@ -1,6 +1,6 @@
 # Testing
 
-201 tests across five packages, all green. The suites aren't just coverage —
+210 tests across five packages, all green. The suites aren't just coverage —
 several *are* the spec, locking guarantees that define the product.
 
 ## How to run
@@ -31,7 +31,7 @@ cd packages/<name> && pnpm exec vitest run   # one package (rebuild core first i
 | Editor load→serialize is a fixed point (live source pane) | `source-map.test.ts` | editor |
 | React editor mounts; `contentDOM` lands in the component's render; live source matches | `editor-mount.test.ts` (jsdom) | editor |
 | Prop-control value coercion (number/json/multiselect/empty→drop) | `prop-controls.test.ts` | editor |
-| Canonical frontmatter YAML is a fixed point; field ordering; IMDX008/009 | `frontmatter.test.ts` | core |
+| Canonical frontmatter YAML is a fixed point; field ordering; MDMX008/009 | `frontmatter.test.ts` | core |
 | Collection resolves by longest dir prefix | `frontmatter.test.ts` | core |
 | Frontmatter edit rewrites canonical YAML in the live source | `editor-mount.test.ts` | editor |
 | Save validates frontmatter (strict 422 / report diagnostics) | `api.test.ts` | next |

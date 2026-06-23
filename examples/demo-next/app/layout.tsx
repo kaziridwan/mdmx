@@ -2,7 +2,7 @@ import type { ReactNode } from "react";
 import "./globals.css";
 
 export const metadata = {
-  title: "iMDX — local CMS",
+  title: "MDMX — local CMS",
   description: "A git-native CMS where your React components are first-class blocks.",
 };
 

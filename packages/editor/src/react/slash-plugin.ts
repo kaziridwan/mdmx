@@ -10,7 +10,7 @@ export interface SlashState {
 
 const INACTIVE: SlashState = { active: false, query: "", from: 0 };
 
-export const slashKey = new PluginKey<SlashState>("imdxSlash");
+export const slashKey = new PluginKey<SlashState>("mdmxSlash");
 
 /**
  * Tracks a `/`-trigger at the start of an empty-ish paragraph. The React

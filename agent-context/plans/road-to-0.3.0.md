@@ -1,6 +1,6 @@
 # Road to 0.3.0 — demo presentability
 
-Goal: make the iMDX demo presentable. Driven by a self-paced `/loop` (≤8h / ≤100
+Goal: make the MDMX demo presentable. Driven by a self-paced `/loop` (≤8h / ≤100
 iterations). Each iteration: pick the next unchecked item, implement it fully,
 add tests, run the **full** typecheck + test suite green, do the AGENTS.md wiki
 upkeep (SessionLog entry, ADR if architectural, sync Packages/Roadmap/Testing/
@@ -9,7 +9,7 @@ Home counts), and commit with a `Co-Authored-By` trailer. Re-read this file and
 
 **Never** alter canonical serialization or round-trip tests to make something
 pass. The editor main entry stays React-free (Invariant 9); React lives under
-`@imdx/editor/react`. CSS lives in the consumers (`examples/demo-next/app/
+`@mdmx/editor/react`. CSS lives in the consumers (`examples/demo-next/app/
 globals.css`, `examples/editor-playground/src/styles.css`) — keep both in sync.
 
 ## Standing assumptions (flagged for the user)
@@ -33,7 +33,7 @@ globals.css`, `examples/editor-playground/src/styles.css`) — keep both in sync
   mode: source (the signature view). Update demo + playground CSS to a 3-column
   grid. jsdom tests for the toggle.
 - [x] **S12 — Resizable sidebar (desktop).** Drag handle on the sidebar's left
-  edge sets `--imdx-sidebar-width` on the editor root (clamped); persist the last
+  edge sets `--mdmx-sidebar-width` on the editor root (clamped); persist the last
   width. Pure-ish resize logic unit-tested; jsdom drag smoke.
 - [x] **S13 — Mobile layout.** Below a breakpoint: the left palette collapses to a
   floating button (bottom-left) opening a half-height/scrollable modal; the right
@@ -52,7 +52,7 @@ globals.css`, `examples/editor-playground/src/styles.css`) — keep both in sync
 - [x] **S16 — Feature grid + Stats band.**
 - [x] **S17 — Pricing + Testimonial.**
 - [x] **S18 — Logo cloud + FAQ + Newsletter signup.**
-  (Each: real component in `examples/demo-next/components/imdx`, `defineIMDX`
+  (Each: real component in `examples/demo-next/components/mdmx`, `defineMDMX`
   metadata with category/icon, generate, a showcase post, verify in `next dev`.)
 
 ### HTML component

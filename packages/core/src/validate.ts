@@ -51,16 +51,16 @@ const RICH_TEXT_PHRASING = new Set([
 
 /** Friendlier names for the things we reject most often. */
 const DISALLOWED_HINTS: Record<string, string> = {
-  html: "Raw HTML is not part of iMDX. Use a registered component instead.",
-  mdxjsEsm: "import/export statements are not allowed in iMDX content. Components are injected from the registry.",
-  mdxFlowExpression: "JavaScript expressions are not allowed in iMDX content.",
-  mdxTextExpression: "Inline JavaScript expressions are not allowed in iMDX content.",
-  mdxJsxTextElement: "Inline (text-level) components are not allowed in iMDX v1. Use the component as a block.",
-  definition: "Reference-style links are not part of iMDX. Use inline links: [text](url).",
-  linkReference: "Reference-style links are not part of iMDX. Use inline links: [text](url).",
-  imageReference: "Reference-style images are not part of iMDX. Use inline images: ![alt](url).",
-  footnoteDefinition: "Footnotes are not part of iMDX v1.",
-  footnoteReference: "Footnotes are not part of iMDX v1.",
+  html: "Raw HTML is not part of MDMX. Use a registered component instead.",
+  mdxjsEsm: "import/export statements are not allowed in MDMX content. Components are injected from the registry.",
+  mdxFlowExpression: "JavaScript expressions are not allowed in MDMX content.",
+  mdxTextExpression: "Inline JavaScript expressions are not allowed in MDMX content.",
+  mdxJsxTextElement: "Inline (text-level) components are not allowed in MDMX v1. Use the component as a block.",
+  definition: "Reference-style links are not part of MDMX. Use inline links: [text](url).",
+  linkReference: "Reference-style links are not part of MDMX. Use inline links: [text](url).",
+  imageReference: "Reference-style images are not part of MDMX. Use inline images: ![alt](url).",
+  footnoteDefinition: "Footnotes are not part of MDMX v1.",
+  footnoteReference: "Footnotes are not part of MDMX v1.",
 };
 
 function spanOf(node: Node): SourceSpan | undefined {
@@ -84,7 +84,7 @@ export interface ValidateOptions {
   registry: Registry;
 }
 
-/** Validate an already-parsed tree against the iMDX subset + a registry. */
+/** Validate an already-parsed tree against the MDMX subset + a registry. */
 export function validateTree(tree: Root, options: ValidateOptions): Diagnostic[] {
   const diagnostics: Diagnostic[] = [];
   walk(tree, null, options.registry, diagnostics, "blocks");
@@ -110,11 +110,11 @@ function walk(
   // 1. Subset membership
   if (!ALLOWED_TYPES.has(node.type)) {
     diagnostics.push({
-      code: "IMDX003",
+      code: "MDMX003",
       severity: "error",
       message:
         DISALLOWED_HINTS[node.type] ??
-        `Node type "${node.type}" is outside the iMDX subset.`,
+        `Node type "${node.type}" is outside the MDMX subset.`,
       span: spanOf(node),
     });
     return; // opaque: don't descend into disallowed regions
@@ -124,7 +124,7 @@ function walk(
   if (mode === "rich-text" && node.type !== "paragraph" && node.type !== "root") {
     if (!RICH_TEXT_PHRASING.has(node.type)) {
       diagnostics.push({
-        code: "IMDX004",
+        code: "MDMX004",
         severity: "error",
         message: `"${node.type}" is not allowed inside <${parentComponent?.name}> (children policy: rich-text).`,
         span: spanOf(node),
@@ -156,9 +156,9 @@ function validateComponent(
   const name = el.name;
   if (!name) {
     diagnostics.push({
-      code: "IMDX003",
+      code: "MDMX003",
       severity: "error",
-      message: "JSX fragments (<>…</>) are not allowed in iMDX.",
+      message: "JSX fragments (<>…</>) are not allowed in MDMX.",
       span: spanOf(el),
     });
     return;
@@ -167,9 +167,9 @@ function validateComponent(
   const spec = registry.get(name);
   if (!spec) {
     diagnostics.push({
-      code: "IMDX001",
+      code: "MDMX001",
       severity: "error",
-      message: `Unknown component <${name}>. It is not in the iMDX registry — run \`imdx generate\` or register it with defineIMDX().`,
+      message: `Unknown component <${name}>. It is not in the MDMX registry — run \`mdmx generate\` or register it with defineMDMX().`,
       span: spanOf(el),
     });
     return;
@@ -181,7 +181,7 @@ function validateComponent(
     const parentName = parentComponent?.name;
     if (!parentName || !allowedParents.includes(parentName)) {
       diagnostics.push({
-        code: "IMDX005",
+        code: "MDMX005",
         severity: "error",
         message: `<${name}> may only appear inside ${allowedParents
           .map((p) => `<${p}>`)
@@ -199,7 +199,7 @@ function validateComponent(
   for (const propName of Object.keys(props)) {
     if (!declared.has(propName)) {
       diagnostics.push({
-        code: "IMDX007",
+        code: "MDMX007",
         severity: "warning",
         message: `<${name}> does not declare a prop "${propName}".`,
         span: spanOf(el),
@@ -209,7 +209,7 @@ function validateComponent(
   for (const p of spec.props) {
     if (p.required && !(p.name in props) && p.default === undefined) {
       diagnostics.push({
-        code: "IMDX006",
+        code: "MDMX006",
         severity: "error",
         message: `<${name}> is missing required prop "${p.name}".`,
         span: spanOf(el),
@@ -222,7 +222,7 @@ function validateComponent(
   if (policy === "none") {
     if (el.children.length > 0) {
       diagnostics.push({
-        code: "IMDX004",
+        code: "MDMX004",
         severity: "error",
         message: `<${name}> does not accept children (children policy: none). Write it self-closing: <${name} />.`,
         span: spanOf(el),
@@ -241,7 +241,7 @@ function validateComponent(
         allowedChildren.includes((child as MdxJsxFlowElement).name as string);
       if (!ok) {
         diagnostics.push({
-          code: "IMDX004",
+          code: "MDMX004",
           severity: "error",
           message: `<${name}> only accepts ${allowedChildren
             .map((c) => `<${c}>`)

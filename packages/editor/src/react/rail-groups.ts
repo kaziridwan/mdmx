@@ -1,4 +1,4 @@
-import type { ComponentSpec } from "@imdx/core";
+import type { ComponentSpec } from "@mdmx/core";
 
 /** Default group label for components without a `category`. */
 export const DEFAULT_CATEGORY = "Components";

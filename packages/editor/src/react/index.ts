@@ -1,5 +1,5 @@
-export { IMDXEditor } from "./Editor.js";
-export type { IMDXEditorProps, ComponentMap } from "./Editor.js";
+export { MDMXEditor } from "./Editor.js";
+export type { MDMXEditorProps, ComponentMap } from "./Editor.js";
 export { createReactNodeView } from "./react-node-view.js";
 export type {
   NodeViewComponent,
@@ -7,7 +7,7 @@ export type {
   CreateNodeViewOptions,
 } from "./react-node-view.js";
 export { makeComponentBlock } from "./ComponentBlock.js";
-export { Rail, IMDX_DRAG_MIME } from "./Rail.js";
+export { Rail, MDMX_DRAG_MIME } from "./Rail.js";
 export type { RailProps } from "./Rail.js";
 export { filterComponents, groupByCategory, DEFAULT_CATEGORY } from "./rail-groups.js";
 export { SourcePane } from "./SourcePane.js";

@@ -1,4 +1,4 @@
-import { defineIMDX } from "@imdx/core";
+import { defineMDMX } from "@mdmx/core";
 
 interface ChartProps {
   title?: string;
@@ -12,7 +12,7 @@ function ChartImpl({ series }: ChartProps) {
   return <svg data-series={series.join(",")} />;
 }
 
-export const Chart = defineIMDX(ChartImpl, {
+export const Chart = defineMDMX(ChartImpl, {
   name: "Chart",
   category: "Data",
   icon: "bar-chart",

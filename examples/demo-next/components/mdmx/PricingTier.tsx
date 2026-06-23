@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { defineIMDX } from "@imdx/core";
+import { defineMDMX } from "@mdmx/core";
 
 interface PricingTierProps {
   name: string;
@@ -38,7 +38,7 @@ function PricingTierImpl({
   );
 }
 
-export const PricingTier = defineIMDX(PricingTierImpl, {
+export const PricingTier = defineMDMX(PricingTierImpl, {
   name: "PricingTier",
   category: "Marketing",
   icon: "tag",

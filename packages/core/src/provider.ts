@@ -1,6 +1,6 @@
 /**
  * The content storage contract. Implementations: GitHubProvider
- * (@imdx/provider-github), LocalProvider (@imdx/next, development mode),
+ * (@mdmx/provider-github), LocalProvider (@mdmx/next, development mode),
  * and in the future GitLab / generic git.
  *
  * Design notes:

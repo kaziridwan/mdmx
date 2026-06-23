@@ -2,19 +2,19 @@ import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { Registry, type RegistrySpec } from "@imdx/core";
+import { Registry, type RegistrySpec } from "@mdmx/core";
 import {
-  createIMDXHandlers,
+  createMDMXHandlers,
   LocalProvider,
   parseCookies,
   seal,
   unseal,
-  type IMDXHandlers,
+  type MDMXHandlers,
   type SessionData,
 } from "../src/index.js";
 
 const SECRET = "test-secret-test-secret";
-const BASE = "https://site.example/api/imdx";
+const BASE = "https://site.example/api/mdmx";
 
 // ---------------------------------------------------------------------------
 // Fake GitHub OAuth + permission endpoints
@@ -47,7 +47,7 @@ function respond(body: unknown, status = 200): Response {
 // ---------------------------------------------------------------------------
 
 const registry = new Registry({
-  imdxRegistryVersion: 1,
+  mdmxRegistryVersion: 1,
   components: [
     {
       name: "Callout",
@@ -67,8 +67,8 @@ const registry = new Registry({
 let root: string;
 let now = Date.now();
 
-function makeHandlers(over: Partial<Parameters<typeof createIMDXHandlers>[0]> = {}): IMDXHandlers {
-  return createIMDXHandlers({
+function makeHandlers(over: Partial<Parameters<typeof createMDMXHandlers>[0]> = {}): MDMXHandlers {
+  return createMDMXHandlers({
     repo: { owner: "jane", name: "blog", branch: "main" },
     contentDir: "content",
     mediaDir: "public/media",
@@ -89,7 +89,7 @@ function sessionCookie(overrides: Partial<SessionData> = {}): string {
     verifiedAt: now,
     ...overrides,
   };
-  return `imdx_session=${seal(data, SECRET)}`;
+  return `mdmx_session=${seal(data, SECRET)}`;
 }
 
 function req(
@@ -110,7 +110,7 @@ function req(
 }
 
 beforeAll(async () => {
-  root = await mkdtemp(join(tmpdir(), "imdx-api-"));
+  root = await mkdtemp(join(tmpdir(), "mdmx-api-"));
   const seedProvider = new LocalProvider(root);
   await seedProvider.commit(
     [
@@ -154,21 +154,21 @@ describe("OAuth flow", () => {
     expect(location).toContain("github.com/login/oauth/authorize");
     expect(location).toContain("scope=repo");
     const state = new URL(location).searchParams.get("state")!;
-    expect(res.headers.get("set-cookie")).toContain(`imdx_oauth_state=${state}`);
+    expect(res.headers.get("set-cookie")).toContain(`mdmx_oauth_state=${state}`);
   });
 
   it("callback exchanges the code, checks permission, and seals a session", async () => {
     const h = makeHandlers();
     const res = await h.GET(
       new Request(`${BASE}/auth/callback?code=good-code&state=s1`, {
-        headers: { cookie: "imdx_oauth_state=s1" },
+        headers: { cookie: "mdmx_oauth_state=s1" },
       }),
     );
     expect(res.status).toBe(302);
-    expect(res.headers.get("location")).toBe("/imdx");
+    expect(res.headers.get("location")).toBe("/mdmx");
     const setCookies = res.headers.getSetCookie();
-    const sessionSet = setCookies.find((c) => c.startsWith("imdx_session="))!;
-    const sealed = parseCookies(sessionSet.split(";")[0]!)["imdx_session"]!;
+    const sessionSet = setCookies.find((c) => c.startsWith("mdmx_session="))!;
+    const sealed = parseCookies(sessionSet.split(";")[0]!)["mdmx_session"]!;
     const session = unseal(sealed, SECRET)!;
     expect(session.login).toBe("jane");
     expect(session.token).toBe("gh-token-123");
@@ -178,7 +178,7 @@ describe("OAuth flow", () => {
     const h = makeHandlers();
     const res = await h.GET(
       new Request(`${BASE}/auth/callback?code=good-code&state=evil`, {
-        headers: { cookie: "imdx_oauth_state=s1" },
+        headers: { cookie: "mdmx_oauth_state=s1" },
       }),
     );
     expect(res.status).toBe(400);
@@ -190,7 +190,7 @@ describe("OAuth flow", () => {
     });
     const res = await h.GET(
       new Request(`${BASE}/auth/callback?code=good-code&state=s1`, {
-        headers: { cookie: "imdx_oauth_state=s1" },
+        headers: { cookie: "mdmx_oauth_state=s1" },
       }),
     );
     expect(res.status).toBe(403);
@@ -204,7 +204,7 @@ describe("auth guard", () => {
     expect(
       (
         await h.GET(
-          new Request(`${BASE}/me`, { headers: { cookie: "imdx_session=garbage" } }),
+          new Request(`${BASE}/me`, { headers: { cookie: "mdmx_session=garbage" } }),
         )
       ).status,
     ).toBe(401);
@@ -215,7 +215,7 @@ describe("auth guard", () => {
     const stale = sessionCookie({ verifiedAt: now - 6 * 60 * 1000 });
     const res = await h.GET(new Request(`${BASE}/me`, { headers: { cookie: stale } }));
     expect(res.status).toBe(200);
-    const refreshed = res.headers.getSetCookie().find((c) => c.startsWith("imdx_session="));
+    const refreshed = res.headers.getSetCookie().find((c) => c.startsWith("mdmx_session="));
     expect(refreshed).toBeDefined();
   });
 
@@ -260,7 +260,7 @@ describe("content API", () => {
     );
     expect(res.status).toBe(200);
     const body = (await res.json()) as { diagnostics: Array<{ code: string }> };
-    expect(body.diagnostics.map((d) => d.code)).toContain("IMDX001");
+    expect(body.diagnostics.map((d) => d.code)).toContain("MDMX001");
   });
 
   it("rejects invalid saves in strict mode with 422", async () => {
@@ -360,8 +360,8 @@ describe("content API", () => {
 
 describe("localMode (no GitHub OAuth)", () => {
   // No auth / sessionSecret; every request runs as a synthetic "local" session.
-  function localHandlers(): IMDXHandlers {
-    return createIMDXHandlers({
+  function localHandlers(): MDMXHandlers {
+    return createMDMXHandlers({
       repo: { owner: "local", name: "demo", branch: "main" },
       contentDir: "content",
       mediaDir: "public/media",
@@ -437,7 +437,7 @@ describe("localMode (no GitHub OAuth)", () => {
 
 describe("frontmatter validation on save", () => {
   const withCollection = new Registry({
-    imdxRegistryVersion: 1,
+    mdmxRegistryVersion: 1,
     components: registry.components as never,
     collections: [
       {
@@ -455,8 +455,8 @@ describe("frontmatter validation on save", () => {
     ],
   });
 
-  function handlers(validation: "strict" | "report"): IMDXHandlers {
-    return createIMDXHandlers({
+  function handlers(validation: "strict" | "report"): MDMXHandlers {
+    return createMDMXHandlers({
       repo: { owner: "local", name: "demo", branch: "main" },
       contentDir: "content",
       mediaDir: "public/media",
@@ -483,7 +483,7 @@ describe("frontmatter validation on save", () => {
     const res = await handlers("report").PUT(put("content/posts/r.mdx", missingTitle));
     expect(res.status).toBe(200);
     const body = await res.json();
-    expect(body.diagnostics.map((d: { code: string }) => d.code)).toContain("IMDX008");
+    expect(body.diagnostics.map((d: { code: string }) => d.code)).toContain("MDMX008");
   });
 
   it("strict mode: rejects invalid frontmatter with 422", async () => {

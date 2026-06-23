@@ -2,8 +2,8 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { createElement } from "react";
 import { createRoot, type Root } from "react-dom/client";
-import { Registry, type RegistrySpec } from "@imdx/core";
-import { IMDXEditor } from "../src/react/index.js";
+import { Registry, type RegistrySpec } from "@mdmx/core";
+import { MDMXEditor } from "../src/react/index.js";
 import { MediaLibrary } from "../src/react/MediaLibrary.js";
 import type { MediaItem, MediaSource, MediaUpload } from "../src/react/media.js";
 
@@ -70,9 +70,9 @@ describe("MediaLibrary (jsdom)", () => {
         onClose: () => {},
       }),
     );
-    const names = Array.from(el.querySelectorAll(".imdx-media-name")).map((n) => n.textContent);
+    const names = Array.from(el.querySelectorAll(".mdmx-media-name")).map((n) => n.textContent);
     expect(names).toEqual(["logo.png", "banner.jpg"]);
-    expect(el.querySelectorAll("img.imdx-media-thumb")).toHaveLength(2);
+    expect(el.querySelectorAll("img.mdmx-media-thumb")).toHaveLength(2);
   });
 
   it("filters by the search query", async () => {
@@ -87,7 +87,7 @@ describe("MediaLibrary (jsdom)", () => {
     const search = el.querySelector('[aria-label="Search media"]') as HTMLInputElement;
     typeInto(search, "banner");
     await settle();
-    const names = Array.from(el.querySelectorAll(".imdx-media-name")).map((n) => n.textContent);
+    const names = Array.from(el.querySelectorAll(".mdmx-media-name")).map((n) => n.textContent);
     expect(names).toEqual(["banner.jpg"]);
   });
 
@@ -101,7 +101,7 @@ describe("MediaLibrary (jsdom)", () => {
         onClose: () => {},
       }),
     );
-    (el.querySelector(".imdx-media-item") as HTMLButtonElement).click();
+    (el.querySelector(".mdmx-media-item") as HTMLButtonElement).click();
     expect(onPick).toHaveBeenCalledWith(ITEMS[0]);
   });
 
@@ -117,7 +117,7 @@ describe("MediaLibrary (jsdom)", () => {
       }),
     );
     // Empty state initially.
-    expect(el.querySelector(".imdx-media-empty")?.textContent).toContain("No media yet");
+    expect(el.querySelector(".mdmx-media-empty")?.textContent).toContain("No media yet");
 
     const input = el.querySelector('[aria-label="Upload media"]') as HTMLInputElement;
     // A file-like object (jsdom's File.arrayBuffer is unreliable); fileToUpload
@@ -136,13 +136,13 @@ describe("MediaLibrary (jsdom)", () => {
   });
 });
 
-const registrySpec: RegistrySpec = { imdxRegistryVersion: 1, components: [] };
+const registrySpec: RegistrySpec = { mdmxRegistryVersion: 1, components: [] };
 
-describe("IMDXEditor media integration (jsdom)", () => {
+describe("MDMXEditor media integration (jsdom)", () => {
   it("inserts an image into the document when one is picked", async () => {
     const media = fakeMedia([{ path: "public/media/logo.png", url: "/media/logo.png" }]);
     const el = await render(
-      createElement(IMDXEditor, {
+      createElement(MDMXEditor, {
         registry: new Registry(registrySpec),
         source: "Hello.\n",
         media,
@@ -150,20 +150,20 @@ describe("IMDXEditor media integration (jsdom)", () => {
       }),
     );
 
-    const openBtn = el.querySelector(".imdx-toolbar-image") as HTMLButtonElement;
+    const openBtn = el.querySelector(".mdmx-toolbar-image") as HTMLButtonElement;
     expect(openBtn).not.toBeNull();
     openBtn.click();
     await settle();
 
-    const item = el.querySelector(".imdx-media-item") as HTMLButtonElement;
+    const item = el.querySelector(".mdmx-media-item") as HTMLButtonElement;
     expect(item).not.toBeNull();
     item.click();
     await settle();
 
     // The library closed and an image node now lives in the canvas + source.
-    expect(el.querySelector(".imdx-media-overlay")).toBeNull();
+    expect(el.querySelector(".mdmx-media-overlay")).toBeNull();
     expect(el.querySelector(".ProseMirror img")).not.toBeNull();
-    const source = Array.from(el.querySelectorAll(".imdx-source-line"))
+    const source = Array.from(el.querySelectorAll(".mdmx-source-line"))
       .map((n) => n.textContent)
       .join("\n");
     expect(source).toContain("![](/media/logo.png)");
@@ -171,11 +171,11 @@ describe("IMDXEditor media integration (jsdom)", () => {
 
   it("shows no image button when no media source is provided", async () => {
     const el = await render(
-      createElement(IMDXEditor, {
+      createElement(MDMXEditor, {
         registry: new Registry(registrySpec),
         source: "Hello.\n",
       }),
     );
-    expect(el.querySelector(".imdx-toolbar-image")).toBeNull();
+    expect(el.querySelector(".mdmx-toolbar-image")).toBeNull();
   });
 });

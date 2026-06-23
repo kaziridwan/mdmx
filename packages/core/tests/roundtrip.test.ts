@@ -78,8 +78,8 @@ describe("frontmatter", () => {
   it("parses YAML frontmatter into an object", () => {
     const { frontmatter } = parseDocument(fixture("kitchen-sink.mdx"));
     expect(frontmatter).toEqual({
-      title: "Hello iMDX",
-      slug: "hello-imdx",
+      title: "Hello MDMX",
+      slug: "hello-mdmx",
       status: "draft",
     });
   });

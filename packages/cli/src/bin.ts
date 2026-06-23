@@ -5,10 +5,10 @@ import { generate } from "./generate.js";
 import { check, formatDiagnostics } from "./check.js";
 import { dev } from "./dev.js";
 
-const USAGE = `imdx <command>
+const USAGE = `mdmx <command>
 
 Commands:
-  generate   Scan components, emit .imdx/registry.json and .imdx/registry.ts
+  generate   Scan components, emit .mdmx/registry.json and .mdmx/registry.ts
   check      Validate content files against the generated registry
   dev        Watch components/config and regenerate the registry on change
 
@@ -32,7 +32,7 @@ async function main(): Promise<number> {
       console.error(`${loc} ${issue.severity} ${issue.message}`);
     }
     console.log(
-      `imdx: registered ${result.spec.components.length} component(s) → ${result.written.json}`,
+      `mdmx: registered ${result.spec.components.length} component(s) → ${result.written.json}`,
     );
     return result.hasErrors ? 1 : 0;
   }
@@ -42,7 +42,7 @@ async function main(): Promise<number> {
     const output = formatDiagnostics(result);
     if (output) console.log(output);
     console.log(
-      `imdx: ${result.errorCount} error(s), ${result.warningCount} warning(s)`,
+      `mdmx: ${result.errorCount} error(s), ${result.warningCount} warning(s)`,
     );
     return result.errorCount > 0 ? 1 : 0;
   }

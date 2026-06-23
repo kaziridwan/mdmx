@@ -1,4 +1,4 @@
-import { defineIMDX } from "@imdx/core";
+import { defineMDMX } from "@mdmx/core";
 
 interface StatProps {
   /** The headline number, preformatted */
@@ -17,7 +17,7 @@ function StatImpl({ value, label }: StatProps) {
   );
 }
 
-export const Stat = defineIMDX(StatImpl, {
+export const Stat = defineMDMX(StatImpl, {
   name: "Stat",
   category: "Data",
   icon: "trending-up",

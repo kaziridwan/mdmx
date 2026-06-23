@@ -1,5 +1,5 @@
 #!/usr/bin/env sh
-# Run every package's test suite (builds @imdx/core first).
+# Run every package's test suite (builds @mdmx/core first).
 set -e
 ROOT=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
 cd "$ROOT"
