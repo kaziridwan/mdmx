@@ -11,6 +11,33 @@ initial design-and-build conversation (12 commits).
 
 <!-- APPEND NEW ENTRIES ABOVE THIS LINE -->
 
+### S22 — Next.js integration guide series (docs only)
+- **docs/guides/next-js/** (new): seven consumer-facing guides documenting how
+  to integrate MDMX into a Next.js App Router site, written against the actual
+  v0.3.1 API surface and mirroring `examples/demo-next`:
+  - `README.md` — overview, package map, local vs GitHub mode, prerequisites
+  - `01-installation.md` — packages, `transpilePackages`, layout, `pre*` scripts,
+    shared `lib/mdmx-config.ts`
+  - `02-components-and-registry.md` — `defineMDMX()` + `DefineMDMXConfig`
+    reference, children policies, constraints, `ControlSpec`, `mdmx.config.json`,
+    collections, `generate`/`check`/`dev`
+  - `03-content-api.md` — `createMDMXHandlers()` mount, `localMode`, full
+    `MDMXHandlerOptions`, endpoint + error-status reference
+  - `04-editor.md` — server page + client mount (`next/dynamic` `ssr:false`),
+    sha-refreshing save loop, `MDMXEditorProps` reference, `MediaSource`
+    adapter, no-stylesheet styling note
+  - `05-rendering-content.md` — `getDocuments`/`getDocumentBySlug`,
+    draft/publish via `status`, rendering with standard MDX tooling
+    (`next-mdx-remote/rsc` + `remark-gfm` recipe; MDMX ships no renderer)
+  - `06-production-github.md` — OAuth app setup, env vars, `GitHubProvider`
+    swap-in, authorization model (push permission ⇒ access, 5-min re-verify),
+    production checklist
+  - `07-troubleshooting.md` — startup/API/editor failure modes, HTTP status
+    map, MDMX001–009 diagnostics table
+- **docs/wiki/Home.md** — added the guide series to the map of the docs.
+- **README.md** (root) — added the guides to "Repo guides".
+- No code, spec, or behavior changes; no ADR needed.
+
 ### S21 — Collections UI, new-post authoring, paste-to-upload, caret-at-edge
 - **editor (package code)**:
   - `Editor.tsx` — **caret at document edge**: a `mousedown` on the canvas
