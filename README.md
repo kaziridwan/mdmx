@@ -38,6 +38,7 @@ formatting is treated as a semver-major change.
 
 ## Repo guides
 
+- **docs/guides/next-js/** — step-by-step integration guides: mount MDMX in a Next.js site, from install to GitHub-mode production
 - **SPEC.md** — the MDMX v1 grammar, canonical form, registry schema, diagnostics, provider contract
 - **AGENTS.md** / **CLAUDE.md** — context for AI coding agents (invariants, build gotchas)
 - **llms.txt** — machine-readable index

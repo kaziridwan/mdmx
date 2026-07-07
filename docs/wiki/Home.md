@@ -15,6 +15,7 @@ registry that drives validation, the editor palette, and prop panels.
 
 | Doc | What it covers |
 | --- | --- |
+| [Next.js integration guides](../guides/next-js/README.md) | Consumer-facing, step-by-step: install → components/registry → content API → editor → rendering → GitHub mode → troubleshooting |
 | [Architecture](Architecture.md) | The five packages, the data-flow pipeline, how they fit |
 | [Packages](Packages.md) | Per-package reference: exports, responsibilities, test counts |
 | [Invariants](Invariants.md) | The nine rules that must never break, and why |
