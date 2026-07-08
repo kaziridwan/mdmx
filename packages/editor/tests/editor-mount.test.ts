@@ -116,7 +116,10 @@ async function mountEditor(
     }),
   );
   // Let React effects (EditorView creation) and the per-node React roots settle.
-  for (let i = 0; i < 4; i++) await flush();
+  // React 19 schedules nested-root renders across more macrotasks than 18 did,
+  // so deeply nested docs (TwoColumn) need a few extra ticks before the outer
+  // editor state commit is observable.
+  for (let i = 0; i < 8; i++) await flush();
   return host;
 }
 
