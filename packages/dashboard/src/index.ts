@@ -16,4 +16,12 @@ export {
   ApiError,
   UnauthorizedError,
 } from "./api-client.js";
-export type { ApiClient, Me, FileEntry, FileContent, SaveResult } from "./api-client.js";
+export type {
+  ApiClient,
+  Me,
+  FileEntry,
+  FileContent,
+  DocumentMeta,
+  SaveResult,
+} from "./api-client.js";
+export { slugify, scaffoldDocument } from "./scaffold.js";

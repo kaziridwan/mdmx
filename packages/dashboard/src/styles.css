@@ -413,3 +413,236 @@
   background: var(--mdmx-surface-2);
   color: var(--mdmx-fg);
 }
+
+/* -- inputs & forms ----------------------------------------------------------- */
+
+.mdmx-dash-input {
+  padding: 7px 10px;
+  border-radius: var(--mdmx-radius-sm);
+  border: 1px solid var(--mdmx-border);
+  background: var(--mdmx-surface);
+  color: var(--mdmx-fg);
+  font-size: 13.5px;
+  font-family: var(--mdmx-font);
+  min-width: 0;
+}
+
+.mdmx-dash-input:focus {
+  outline: 2px solid var(--mdmx-accent);
+  outline-offset: -1px;
+}
+
+.mdmx-dash-select {
+  appearance: auto;
+}
+
+.mdmx-dash-filter {
+  width: 100%;
+  margin-bottom: 14px;
+}
+
+.mdmx-dash-form {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.mdmx-dash-form-row {
+  display: grid;
+  grid-template-columns: 1fr 2fr;
+  gap: 14px;
+}
+
+.mdmx-dash-field {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.mdmx-dash-field > span:first-child {
+  color: var(--mdmx-fg-muted);
+  text-transform: uppercase;
+  font-size: 11px;
+  letter-spacing: 0.05em;
+}
+
+.mdmx-dash-field-hint {
+  font-weight: 400;
+  font-size: 12px;
+  color: var(--mdmx-fg-muted);
+}
+
+.mdmx-dash-form-actions {
+  display: flex;
+  gap: 10px;
+}
+
+.mdmx-dash-fieldset {
+  border: 1px solid var(--mdmx-border);
+  border-radius: var(--mdmx-radius);
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-inline-size: 0;
+}
+
+.mdmx-dash-fieldset legend {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--mdmx-fg-muted);
+  padding: 0 6px;
+}
+
+.mdmx-dash-fieldset > .mdmx-dash-button {
+  align-self: flex-start;
+}
+
+.mdmx-dash-field-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.mdmx-dash-field-row > .mdmx-dash-input {
+  flex: 1 1 120px;
+}
+
+.mdmx-dash-field-row > .mdmx-dash-select {
+  flex: 0 1 130px;
+}
+
+.mdmx-dash-input-default {
+  flex: 0 1 110px;
+}
+
+.mdmx-dash-check {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12.5px;
+  color: var(--mdmx-fg-muted);
+  white-space: nowrap;
+}
+
+.mdmx-dash-field-row-actions {
+  display: flex;
+  gap: 2px;
+}
+
+.mdmx-dash-field-row-actions .mdmx-dash-button {
+  padding: 4px 8px;
+}
+
+.mdmx-dash-problems {
+  margin: 0;
+  padding-left: 18px;
+}
+
+.mdmx-dash-danger-hover:hover {
+  color: var(--mdmx-danger);
+}
+
+.mdmx-dash-view-narrow {
+  max-width: 560px;
+}
+
+.mdmx-dash-view-sub {
+  margin: 4px 0 0;
+  font-size: 13px;
+  color: var(--mdmx-fg-muted);
+}
+
+.mdmx-dash-view-sub a {
+  color: var(--mdmx-accent);
+}
+
+/* -- entry table ---------------------------------------------------------------- */
+
+.mdmx-dash-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: var(--mdmx-surface);
+  border: 1px solid var(--mdmx-border);
+  border-radius: var(--mdmx-radius);
+  overflow: hidden;
+}
+
+.mdmx-dash-table th,
+.mdmx-dash-table td {
+  text-align: left;
+  padding: 9px 12px;
+  border-bottom: 1px solid var(--mdmx-border);
+  font-size: 13.5px;
+}
+
+.mdmx-dash-table th {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--mdmx-fg-muted);
+  background: var(--mdmx-surface-2);
+}
+
+.mdmx-dash-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.mdmx-dash-table tbody tr:hover {
+  background: var(--mdmx-surface-2);
+}
+
+.mdmx-dash-table-narrow {
+  width: 1%;
+  white-space: nowrap;
+}
+
+.mdmx-dash-table-title {
+  color: var(--mdmx-fg);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.mdmx-dash-table-title:hover {
+  color: var(--mdmx-accent);
+}
+
+.mdmx-dash-table-path {
+  font-family: var(--mdmx-mono);
+  font-size: 12px;
+  color: var(--mdmx-fg-muted);
+}
+
+.mdmx-dash-status {
+  display: inline-block;
+  font-size: 11.5px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: var(--mdmx-surface-2);
+  border: 1px solid var(--mdmx-border);
+  color: var(--mdmx-fg-muted);
+}
+
+.mdmx-dash-status.is-published {
+  color: var(--mdmx-ok);
+  border-color: currentColor;
+}
+
+.mdmx-dash-status.is-draft {
+  color: var(--mdmx-warn);
+  border-color: currentColor;
+}
+
+/* -- embedded editor -------------------------------------------------------------- */
+
+.mdmx-dash-editor {
+  height: 100%;
+  min-height: 0;
+}

@@ -50,6 +50,22 @@ commit per green milestone). This entry grows as milestones land.
   it). `/me` reports contentDir/mediaDir/validation/localMode. Dashboard:
   collections client methods, `DashboardContext` + live collection state
   behind the gate. +19 tests (7 core, 12 next) → 248 total.
+- **M4 — dashboard core surfaces**: the CMS is now usable end to end from
+  `/mdmx`. New `GET /documents?dir=` in `@mdmx/next` (listing + parsed
+  frontmatter in one round trip; malformed files degrade to empty
+  frontmatter, bodies excluded). Dashboard views: `CollectionView` (entry
+  table with title/status badge/path, client filter, confirmed delete with
+  listed sha), `EntryNewView` (title→slug scaffold via `scaffoldDocument` —
+  moved from the demo into the package — committed `expectedSha: null`, then
+  straight into the editor), `EditorView` (embedded `MDMXEditor` via
+  `next/dynamic` `ssr:false` with CJS-interop shim; sha-refreshing saves;
+  `MediaSource` adapter over the API; back-link to the collection),
+  `CollectionFormView` (create + field-schema edit over a pure
+  `field-draft.ts` draft⇄config converter; nested list/object controls pass
+  through an "advanced" escape hatch verbatim). Editor routes carry the full
+  repo-relative path (`/mdmx/edit/content/posts/x.mdx`). Styles: forms,
+  field rows, entry table, status badges. +11 tests (2 next, 9 dashboard) →
+  259 total; all dashboard routes smoke-tested live against the demo.
 
 ### S22 — Next.js integration guide series (docs only)
 - **docs/guides/next-js/** (new): seven consumer-facing guides documenting how

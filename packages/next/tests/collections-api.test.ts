@@ -285,6 +285,46 @@ describe("runtime collections drive frontmatter validation on save", () => {
   });
 });
 
+describe("GET /documents", () => {
+  it("returns listing + parsed frontmatter, skipping bodies and surviving bad files", async () => {
+    const provider = new LocalProvider(root);
+    await provider.commit(
+      [
+        {
+          path: "content/posts/a.mdx",
+          content: "---\ntitle: Alpha\nstatus: published\n---\n\n# A\n",
+        },
+        { path: "content/posts/b.mdx", content: "---\ntitle: Beta\n---\n\n# B\n" },
+        { path: "content/posts/broken.mdx", content: "---\n: not yaml\n---\n<Nope\n" },
+        { path: "content/posts/ignore.txt", content: "not content" },
+      ],
+      "seed docs",
+    );
+    const h = makeHandlers();
+    const res = await h.GET(req("GET", "/documents?dir=content/posts"));
+    expect(res.status).toBe(200);
+    const { documents } = (await res.json()) as {
+      documents: { path: string; sha: string; frontmatter: Record<string, unknown> }[];
+    };
+    expect(documents.map((d) => d.path)).toEqual([
+      "content/posts/a.mdx",
+      "content/posts/b.mdx",
+      "content/posts/broken.mdx",
+    ]);
+    expect(documents[0]!.frontmatter).toEqual({ title: "Alpha", status: "published" });
+    expect(documents[0]!.sha).toMatch(/^[0-9a-f]{40}$/);
+    expect(documents[2]!.frontmatter).toEqual({}); // malformed → empty, not a 500
+    const asJson = JSON.stringify(documents);
+    expect(asJson).not.toContain("# A"); // bodies stay out of the payload
+  });
+
+  it("confines dir like the other read routes", async () => {
+    const h = makeHandlers();
+    const res = await h.GET(req("GET", "/documents?dir=secrets"));
+    expect(res.status).toBe(400);
+  });
+});
+
 describe("GET /me", () => {
   it("reports repo, dirs, validation mode, and localMode for the settings page", async () => {
     const h = makeHandlers({ validation: "strict" });
