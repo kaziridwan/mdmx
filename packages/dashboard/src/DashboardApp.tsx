@@ -13,7 +13,10 @@ import { CollectionView } from "./views/CollectionView.js";
 import { EditorView } from "./views/EditorView.js";
 import { EntryNewView } from "./views/EntryNewView.js";
 import { HomeView } from "./views/HomeView.js";
+import { MediaView } from "./views/MediaView.js";
 import { PlaceholderView } from "./views/PlaceholderView.js";
+import { SettingsView } from "./views/SettingsView.js";
+import { applyThemePreference, readThemePreference } from "./theme.js";
 
 /**
  * Client root of the dashboard. The server page hands us the slug segments,
@@ -83,6 +86,11 @@ function AuthedDashboard({
     });
   }, [refreshCollections]);
 
+  // Re-apply the stored theme pin (settings) on every dashboard load.
+  useEffect(() => {
+    applyThemePreference(readThemePreference());
+  }, []);
+
   const value: DashboardContextValue = useMemo(
     () => ({ config, api, me, registry, collections, refreshCollections, components }),
     [config, api, me, registry, collections, refreshCollections, components],
@@ -122,9 +130,9 @@ function RouteView({ route }: { route: DashboardRoute }) {
     case "editor":
       return <EditorView path={route.path} />;
     case "media":
-      return <PlaceholderView title="Media" />;
+      return <MediaView />;
     case "settings":
-      return <PlaceholderView title="Settings" />;
+      return <SettingsView />;
     case "not-found":
       return <PlaceholderView title={`No such page: ${route.slug.join("/")}`} />;
   }
