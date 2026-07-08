@@ -48,6 +48,12 @@ export interface FileContent {
   sha: string;
 }
 
+export interface DocumentMeta {
+  path: string;
+  sha: string;
+  frontmatter: Record<string, unknown>;
+}
+
 export interface CommitInfo {
   sha?: string;
   [key: string]: unknown;
@@ -96,6 +102,18 @@ export function createApiClient(basePath: string) {
 
     readFile: (path: string) =>
       request<FileContent>(`${basePath}/file?path=${encodeURIComponent(path)}`),
+
+    listDocuments: async (dir: string): Promise<DocumentMeta[]> => {
+      try {
+        const { documents } = await request<{ documents: DocumentMeta[] }>(
+          `${basePath}/documents?dir=${encodeURIComponent(dir)}`,
+        );
+        return documents;
+      } catch (err) {
+        if (err instanceof ApiError && err.status === 404) return [];
+        throw err;
+      }
+    },
 
     saveFile: (args: {
       path: string;

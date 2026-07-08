@@ -239,6 +239,26 @@ export function createMDMXHandlers(options: MDMXHandlerOptions): MDMXHandlers {
         return withSession(json(200, { files: await provider.list(dir) }));
       }
 
+      if (route === "/documents" && method === "GET") {
+        // Listing + parsed frontmatter in one round trip, for entry tables
+        // and search. Body content stays out of the payload.
+        const dir = checkPrefix(url.searchParams.get("dir") ?? o.contentDir);
+        const files = await provider.list(dir);
+        const documents = [];
+        for (const f of files) {
+          if (!/\.mdx?$/.test(f.path)) continue;
+          const { content, sha } = await provider.read(f.path);
+          let frontmatter: Record<string, unknown> = {};
+          try {
+            ({ frontmatter } = parseDocument(content));
+          } catch {
+            // One malformed file must not take down the whole listing.
+          }
+          documents.push({ path: f.path, sha, frontmatter });
+        }
+        return withSession(json(200, { documents }));
+      }
+
       if (route === "/file" && method === "GET") {
         const path = checkPrefix(url.searchParams.get("path") ?? "");
         const file = await provider.read(path);

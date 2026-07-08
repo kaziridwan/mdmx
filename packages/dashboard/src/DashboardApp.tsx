@@ -8,6 +8,10 @@ import { DashboardContext, type DashboardContextValue } from "./context.js";
 import { resolveRoute, type DashboardRoute } from "./routes.js";
 import { AuthGate } from "./shell/AuthGate.js";
 import { DashboardShell } from "./shell/DashboardShell.js";
+import { CollectionFormView } from "./views/CollectionFormView.js";
+import { CollectionView } from "./views/CollectionView.js";
+import { EditorView } from "./views/EditorView.js";
+import { EntryNewView } from "./views/EntryNewView.js";
 import { HomeView } from "./views/HomeView.js";
 import { PlaceholderView } from "./views/PlaceholderView.js";
 
@@ -108,15 +112,15 @@ function RouteView({ route }: { route: DashboardRoute }) {
     case "home":
       return <HomeView />;
     case "collection":
-      return <PlaceholderView title={route.name} />;
+      return <CollectionView name={route.name} />;
     case "collection-new":
-      return <PlaceholderView title="New collection" />;
+      return <CollectionFormView />;
     case "collection-edit":
-      return <PlaceholderView title={`Edit ${route.name}`} />;
+      return <CollectionFormView editName={route.name} />;
     case "entry-new":
-      return <PlaceholderView title={`New ${route.collection} entry`} />;
+      return <EntryNewView collectionName={route.collection} />;
     case "editor":
-      return <PlaceholderView title={route.path.join("/")} />;
+      return <EditorView path={route.path} />;
     case "media":
       return <PlaceholderView title="Media" />;
     case "settings":
