@@ -15,13 +15,9 @@ pnpm install
 echo "> Building packages the app needs..."
 pnpm build
 
-# pnpm only links a workspace bin when its target exists at install time, so
-# the install above (running before the first build) skips the `mdmx` CLI
-# link on a fresh/cleaned tree. Now that dist/ exists, re-install to link it.
-if [ ! -e "$ROOT/examples/demo-next/node_modules/.bin/mdmx" ]; then
-  echo "> Relinking workspace bins (the mdmx CLI was built after install)..."
-  pnpm install
-fi
+# Make sure the mdmx CLI bin is linked (pnpm skips bins whose dist was built
+# after install, and a no-op install won't repair it — see the helper).
+sh "$ROOT/scripts/ensure-mdmx-bin.sh"
 
 echo "> Starting demo-next (generates registry, then next dev)..."
 echo "  -> http://localhost:${PORT:-3000}"

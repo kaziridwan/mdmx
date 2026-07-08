@@ -3,6 +3,7 @@
   "private": true,
   "version": "0.4.0",
   "type": "module",
+  "packageManager": "pnpm@11.7.0",
   "scripts": {
     "build": "pnpm --filter @mdmx/core build && pnpm --filter @mdmx/provider-github --filter @mdmx/cli --filter @mdmx/editor --filter @mdmx/next --filter @mdmx/dashboard build",
     "test": "pnpm build && pnpm -r test",
