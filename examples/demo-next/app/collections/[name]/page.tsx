@@ -8,16 +8,17 @@ import { CONTENT_DIR, projectRoot, registry } from "../../../lib/mdmx-config";
 
 export const dynamic = "force-dynamic";
 
-export default async function CollectionPage({ params }: { params: { name: string } }) {
+export default async function CollectionPage({ params }: { params: Promise<{ name: string }> }) {
+  const { name } = await params;
   const reg = registry();
-  const collection = reg.getCollection(params.name);
+  const collection = reg.getCollection(name);
 
   if (!collection) {
     return (
       <main className="mdmx-home">
-        <CmsHeader crumbs={[{ label: params.name }]} />
+        <CmsHeader crumbs={[{ label: name }]} />
         <p className="mdmx-home-empty">
-          No collection named <code>{params.name}</code>. <Link href="/">Back home</Link>.
+          No collection named <code>{name}</code>. <Link href="/">Back home</Link>.
         </p>
       </main>
     );

@@ -5,8 +5,9 @@ import { EditorClient } from "./EditorClient";
 
 export const dynamic = "force-dynamic";
 
-export default async function EditPage({ params }: { params: { slug: string[] } }) {
-  const rel = params.slug.join("/");
+export default async function EditPage({ params }: { params: Promise<{ slug: string[] }> }) {
+  const { slug } = await params;
+  const rel = slug.join("/");
   const path = `${CONTENT_DIR}/${rel}`;
   const provider = new LocalProvider(projectRoot());
   const collection = registry().collectionForPath(path);
