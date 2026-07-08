@@ -81,6 +81,17 @@ commit per green milestone). This entry grows as milestones land.
   detail) with a navbar trigger. Keyboard: ⌘K toggle, arrows, Enter, Esc;
   listbox/option ARIA. The shell takes the trigger as a `search` slot so it
   stays context-free. +5 tests → 269 total.
+- **M7 — stylesheet completion**: the embedded editor is now fully styled by
+  the shipped stylesheet — the demo's reference editor CSS ported onto the
+  `--mdmx-*` tokens (new: `--mdmx-accent-wash`, `--mdmx-code-*`,
+  `--mdmx-content-font`), **scoped under `.mdmx-dash-editor`** so a
+  standalone editor mount elsewhere stays headless. Covers rail, canvas
+  typography, NodeViews/placeholders/TwoColumn, slash menu, prop panel +
+  controls, dark source pane with amber active line, toolbar, media modal,
+  mobile sheets/FABs, ProseMirror cursors — all light+dark via tokens
+  (webfont references dropped; system font stacks). A11y: `:focus-visible`
+  rings, `prefers-reduced-motion` disables sheet transitions/spinner.
+  Verified the editor route's CSS chunk ships the scoped chrome. 269 tests.
 
 ### S22 — Next.js integration guide series (docs only)
 - **docs/guides/next-js/** (new): seven consumer-facing guides documenting how
