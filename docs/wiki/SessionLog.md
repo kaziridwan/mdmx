@@ -75,6 +75,12 @@ commit per green milestone). This entry grows as milestones land.
   **theme pin**: system/light/dark radio persisting to localStorage and
   applying `data-mdmx-theme` on the root; re-applied on dashboard load.
   +5 tests → 264 total; media/settings routes smoke-tested live.
+- **M6 — quick-open (Cmd/Ctrl+K)**: palette over entries (fresh
+  `GET /documents` per open) + collections + pages + "new …" actions; pure
+  `quick-open.ts` scoring (prefix > word-prefix > substring; label outranks
+  detail) with a navbar trigger. Keyboard: ⌘K toggle, arrows, Enter, Esc;
+  listbox/option ARIA. The shell takes the trigger as a `search` slot so it
+  stays context-free. +5 tests → 269 total.
 
 ### S22 — Next.js integration guide series (docs only)
 - **docs/guides/next-js/** (new): seven consumer-facing guides documenting how

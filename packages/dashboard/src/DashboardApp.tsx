@@ -8,6 +8,7 @@ import { DashboardContext, type DashboardContextValue } from "./context.js";
 import { resolveRoute, type DashboardRoute } from "./routes.js";
 import { AuthGate } from "./shell/AuthGate.js";
 import { DashboardShell } from "./shell/DashboardShell.js";
+import { QuickOpen } from "./shell/QuickOpen.js";
 import { CollectionFormView } from "./views/CollectionFormView.js";
 import { CollectionView } from "./views/CollectionView.js";
 import { EditorView } from "./views/EditorView.js";
@@ -108,6 +109,7 @@ function AuthedDashboard({
         collections={collections}
         route={route}
         onLogout={onLogout}
+        search={<QuickOpen />}
       >
         <RouteView route={route} />
       </DashboardShell>

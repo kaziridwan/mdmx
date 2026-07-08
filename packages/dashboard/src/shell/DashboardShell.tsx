@@ -17,6 +17,7 @@ export function DashboardShell({
   collections,
   route,
   onLogout,
+  search,
   context,
   children,
 }: {
@@ -25,6 +26,8 @@ export function DashboardShell({
   collections: readonly CollectionSpec[];
   route: DashboardRoute;
   onLogout: () => void;
+  /** Search / quick-open trigger rendered in the navbar (kept as a slot so the shell stays context-free). */
+  search?: ReactNode;
   /** Contextual right panel; views that manage their own chrome pass nothing. */
   context?: ReactNode;
   children: ReactNode;
@@ -44,6 +47,7 @@ export function DashboardShell({
         <Link className="mdmx-dash-brand" href={mountPath}>
           {config.title}
         </Link>
+        {search}
         <div className="mdmx-dash-nav-spacer" />
         <span className="mdmx-dash-repo" title={`branch ${me.repo.branch}`}>
           {me.repo.owner}/{me.repo.name}
