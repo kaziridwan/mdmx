@@ -163,12 +163,26 @@ metadata is inferred from TypeScript types and overlaid with explicit config
 
 **Collections** group content under a `dir` and give it a typed frontmatter
 schema (`fields`, reusing the control taxonomy). They are authored in
-`mdmx.config.json` and emitted into the registry by `mdmx generate`. The `hash`
-covers components **and** collections. Frontmatter is validated against the
-matching collection (longest `dir` prefix) by `mdmx check` and on save:
-required fields → MDMX008, value/type mismatches → MDMX009; undeclared keys are
+`mdmx.config.json` (a record keyed by collection name; fields keyed by field
+name) and emitted into the registry by `mdmx generate`. The `hash` covers
+components **and** collections. Frontmatter is validated against the matching
+collection (longest `dir` prefix) by `mdmx check` and on save: required
+fields → MDMX008, value/type mismatches → MDMX009; undeclared keys are
 allowed. Draft/publish is modeled with a `status` field (e.g.
 `select` over `["draft", "published"]`); readers filter by it.
+
+**Config is authoritative for collections at runtime** (ADR-035): servers
+that manage collections (the `@mdmx/next` handlers) re-derive
+`CollectionSpec[]` from `mdmx.config.json` *per request* — read through the
+ContentProvider — and write collection changes back to that file with
+`expectedShas` conflict safety. The registry's `collections` array is a
+build-time snapshot for the CLI, `mdmx check`, and build-time readers; when
+the config file is missing or lacks a `collections` block, runtime resolution
+falls back to that snapshot, and the first runtime write seeds it into the
+file. The record⇄array derivation is canonical in `@mdmx/core`
+(`collectionsFromConfig` / `collectionToConfig`); collection and field names
+match `^[a-z0-9][a-z0-9_-]*$`, and a collection's `dir` must live under the
+configured content dir.
 
 **Control taxonomy** (discriminated union on `type`): `text` / `textarea`
 (`placeholder?`), `number` (`min?`, `max?`, `step?`), `boolean`, `select` /

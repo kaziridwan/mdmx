@@ -30,7 +30,8 @@ registry that drives validation, the editor palette, and prop panels.
 
 ## Status at a glance
 
-- **5 packages** at **v0.3.1**, 210 tests, all green; strict TypeScript throughout.
+- **6 packages** at **v0.4.0** (`release/0.4.0`), 269 tests, all green; strict
+  TypeScript throughout; Next 15 + React 19.
 - The **entire headless pipeline** is implemented and tested: define a
   component → generate a typed registry → edit as a validated block document
   → serialize to canonical MDMX → commit atomically with conflict safety →
@@ -43,7 +44,14 @@ registry that drives validation, the editor palette, and prop panels.
   needed (`localMode`, ADR-024).
 - **Collections & draft/publish** (ADR-025): typed frontmatter defined in config,
   validated (MDMX008/009), edited via the editor's frontmatter panel (canonical
-  YAML). Next: nested editing (TwoColumn), media library UI.
+  YAML). Collections are resolved from config **at request time** and managed
+  from the dashboard (ADR-035).
+- **The drop-in dashboard** (`@mdmx/dashboard`, ADR-034): mount two ~3-line
+  files and get the full CMS at `/mdmx` — auth gate, collections + entry
+  tables, new-entry scaffolding, the embedded block editor, collection field
+  editing, media library, settings with a theme pin, and ⌘K quick-open — all
+  styled by a shipped light+dark token stylesheet. `examples/demo-next` **is**
+  that two-file consumer app.
 
 See [Roadmap](Roadmap.md) for the detailed breakdown.
 

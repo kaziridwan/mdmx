@@ -1,35 +1,129 @@
-# 4 · Mounting the editor
+# 4 · Mounting the dashboard
 
-The editor is a React component — `MDMXEditor` from `@mdmx/editor/react` —
-that you mount on a page of your app. The pattern is a **server component**
-that reads the file (content + blob sha) and a **client component** that
-renders the editor and saves through the API from [guide 3](03-content-api.md).
+`@mdmx/dashboard` is the drop-in CMS. You already mounted the API route in
+[guide 3](03-content-api.md); one more file gives you the entire authoring
+surface at `/mdmx`.
 
-## The client component
-
-Two things are non-negotiable here:
-
-1. **Load the editor client-only.** ProseMirror touches browser globals at
-   import time, so import `MDMXEditor` via `next/dynamic` with `ssr: false`.
-2. **Track the blob sha across saves.** Send `expectedSha` with every `PUT`
-   and refresh it after each save, so concurrent edits surface as a 409
-   instead of silently clobbering each other.
+## The mount
 
 ```tsx
-// app/edit/[...slug]/EditorClient.tsx
+// app/mdmx/[[...slug]]/page.tsx
+import { createDashboardPage } from "@mdmx/dashboard/next";
+import { components } from "../../../lib/components";
+
+export default createDashboardPage({ components });
+export const dynamic = "force-dynamic";
+```
+
+That's it. `@mdmx/dashboard/next` also re-exports the whole `@mdmx/next`
+surface, so both mount files can import from one package if you prefer.
+
+What you get at `/mdmx`:
+
+- an **auth gate** — GitHub login screen in production, straight in (with a
+  "local" badge) under `localMode`
+- **collections**: overview cards, per-collection entry tables (title, status
+  badge, filter, conflict-safe delete), *create collection* and *edit fields*
+  forms that write `mdmx.config.json` through the commit pipeline
+- **new-entry scaffolding**: title → slug → a valid starter document from the
+  collection's field schema, then straight into the editor
+- the **embedded block editor**: your components rendered live, prop panels,
+  slash menu, the live canonical-source pane, media uploads, sha-checked
+  conflict-safe saves
+- a **media library**, a **settings page** (session, repo, validation mode,
+  light/dark pin), and **⌘K quick-open** across entries and actions
+
+The page factory's server side stays thin: it reads `.mdmx/registry.json` per
+request and hands everything to the client app, which talks to the content
+API — so the same UI works in localMode and GitHub mode with no changes.
+
+### The component map
+
+The registry JSON describes components; the **component map** provides the
+real implementations so blocks render live in the editor exactly as they will
+on the site. It's a client module keyed by registry name:
+
+```ts
+// lib/components.ts
+"use client";
+import type { ComponentMap } from "@mdmx/editor/react";
+import Callout from "../components/mdmx/Callout";
+import TwoColumn from "../components/mdmx/TwoColumn";
+import Column from "../components/mdmx/Column";
+
+export const components: ComponentMap = { Callout, TwoColumn, Column };
+```
+
+Because it's a `"use client"` module, the components cross the server→client
+boundary as references. A registry component missing from the map still works
+— it renders as a labeled placeholder block.
+
+### `DashboardPageOptions` reference
+
+Everything is optional; the defaults match the canonical mount and the
+standard layout from [guide 1](01-installation.md).
+
+| Option | Default | Meaning |
+| --- | --- | --- |
+| `components` | — | Author components (client references) for live rendering |
+| `basePath` | `"/api/mdmx"` | Where the API handlers are mounted |
+| `mountPath` | `"/mdmx"` | Where this page is mounted (used to build links) |
+| `contentDir` | `"content"` | Content directory, repo-relative |
+| `mediaDir` | `"public/media"` | Media directory, repo-relative |
+| `registryPath` | `".mdmx/registry.json"` | Registry JSON, project-root-relative |
+| `title` | `"MDMX"` | Product name in the navbar |
+
+## Theming
+
+The dashboard ships its stylesheet automatically (the package imports it; no
+CSS import needed in your app). It follows `prefers-color-scheme` and
+supports a pinned theme via `data-mdmx-theme="light" | "dark"` on any
+ancestor — the settings page exposes exactly that as a per-browser toggle.
+
+Every color, radius, and font routes through `--mdmx-*` custom properties, so
+restyling is a token override:
+
+```css
+/* your globals.css */
+.mdmx-dash,
+.mdmx-dash-gate {
+  --mdmx-accent: #0d9488;
+  --mdmx-font: "Inter", system-ui, sans-serif;
+}
+```
+
+The embedded editor is themed by the same stylesheet, **scoped under
+`.mdmx-dash-editor`** — an editor you mount yourself elsewhere (below) stays
+headless, as `@mdmx/editor` always has been.
+
+Your own block components are yours to style: global CSS (like the demo's
+`mk-*` classes) applies inside the editor canvas and on your public pages
+alike — that's what makes the editing experience WYSIWYG.
+
+## Advanced: mounting the editor manually
+
+The dashboard is a composition of public APIs — if you need the block editor
+inside your own UI (a bespoke admin, a different shell), mount `MDMXEditor`
+directly. Two rules:
+
+1. **Load it client-only.** ProseMirror touches browser globals at import
+   time, so import via `next/dynamic` with `ssr: false`.
+2. **Track the blob sha across saves** (`expectedSha` + refresh after each
+   save) so concurrent edits surface as 409s instead of clobbering.
+
+```tsx
 "use client";
 import { useMemo, useRef } from "react";
 import dynamic from "next/dynamic";
 import { Registry, type CollectionSpec, type RegistrySpec } from "@mdmx/core";
-import { components } from "../../../lib/components";
+import { components } from "../lib/components";
 
-// ProseMirror touches browser globals at import time → load client-only.
 const MDMXEditor = dynamic(
   async () => (await import("@mdmx/editor/react")).MDMXEditor,
   { ssr: false, loading: () => <div>Loading editor…</div> },
 );
 
-export function EditorClient({
+export function MyEditor({
   path,
   initialSource,
   initialSha,
@@ -49,18 +143,9 @@ export function EditorClient({
     const res = await fetch("/api/mdmx/file", {
       method: "PUT",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify({
-        path,
-        content,
-        expectedSha: shaRef.current,
-        message: `mdmx: edit ${path}`,
-      }),
+      body: JSON.stringify({ path, content, expectedSha: shaRef.current }),
     });
-    if (!res.ok) {
-      const body = (await res.json().catch(() => ({}))) as { error?: string };
-      throw new Error(body.error ?? `save failed (${res.status})`);
-    }
-    // Refresh the blob sha so the next save stays conflict-safe.
+    if (!res.ok) throw new Error(`save failed (${res.status})`);
     const fresh = await fetch(`/api/mdmx/file?path=${encodeURIComponent(path)}`);
     if (fresh.ok) shaRef.current = ((await fresh.json()) as { sha: string }).sha;
   };
@@ -78,73 +163,12 @@ export function EditorClient({
 }
 ```
 
-Rejecting the `onSave` promise (as above on a non-OK response) surfaces the
-error in the editor's save toolbar — no extra error UI needed.
+Rejecting the `onSave` promise surfaces the error in the editor's save
+toolbar. Note that a manual mount is **unstyled** — the editor renders
+class-named markup (`.mdmx-editor`, `.mdmx-rail`, …) and leaves appearance to
+you; the dashboard's scoped chrome deliberately doesn't apply outside it.
 
-### The component map
-
-The registry JSON describes components; the **component map** provides the
-real implementations so blocks render live in the editor exactly as they will
-on the site. It's a client module keyed by registry name:
-
-```ts
-// lib/components.ts
-"use client";
-import type { ComponentMap } from "@mdmx/editor/react";
-import Callout from "../components/mdmx/Callout";
-import TwoColumn from "../components/mdmx/TwoColumn";
-import Column from "../components/mdmx/Column";
-
-export const components: ComponentMap = { Callout, TwoColumn, Column };
-```
-
-A registry component missing from the map still works — it renders as a
-labeled placeholder block instead of live output.
-
-## The server page
-
-```tsx
-// app/edit/[...slug]/page.tsx
-import { LocalProvider } from "@mdmx/next";
-import { CONTENT_DIR, projectRoot, registry, registrySpec } from "../../../lib/mdmx-config";
-import { EditorClient } from "./EditorClient";
-
-export const dynamic = "force-dynamic";
-
-export default async function EditPage({ params }: { params: { slug: string[] } }) {
-  const path = `${CONTENT_DIR}/${params.slug.join("/")}`;
-  const provider = new LocalProvider(projectRoot());
-  const collection = registry().collectionForPath(path);
-
-  const file = await provider.read(path); // { content, sha }
-
-  return (
-    <EditorClient
-      path={path}
-      initialSource={file.content}
-      initialSha={file.sha}
-      registrySpec={registrySpec()}
-      collection={collection}
-    />
-  );
-}
-```
-
-Notes:
-
-- The **server** reads the file directly through the provider (no HTTP hop)
-  and passes content + sha down. `force-dynamic` keeps the page reading fresh
-  content after saves.
-- `registrySpec()` (plain JSON) crosses the server→client boundary;
-  the client rebuilds `new Registry(spec)`. Don't try to pass the `Registry`
-  class instance — it isn't serializable.
-- `collectionForPath` resolves which collection owns the file; passing the
-  resulting `CollectionSpec` enables the editor's typed **frontmatter panel**.
-- `/edit/posts/welcome.mdx` edits `content/posts/welcome.mdx`. In GitHub mode,
-  gate this page on the session, or simply let every API call 401 and redirect
-  to `/api/mdmx/auth/login`.
-
-## `MDMXEditorProps` reference
+### `MDMXEditorProps` reference
 
 | Prop | Type | Meaning |
 | --- | --- | --- |
@@ -155,58 +179,12 @@ Notes:
 | `onSave` | `(source: string) => void \| Promise<void>` | Receives canonical MDMX; presence adds the save toolbar; reject to show an error |
 | `docTitle` | `string` | Toolbar label (e.g. the file path) |
 | `backHref` / `backLabel` | `string` | Optional back link at the start of the toolbar |
-| `media` | `MediaSource` | Media adapter; presence enables the image button + library (below) |
+| `media` | `MediaSource` | Media adapter (`{ list, upload }`); presence enables the image button + library |
 | `mediaDir` | `string` | Where uploads land (default `public/media`) |
 
-What you get out of the box: the block canvas with your components rendered
-live, a rail palette with drag-and-drop, a `/` slash menu, a prop panel with
-typed controls, nested editing for `blocks` components, and a live source pane
-showing the canonical MDMX as you type.
-
-## The media library
-
-`MediaSource` is a two-method adapter — the editor doesn't know where images
-live. Back it with the MDMX API and images upload into `public/media/` (and,
-in GitHub mode, commit atomically like any other save):
-
-```ts
-import type { MediaItem, MediaSource, MediaUpload } from "@mdmx/editor/react";
-
-const MEDIA_DIR = "public/media";
-/** Map a repo path under `public/` to the URL Next serves it at. */
-const publicUrl = (path: string) => "/" + path.replace(/^public\//, "");
-
-export const media: MediaSource = {
-  list: async () => {
-    const res = await fetch(`/api/mdmx/files?dir=${encodeURIComponent(MEDIA_DIR)}`);
-    if (res.status === 404) return []; // media dir not created yet
-    if (!res.ok) throw new Error(`could not list media (${res.status})`);
-    const { files } = (await res.json()) as { files: { path: string }[] };
-    return files.map((f) => ({ path: f.path, url: publicUrl(f.path) }));
-  },
-  upload: async (upload: MediaUpload): Promise<MediaItem> => {
-    const res = await fetch("/api/mdmx/media", {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify(upload),
-    });
-    if (!res.ok) throw new Error(`upload failed (${res.status})`);
-    const { path } = (await res.json()) as { path: string };
-    return { path, url: publicUrl(path) };
-  },
-};
-```
-
-Pass it as `<MDMXEditor media={media} mediaDir={MEDIA_DIR} …/>`. Pasting an
-image from the clipboard also routes through this adapter.
-
-## Styling
-
-The editor ships **no stylesheet**. It renders semantic, class-named markup
-(`.mdmx-editor`, `.mdmx-rail`, `.mdmx-sidebar`, `.mdmx-toolbar`, …) and leaves
-appearance to you, so the CMS inherits your app's look. The fastest start is
-to copy the editor sections of the demo's
-[`app/globals.css`](../../../examples/demo-next/app/globals.css) and adjust
-tokens from there.
+A `MediaSource` backed by the MDMX API is ~20 lines — list via
+`GET /files?dir=<mediaDir>`, upload via `POST /media`, map repo paths under
+`public/` to the URLs Next serves. The dashboard's built-in editor view does
+exactly this.
 
 Next: [render content on your site →](05-rendering-content.md)

@@ -14,7 +14,8 @@ components live, driven by a generated component registry.
 | `@mdmx/core` | ✅ implemented | MDMX spec: parser, validator (diagnostics `MDMX001`–`MDMX007`), canonical serializer, registry types, `defineMDMX()` |
 | `@mdmx/cli` | ✅ implemented | `mdmx generate` (TS compiler API prop extraction → registry.json + registry.ts), `mdmx check` (content lint, CI-ready exit codes), and `mdmx dev` (watch components/config → debounced, hash-diffed registry regenerate) |
 | `@mdmx/editor` | ✅ implemented | Registry→ProseMirror schema, `fromMdast`/`toMdast` converters (byte-level round-trip tests), command/palette layer, and the **React editor** under `@mdmx/editor/react` — React NodeViews on raw ProseMirror (ADR-023), rail palette, slash menu, prop panel, live-source pane, **nested editing** (TwoColumn, ADR-021), and a **media library** (`MediaSource` adapter + browser/uploader, ADR-027). Run it via `examples/editor-playground`. Drop-indicator polish pending |
-| `@mdmx/next` | ✅ implemented | LocalProvider, content readers, encrypted sessions (AES-GCM cookies), GitHub OAuth with push-permission authz + 5-min re-verification, full content/media API handlers (web-standard Request→Response, mountable as App Router routes), and a no-OAuth `localMode` for local authoring. The editor mount page + a runnable app live in `examples/demo-next` |
+| `@mdmx/next` | ✅ implemented | LocalProvider, content readers, encrypted sessions (AES-GCM cookies), GitHub OAuth with push-permission authz + 5-min re-verification, full content/media/collections API handlers (web-standard Request→Response, mountable as App Router routes; collections resolved from config at request time, ADR-035), and a no-OAuth `localMode` for local authoring |
+| `@mdmx/dashboard` | ✅ implemented | **The drop-in CMS** (ADR-034): mount two ~3-line files and get the full dashboard at `/mdmx` — auth gate, collection + entry management, new-entry scaffolding, the embedded block editor, media library, settings with a theme pin, ⌘K quick-open — styled by a shipped light+dark token stylesheet. `examples/demo-next` is exactly that consumer app |
 | `@mdmx/provider-github` | ✅ implemented | Git Data API provider: atomic multi-file commits (blobs→tree→commit→ref), optimistic concurrency via blob shas, path-safety guards; tested against an in-memory GitHub fake |
 
 ## The MDMX subset (v1)
@@ -43,14 +44,14 @@ formatting is treated as a semver-major change.
 - **AGENTS.md** / **CLAUDE.md** — context for AI coding agents (invariants, build gotchas)
 - **llms.txt** — machine-readable index
 - **examples/demo** — minimal consumer; `pnpm exec mdmx generate && pnpm exec mdmx check` inside it
-- **examples/demo-next** — a complete, runnable Next.js app: edit components-as-blocks and save canonical MDMX to the local repo, no GitHub needed (`pnpm --filter demo-next dev`). See its README
+- **examples/demo-next** — a complete, runnable Next.js app: the two-file dashboard mount over `@mdmx/dashboard`; edit components-as-blocks and save canonical MDMX to the local repo, no GitHub needed (`pnpm dev:next`). See its README
 - **examples/editor-playground** — Vite harness for developing the editor UI in isolation
 
 ## Development
 
 ```sh
 pnpm install
-pnpm test          # builds @mdmx/core, then runs all 210 tests across packages
+pnpm test          # builds all packages, then runs all 269 tests
 pnpm build         # build all packages
 pnpm check         # typecheck all packages
 ```
@@ -81,4 +82,7 @@ Key guarantees under test in `@mdmx/core`:
 2. **Phase 2** — collections + draft/publish ✅ (typed frontmatter, canonical
    YAML, editor panel); next: container components with nested editing, media
    library, `mdmx check` in CI
-3. **Phase 3** — segment composer, GitLab / generic git providers, collab (Yjs)
+3. **Phase 2.5 (0.4.0)** — the drop-in dashboard ✅: `@mdmx/dashboard` two-file
+   mount, collections managed from the UI (config-as-code, live without
+   redeploy), media library, settings, quick-open; Next 15 + React 19
+4. **Phase 3** — segment composer, GitLab / generic git providers, collab (Yjs)

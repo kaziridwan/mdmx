@@ -109,14 +109,20 @@ ref), not the Contents API:
 - **Path safety** — the same `contentDir`/`mediaDir` confinement applies
   before anything reaches GitHub.
 
-## Editor pages in production
+## The dashboard in production
 
-The `/edit` server page from guide 4 reads via `LocalProvider` — in GitHub
-mode the deployed filesystem is read-only and stale between deploys. Read
-through the API instead so the page sees the branch's current state, e.g.
-fetch `GET <basePath>/file?path=…` (forwarding the request's cookies) and
-redirect to `/api/mdmx/auth/login` on a 401. Reads through the session's
-`GitHubProvider` hit the Git Data API directly.
+The dashboard mount from [guide 4](04-editor.md) needs **no changes**: its
+client talks only to the content API, and reads through the session's
+`GitHubProvider` hit the Git Data API directly — so entry tables, the editor,
+and collection management always see the branch's current state, not the
+deployed snapshot. An expired session surfaces as the GitHub login screen.
+
+One nuance: the page factory reads `.mdmx/registry.json` from the deployed
+filesystem, so **component** changes still flow through `mdmx generate` +
+deploy (they're code changes anyway). **Collections** don't — they're
+resolved from `mdmx.config.json` through the provider per request (ADR-035),
+so a collection created in the dashboard is usable immediately, before the
+rebuild that its own commit triggers.
 
 The **public** site keeps reading the local filesystem at build time
 ([guide 5](05-rendering-content.md)) — a save commits to the branch, your

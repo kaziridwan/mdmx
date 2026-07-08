@@ -32,20 +32,21 @@ Key property: **mdast is the hub** (ADR-009). Text never converts directly to
 ProseMirror; both directions go through mdast, so one parse path serves the
 validator, CLI, and editor, and round-trip tests run headlessly.
 
-## The five packages
+## The six packages
 
 | Package | Depends on | Role |
 | --- | --- | --- |
-| `@mdmx/core` | (nothing heavy) | The format: parse, validate, serialize; Registry; defineMDMX; ContentProvider contract + path safety. Zero React/Next. |
-| `@mdmx/cli` | core | `mdmx generate` (type extraction → registry), `mdmx check` (lint). |
-| `@mdmx/editor` | core | Registry→ProseMirror schema; mdast⇄PM converters; command/palette layer. React UI chrome pending. |
-| `@mdmx/next` | core | LocalProvider, build-time readers, sealed sessions, GitHub OAuth, content/media API handlers. Editor mount page pending. |
+| `@mdmx/core` | (nothing heavy) | The format: parse, validate, serialize; Registry; defineMDMX; collections config derivation; ContentProvider contract + path safety. Zero React/Next. |
+| `@mdmx/cli` | core | `mdmx generate` (type extraction → registry), `mdmx check` (lint), `mdmx dev` (watch). |
+| `@mdmx/editor` | core | Registry→ProseMirror schema; mdast⇄PM converters; command/palette layer; the React editor UI under `/react`. Headless — ships no CSS. |
+| `@mdmx/next` | core | LocalProvider, build-time readers, sealed sessions, GitHub OAuth, content/media/collections API handlers (request-time collection resolution, ADR-035). |
 | `@mdmx/provider-github` | core | GitHubProvider over the Git Data API: atomic multi-file commits, conflict detection. |
+| `@mdmx/dashboard` | core + editor + next | **The app layer** (ADR-034): the drop-in CMS — two-file mount, shell, views, quick-open, shipped light+dark stylesheet that also themes the embedded editor. |
 
-Dependency discipline (ADR, Invariant #9): everything depends on `core`;
-`core` depends on nothing heavy; siblings never depend on each other except
-through `core`. This is what keeps a future VS Code extension or standalone
-use possible.
+Dependency discipline (ADR-034 amends Invariant #9): every *library* package
+depends only on `core`; `@mdmx/dashboard` is the one composition point above
+them, and nothing depends on it. This is what keeps a future VS Code
+extension or standalone use possible.
 
 ## Why the seams are where they are
 

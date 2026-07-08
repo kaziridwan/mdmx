@@ -16,7 +16,7 @@ project to a deployed CMS backed by GitHub OAuth.
 | 1 | [Installation & project setup](01-installation.md) | Packages, `next.config`, directory layout, build scripts |
 | 2 | [Components & the registry](02-components-and-registry.md) | `defineMDMX()`, `mdmx.config.json`, collections, `mdmx generate` / `check` / `dev` |
 | 3 | [The content API](03-content-api.md) | `createMDMXHandlers()` mounted as an App Router route, `localMode` + `LocalProvider` |
-| 4 | [Mounting the editor](04-editor.md) | The `/edit` page, `MDMXEditor`, conflict-safe saves, the media library |
+| 4 | [Mounting the dashboard](04-editor.md) | The two-file `/mdmx` mount: shell, entry tables, embedded editor, media, ⌘K — plus the manual editor mount as an advanced path |
 | 5 | [Rendering content](05-rendering-content.md) | `getDocuments()` / `getDocumentBySlug()`, draft/publish, rendering MDMX on the public site |
 | 6 | [Production: GitHub mode](06-production-github.md) | GitHub OAuth app, sealed sessions, `GitHubProvider`, deployment |
 | 7 | [Troubleshooting](07-troubleshooting.md) | Common errors, HTTP status meanings, diagnostic codes |
@@ -34,18 +34,23 @@ components/mdmx/*.tsx ──(mdmx generate)──► .mdmx/registry.{json,ts}
                                              (local FS in dev, GitHub in prod)
 ```
 
-Four packages participate in a Next.js integration:
+Five packages participate in a Next.js integration:
 
 - **`@mdmx/core`** — the format: parser, validator, canonical serializer,
   `Registry`, `defineMDMX()`. No React, no Next.js.
 - **`@mdmx/cli`** — `mdmx generate` (components → registry), `mdmx check`
   (content lint for CI), `mdmx dev` (watch mode).
 - **`@mdmx/editor`** — the block editor. The React UI lives at
-  `@mdmx/editor/react`.
-- **`@mdmx/next`** — the glue: API route handlers, content readers,
-  sessions/OAuth, and `LocalProvider` for local authoring.
+  `@mdmx/editor/react`. Headless — it ships no CSS.
+- **`@mdmx/next`** — the glue: API route handlers (content, media,
+  collections), content readers, sessions/OAuth, and `LocalProvider` for
+  local authoring.
+- **`@mdmx/dashboard`** — the drop-in CMS: mount one page + the API route and
+  get the full dashboard at `/mdmx` (auth gate, entry tables, the embedded
+  editor, collection management, media library, settings, ⌘K quick-open),
+  styled out of the box by a shipped light+dark stylesheet.
 
-In production a fifth package, **`@mdmx/provider-github`**, commits saves to
+In production a sixth package, **`@mdmx/provider-github`**, commits saves to
 GitHub via the Git Data API (atomic multi-file commits, conflict detection).
 
 ## The two modes

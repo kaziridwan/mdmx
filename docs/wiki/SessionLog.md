@@ -101,6 +101,23 @@ commit per green milestone). This entry grows as milestones land.
   `/api/mdmx/[...route]`, `/mdmx/[[...slug]]`. README rewritten around the
   two-file DX. Smoke-verified: redirect, editor 200, byte-identical
   conflict-safe save. 269 tests green.
+- **M9 — release hygiene (0.4.0)**: SPEC §5 amended with the runtime
+  collection-resolution rule (config authoritative, registry = build-time
+  snapshot, seed-on-first-write, name/dir constraints). Wiki synced: Home
+  (6 packages, v0.4.0, 269 tests, dashboard bullet), Architecture (six-package
+  table, ADR-034 discipline note), Packages (+@mdmx/dashboard section, new
+  core/next rows, counts), Roadmap (Phase 2.5 table, next-milestone rewrite).
+  Guides updated to the dashboard-first DX: README map, install (dashboard
+  package + mount in layout/transpile), content API (configPath +
+  collections/documents endpoints + config-as-code semantics), guide 4
+  rewritten as "Mounting the dashboard" (DashboardPageOptions, theming
+  tokens, manual editor mount kept as the advanced path), production ("The
+  dashboard in production" replaces the stale editor-pages section),
+  troubleshooting (+unstyled-dashboard and gate-unreachable entries). Root
+  README package table + roadmap; **all packages bumped to 0.4.0**. Final
+  gate: 269 tests, guide link check clean.
+- **This session's ADRs**: ADR-034 (app-layer dashboard package),
+  ADR-035 (collections config-as-code, request-time resolution).
 
 ### S22 — Next.js integration guide series (docs only)
 - **docs/guides/next-js/** (new): seven consumer-facing guides documenting how
