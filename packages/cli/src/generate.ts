@@ -4,8 +4,7 @@ import { join, relative } from "node:path";
 import { glob } from "tinyglobby";
 import {
   MDMX_SPEC_VERSION,
-  type CollectionSpec,
-  type FrontmatterField,
+  collectionsFromConfig,
   type RegistrySpec,
 } from "@mdmx/core";
 import type { MDMXConfig } from "./config.js";
@@ -49,7 +48,7 @@ export async function generate(cwd: string, config: MDMXConfig): Promise<Generat
   }
   deduped.sort((a, b) => a.spec.name.localeCompare(b.spec.name));
 
-  const collections = normalizeCollections(config);
+  const collections = collectionsFromConfig(config.collections);
 
   const componentSpecs = deduped.map((c) => c.spec);
   const body = JSON.stringify({ components: componentSpecs, collections });
@@ -115,22 +114,6 @@ function emitRegistryModule(
     "",
   );
   return lines.join("\n");
-}
-
-/** Normalize the config's `collections` map into sorted `CollectionSpec[]`. */
-function normalizeCollections(config: MDMXConfig): CollectionSpec[] {
-  const out: CollectionSpec[] = [];
-  for (const [name, c] of Object.entries(config.collections ?? {})) {
-    const fields: FrontmatterField[] = Object.entries(c.fields).map(([fname, f]) => ({
-      name: fname,
-      required: f.required ?? false,
-      control: f.control,
-      ...(f.default !== undefined ? { default: f.default } : {}),
-      ...(f.description ? { description: f.description } : {}),
-    }));
-    out.push({ name, dir: c.dir, fields });
-  }
-  return out.sort((a, b) => a.name.localeCompare(b.name));
 }
 
 function toImportPath(rel: string): string {

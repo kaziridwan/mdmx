@@ -2,6 +2,7 @@ export {
   MDMX_SPEC_VERSION,
   MDMX_META,
   Registry,
+  collectionForPath,
   defineMDMX,
 } from "./types.js";
 export type {
@@ -22,6 +23,18 @@ export type {
   SourcePosition,
   SourceSpan,
 } from "./types.js";
+
+export {
+  collectionsFromConfig,
+  collectionFromConfig,
+  collectionToConfig,
+  validateCollectionConfig,
+} from "./collections-config.js";
+export type {
+  CollectionConfig,
+  CollectionFieldConfig,
+  CollectionsConfig,
+} from "./collections-config.js";
 
 export { createParser, parseMDX, parseDocument } from "./parse.js";
 export type { ParsedDocument } from "./parse.js";

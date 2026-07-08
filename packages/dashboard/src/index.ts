@@ -7,6 +7,8 @@ export { DashboardShell } from "./shell/DashboardShell.js";
 export { HomeView } from "./views/HomeView.js";
 export { resolveRoute, routeHref, editorHref } from "./routes.js";
 export type { DashboardRoute } from "./routes.js";
+export { DashboardContext, useDashboard } from "./context.js";
+export type { DashboardContextValue } from "./context.js";
 export { resolveConfig } from "./config.js";
 export type { DashboardConfig, ResolvedDashboardConfig } from "./config.js";
 export {

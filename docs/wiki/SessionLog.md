@@ -36,6 +36,20 @@ commit per green milestone). This entry grows as milestones land.
   `test`/`check` now build all packages first. Demo mounts the dashboard at
   `/mdmx` alongside its old pages (replaced in M8); smoke-verified: `/mdmx`
   200, route-scoped CSS chunk contains tokens, `/me` answers local.
+- **M3 — collections API, resolved at request time** (ADR-035): collections
+  stay config-as-code; the API reads/writes `mdmx.config.json` **through the
+  provider per request**, so dashboard-created collections are live without
+  regenerate/redeploy in both modes. New: `configPath` option;
+  `GET/POST /collections`, `PUT /collections/:name` (fields only; dir
+  immutable; PUT not PATCH to keep the handler surface); registry fallback +
+  seed-on-first-write migration; name/dir/control validation server-side
+  (400 + problems, 409 duplicates); frontmatter validation in `PUT /file` now
+  uses the request-time set (MDMX008 fires on a just-created collection —
+  live-tested). Core: `collections-config.ts` (record⇄array derivation +
+  `validateCollectionConfig` + standalone `collectionForPath`; CLI now reuses
+  it). `/me` reports contentDir/mediaDir/validation/localMode. Dashboard:
+  collections client methods, `DashboardContext` + live collection state
+  behind the gate. +19 tests (7 core, 12 next) → 248 total.
 
 ### S22 — Next.js integration guide series (docs only)
 - **docs/guides/next-js/** (new): seven consumer-facing guides documenting how

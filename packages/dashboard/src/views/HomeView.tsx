@@ -1,17 +1,11 @@
 "use client";
-import type { CollectionSpec } from "@mdmx/core";
-import type { ResolvedDashboardConfig } from "../config.js";
+import { useDashboard } from "../context.js";
 import { routeHref } from "../routes.js";
 import { Link } from "../shell/link.js";
 
 /** Dashboard home: the collections overview. */
-export function HomeView({
-  config,
-  collections,
-}: {
-  config: ResolvedDashboardConfig;
-  collections: readonly CollectionSpec[];
-}) {
+export function HomeView() {
+  const { config, collections } = useDashboard();
   return (
     <div className="mdmx-dash-view">
       <header className="mdmx-dash-view-head">
