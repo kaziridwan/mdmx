@@ -62,6 +62,7 @@ an authentication bypass by design.
 | `auth` | in GitHub mode | — | `{ clientId, clientSecret }` of the GitHub OAuth app (+ optional `apiBase`/`oauthBase` for GHE) |
 | `sessionSecret` | in GitHub mode | — | Secret sealing the session cookie (AES-GCM) |
 | `registry` | | — | When present, `.mdx` saves are re-validated server-side against it |
+| `configPath` | | `"mdmx.config.json"` | Project config file collections are resolved from at request time and written back to by the collection routes |
 | `validation` | | `"report"` | `"report"`: save and return diagnostics. `"strict"`: reject saves with error diagnostics (422) |
 | `basePath` | | `"/api/mdmx"` | Route prefix the handlers are mounted under |
 | `editorPath` | | `"/mdmx"` | Where to redirect after login |
@@ -80,6 +81,10 @@ requires a session (401 otherwise); in local mode the session is implicit.
 | `POST /auth/logout` | — | Clears the session cookie |
 | `GET /me` | — | `{ login, repo }` |
 | `GET /files` | `?dir=` (default `contentDir`) | `{ files: FileMeta[] }` |
+| `GET /documents` | `?dir=` (default `contentDir`) | `{ documents: [{ path, sha, frontmatter }] }` — listing + parsed frontmatter in one round trip; bodies excluded |
+| `GET /collections` | — | `{ collections: CollectionSpec[] }` — resolved from `configPath` per request (baked registry as fallback) |
+| `POST /collections` | `{ name, dir?, fields }` | 201 `{ collection, commit }` — writes the config file via the provider; 409 duplicate, 400 + `problems` invalid |
+| `PUT /collections/:name` | `{ fields }` | `{ collection, commit }` — replaces the field schema (`dir` is immutable) |
 | `GET /file` | `?path=` | `{ path, content, sha }` |
 | `PUT /file` | `{ path, content, message?, expectedSha? }` | `{ commit, diagnostics }` |
 | `DELETE /file` | `{ path, message?, expectedSha? }` | `{ commit }` |
@@ -94,6 +99,12 @@ Semantics worth knowing:
   MDMX validator (and the collection's frontmatter schema) on the server — the
   editor client is never trusted. Unparseable MDX is a 400; error diagnostics
   are a 422 in `strict` mode, or saved-and-returned in `report` mode.
+- **Collections are config-as-code.** The collection routes read and write
+  `mdmx.config.json` through the provider, so a collection created from the
+  dashboard is live immediately — no regenerate, no redeploy — and the change
+  is a normal conflict-safe commit. Collection/field names must match
+  `^[a-z0-9][a-z0-9_-]*$` and a collection's `dir` must sit under
+  `contentDir`.
 - **Optimistic concurrency.** Pass `expectedSha` (the git blob sha you read)
   on writes and deletes. If someone else changed the file since, the provider
   raises a conflict and the API returns **409** — refetch, merge, retry. Pass

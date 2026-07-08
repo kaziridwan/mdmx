@@ -9,6 +9,7 @@ Inside this monorepo, apps consume the packages via the workspace protocol:
 {
   "dependencies": {
     "@mdmx/core": "workspace:*",
+    "@mdmx/dashboard": "workspace:*",
     "@mdmx/editor": "workspace:*",
     "@mdmx/next": "workspace:*"
   },
@@ -19,8 +20,8 @@ Inside this monorepo, apps consume the packages via the workspace protocol:
 ```
 
 Outside the monorepo, install the same set from your registry once published
-(`@mdmx/core`, `@mdmx/editor`, `@mdmx/next`, and `@mdmx/cli` as a dev
-dependency). `@mdmx/provider-github` is only needed for
+(`@mdmx/core`, `@mdmx/dashboard`, `@mdmx/editor`, `@mdmx/next`, and
+`@mdmx/cli` as a dev dependency). `@mdmx/provider-github` is only needed for
 [GitHub mode](06-production-github.md).
 
 The editor declares `react >= 18` / `react-dom >= 18` as peer dependencies;
@@ -34,7 +35,7 @@ handles them (required for symlinked monorepo deps, harmless otherwise):
 ```js
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  transpilePackages: ["@mdmx/core", "@mdmx/editor", "@mdmx/next"],
+  transpilePackages: ["@mdmx/core", "@mdmx/editor", "@mdmx/next", "@mdmx/dashboard"],
 };
 
 export default nextConfig;
@@ -62,7 +63,7 @@ your-app/
 │   └── components.ts          # client component map for live rendering
 └── app/
     ├── api/mdmx/[...route]/route.ts   # the content/media API (guide 3)
-    ├── edit/[...slug]/                # the editor mount (guide 4)
+    ├── mdmx/[[...slug]]/page.tsx      # the dashboard mount (guide 4)
     └── …                              # your public site (guide 5)
 ```
 

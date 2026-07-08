@@ -5,7 +5,7 @@ Per-package reference. Test counts are current as of the last session (see
 
 ---
 
-## @mdmx/core — 38 tests
+## @mdmx/core — 45 tests
 
 The format. Zero React/Next dependencies (Invariant #9).
 
@@ -17,10 +17,12 @@ The format. Zero React/Next dependencies (Invariant #9).
 | `validate.ts` | `validateTree`/`validateSource` — subset whitelist, registry membership, prop schema, children policies, slot constraints → diagnostics. |
 | `serialize.ts` | `toMDX` + pinned `CANONICAL_STRINGIFY_OPTIONS`/`CANONICAL_MDX_OPTIONS`. |
 | `provider.ts` | `ContentProvider` contract, `ConflictError`, `PathSafetyError`, `assertSafePath`. |
-| `frontmatter.ts` | `parseFrontmatter`/`stringifyFrontmatter` (canonical YAML, pinned `CANONICAL_YAML_OPTIONS`) + `validateFrontmatter` (MDMX008/009). Collections: `CollectionSpec`, `Registry.collectionForPath`. |
+| `frontmatter.ts` | `parseFrontmatter`/`stringifyFrontmatter` (canonical YAML, pinned `CANONICAL_YAML_OPTIONS`) + `validateFrontmatter` (MDMX008/009). Collections: `CollectionSpec`, `Registry.collectionForPath` (also standalone `collectionForPath`). |
+| `collections-config.ts` | The authored (record-keyed) collections shape: `collectionsFromConfig`/`collectionToConfig` derivation (canonical, shared by CLI and the runtime API), `validateCollectionConfig` (recursive `ControlSpec` checks). ADR-035. |
 
 Key exports: `parseMDX`, `parseDocument`, `validateTree`, `validateSource`,
 `validateFrontmatter`, `stringifyFrontmatter`, `toMDX`, `Registry`,
+`collectionForPath`, `collectionsFromConfig`, `validateCollectionConfig`,
 `defineMDMX`, `assertSafePath`, `ConflictError`.
 
 ---
@@ -33,7 +35,7 @@ into the registry, and validates frontmatter in `check`.
 | File | Responsibility |
 | --- | --- |
 | `bin.ts` | CLI entry; `generate`, `check`, and `dev` subcommands; exit codes for CI. |
-| `config.ts` | Loads `mdmx.config.json`/`.mjs`; defaults. |
+| `config.ts` | Loads `mdmx.config.json`/`.mjs`; defaults. Collection types re-exported from core (one canonical shape, ADR-035). |
 | `extract.ts` | Walks a `ts.Program` for `defineMDMX` calls; pulls props from the component type; merges config. |
 | `infer.ts` | `ts.Type` → `ControlSpec` (string→text, literal union→select, array→list, …); `isFunctionType`. |
 | `static-eval.ts` | Statically evaluates the `defineMDMX` config literal to JSON (never executes user code). |
@@ -76,10 +78,11 @@ have landed; remaining polish is nested drop indicators + per-region slash.
 
 ---
 
-## @mdmx/next — 37 tests
+## @mdmx/next — 51 tests
 
-Next.js integration. The editor mount page lives in `examples/demo-next`.
-Saves are validated against the file's collection schema (MDMX008/009).
+Next.js integration. The dashboard mount lives in `@mdmx/dashboard`;
+`examples/demo-next` is the runnable reference. Saves are validated against
+the file's collection schema (MDMX008/009), resolved at request time.
 
 | File | Responsibility |
 | --- | --- |
@@ -87,11 +90,33 @@ Saves are validated against the file's collection schema (MDMX008/009).
 | `content.ts` | `getDocuments`/`getDocumentBySlug` — build-time readers; frontmatter, status filter, optional registry validation. |
 | `session.ts` | AES-256-GCM sealed cookies; `seal`/`unseal`; cookie helpers. |
 | `auth.ts` | GitHub OAuth: `authorizeUrl`, `exchangeCode`, `verifyRepoAccess` (push-permission check). |
-| `api.ts` | `createMDMXHandlers` — web-standard Request→Response for auth + content/media CRUD. Supports **`localMode`** (no OAuth; synthetic `local` session; ADR-024) for local authoring; a parse failure on save returns 400, not 500. |
+| `api.ts` | `createMDMXHandlers` — web-standard Request→Response for auth + content/media CRUD. Supports **`localMode`** (no OAuth; synthetic `local` session; ADR-024) for local authoring; a parse failure on save returns 400, not 500. **Collections routes** (ADR-035): `GET/POST /collections`, `PUT /collections/:name` — read/write `mdmx.config.json` through the provider per request (registry fallback + seed-on-first-write; `configPath` option); `GET /documents?dir=` returns listing + parsed frontmatter for entry tables/search; `/me` reports repo/dirs/validation/localMode. |
 
 Security posture (ADR-016/017/018): server-side validation on every save,
 origin checks on mutations, prefix-confined paths, 5-min permission
 re-verification, conflict 409s, media type/size limits + no-clobber.
+
+
+---
+
+## @mdmx/dashboard — 38 tests
+
+The app layer (ADR-034): the drop-in CMS mounted with two ~3-line files
+(`app/mdmx/[[...slug]]/page.tsx` + `app/api/mdmx/[...route]/route.ts`).
+Depends on core + editor + next — the one allowed composition point above the
+library siblings. Ships a complete stylesheet (`--mdmx-*` tokens, light+dark,
+`data-mdmx-theme` override) that also themes the embedded editor, scoped
+under `.mdmx-dash-editor` so standalone editor mounts stay headless.
+
+| File | Responsibility |
+| --- | --- |
+| `next/index.ts` | `createDashboardPage()` — optional-catch-all page factory; reads `.mdmx/registry.json` per request, hands spec + resolved config + author-component client references to the client app; re-exports the `@mdmx/next` surface; imports the stylesheet (zero-config styling via `transpilePackages`). |
+| `DashboardApp.tsx`, `context.ts` | Client root: `AuthGate` → `DashboardContext` (api, me, registry, live collections via `GET /collections`, refresh) → shell + view router. Applies the stored theme pin on load. |
+| `routes.ts` | Pure `resolveRoute(slug)` URL scheme + `routeHref`/`editorHref` (editor routes carry the full repo-relative path). |
+| `api-client.ts` | Typed same-origin client over the content API; `UnauthorizedError` drops the UI to the login screen. |
+| `shell/` | `AuthGate` (login / unreachable-API help / localMode badge), `DashboardShell` (navbar, left nav, main, contextual right slot, `search` slot), `QuickOpen` + pure `quick-open.ts` ranking (Cmd/Ctrl+K palette), `link.ts` (next/link NodeNext-CJS interop shim). |
+| `views/` | `HomeView` (collections overview), `CollectionView` (entry table via `GET /documents`, filter, conflict-safe delete), `EntryNewView` (title→slug scaffold, `expectedSha: null`), `EditorView` (embedded `MDMXEditor` via `next/dynamic` `ssr:false`, sha-refreshing saves, `MediaSource` adapter), `CollectionFormView` + pure `field-draft.ts` (create/edit field schemas; nested controls via an "advanced" escape hatch), `MediaView` (grid/upload/delete; local `media-upload.ts` helpers keep ProseMirror out of the SSR graph), `SettingsView` (session, dirs, validation, registry stats, theme pin). |
+| `scaffold.ts`, `theme.ts` | `slugify`/`scaffoldDocument` (canonical starter frontmatter from a collection's fields); theme preference persistence (`data-mdmx-theme` + localStorage). |
 
 ---
 
@@ -115,7 +140,7 @@ re-verification, conflict 409s, media type/size limits + no-clobber.
   the demo registry + components and `welcome.mdx`. The primary interactive
   verification surface for the real editor. (Build core + editor and run
   `mdmx generate` in `demo/` first; see its README.)
-- `demo-next/` — a complete, runnable **Next.js** app dogfooding the full loop
-  locally (list → edit → save canonical MDMX to disk, conflict-safe) via
-  `@mdmx/next` `localMode` (ADR-024). The reference editor mount page. See its
-  README to run.
+- `demo-next/` — a complete, runnable **Next.js** app dogfooding the drop-in
+  CMS locally via `@mdmx/next` `localMode` (ADR-024): exactly the two-file
+  dashboard mount plus author components and content — the reference consumer
+  integration. See its README to run.

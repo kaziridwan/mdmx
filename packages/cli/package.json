@@ -1,6 +1,6 @@
 {
   "name": "@mdmx/cli",
-  "version": "0.3.1",
+  "version": "0.4.0",
   "description": "MDMX tooling: registry codegen (generate), content linting (check), and watch mode (dev)",
   "type": "module",
   "bin": {

@@ -15,9 +15,19 @@ ProseMirror touches browser globals at import time — always load it via
 `next/dynamic` with `ssr: false` ([guide 4](04-editor.md)).
 
 **Bundler errors resolving `@mdmx/*` imports**
-Add `"@mdmx/core", "@mdmx/editor", "@mdmx/next"` to `transpilePackages` in
-`next.config.mjs`. In the monorepo, also make sure the packages are built
-(`pnpm build`) — the apps consume `dist/`.
+Add `"@mdmx/core", "@mdmx/editor", "@mdmx/next", "@mdmx/dashboard"` to
+`transpilePackages` in `next.config.mjs`. In the monorepo, also make sure the
+packages are built (`pnpm build`) — the apps consume `dist/`.
+
+**The dashboard renders unstyled**
+The stylesheet ships inside `@mdmx/dashboard` and flows through
+`transpilePackages` — if `@mdmx/dashboard` is missing from that list, the CSS
+import inside the package is not processed.
+
+**"Could not reach the MDMX API" on the dashboard gate**
+The dashboard's `basePath` (default `/api/mdmx`) doesn't line up with where
+the handlers are mounted, or the API route file is missing. The two mount
+files must agree on `basePath`.
 
 **Stale content or stale registry on CMS pages**
 CMS pages (list, edit) must opt out of static optimization:
