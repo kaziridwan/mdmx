@@ -92,6 +92,15 @@ commit per green milestone). This entry grows as milestones land.
   (webfont references dropped; system font stacks). A11y: `:focus-visible`
   rings, `prefers-reduced-motion` disables sheet transitions/spinner.
   Verified the editor route's CSS chunk ships the scoped chrome. 269 tests.
+- **M8 — demo-next converted to the two-file mount**: deleted the hand-built
+  CMS (`app/collections/`, `app/edit/` + `EditorClient`, `CmsHeader`,
+  `DocList`, `NewPostButton`, `lib/scaffold.ts`); `/` now redirects to
+  `/mdmx`. `globals.css` shrank ~1330 → ~330 lines: only the demo's own
+  `mk-*` author-component styles remain — all CMS/editor chrome comes from
+  the package stylesheet. The route table is exactly `/`,
+  `/api/mdmx/[...route]`, `/mdmx/[[...slug]]`. README rewritten around the
+  two-file DX. Smoke-verified: redirect, editor 200, byte-identical
+  conflict-safe save. 269 tests green.
 
 ### S22 — Next.js integration guide series (docs only)
 - **docs/guides/next-js/** (new): seven consumer-facing guides documenting how
