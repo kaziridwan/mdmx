@@ -33,6 +33,9 @@ importers:
       '@mdmx/core':
         specifier: workspace:*
         version: link:../../packages/core
+      '@mdmx/dashboard':
+        specifier: workspace:*
+        version: link:../../packages/dashboard
       '@mdmx/editor':
         specifier: workspace:*
         version: link:../../packages/editor
@@ -160,6 +163,40 @@ importers:
       mdast-util-mdx:
         specifier: ~3.0.0
         version: 3.0.0
+
+  packages/dashboard:
+    dependencies:
+      '@mdmx/core':
+        specifier: workspace:*
+        version: link:../core
+      '@mdmx/editor':
+        specifier: workspace:*
+        version: link:../editor
+      '@mdmx/next':
+        specifier: workspace:*
+        version: link:../next
+    devDependencies:
+      '@types/node':
+        specifier: ~22.10.10
+        version: 22.10.10
+      '@types/react':
+        specifier: ^19.0.0
+        version: 19.2.17
+      '@types/react-dom':
+        specifier: ^19.0.0
+        version: 19.2.3(@types/react@19.2.17)
+      jsdom:
+        specifier: ~25.0.1
+        version: 25.0.1
+      next:
+        specifier: ^15.3.0
+        version: 15.5.20(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
+      react:
+        specifier: ^19.0.0
+        version: 19.2.7
+      react-dom:
+        specifier: ^19.0.0
+        version: 19.2.7(react@19.2.7)
 
   packages/editor:
     dependencies:

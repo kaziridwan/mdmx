@@ -790,3 +790,73 @@ stays framework-agnostic via a plain `backHref`).
 `/collections/[name]`, `CmsHeader`/`DocList`/`NewPostButton`, `lib/scaffold.ts`)
 is host-app scope, not core. No SPEC change. Open: media `list()` doesn't recurse
 into collection subdirs; caret-at-edge is layout-dependent so not jsdom-tested.
+
+## ADR-034 — `@mdmx/dashboard`: a drop-in app-layer package above the sibling rule
+
+**Context.** 0.4.0's goal is a full CMS dashboard the consumer gets by
+creating one page route (plus the API route) — no hand-built list/edit pages.
+That UI inherently composes two siblings: the editor (`@mdmx/editor/react`)
+and the Next.js glue (`@mdmx/next`). Invariant #9 says siblings only depend
+on each other through `core`, which kept the format/editor/provider layers
+untangled — but a dashboard that may not import the editor cannot exist.
+Putting the UI inside `@mdmx/next` would give the React-free glue package a
+React surface; growing `@mdmx/editor/react` would give the editor routing and
+auth concerns.
+
+**Decision.**
+- **New package `@mdmx/dashboard`, explicitly the app layer.** It depends on
+  `core` + `editor` + `next` and sits at the top of the dependency graph;
+  nothing depends on it. Invariant #9 is amended: *library* siblings still
+  only meet through `core`; `@mdmx/dashboard` is the one composition point
+  allowed to import them all. The format/editor/provider layers stay as
+  decoupled as before — the dashboard is a consumer of their public APIs, a
+  living test that those APIs suffice.
+- **Two-file mount is the canonical DX** (Outstatic's model): an optional
+  catch-all page (`app/mdmx/[[...slug]]/page.tsx`) built by
+  `createDashboardPage()`, and the existing API catch-all built by
+  `createMDMXHandlers()`. `@mdmx/dashboard/next` re-exports the `@mdmx/next`
+  surface so both files import from one package. App Router cannot serve
+  mutations from a `page.tsx`, so one file is physically impossible; two
+  ~3-line files is the honest minimum.
+- **The server side of the page stays thin.** It reads `.mdmx/registry.json`
+  per request and passes the spec + resolved config (both JSON) to the client
+  `DashboardApp`, which does everything else through the content API. One
+  data path (the API) serves both localMode and GitHub mode; the dashboard
+  has no provider access of its own. Author components cross the boundary as
+  client references via the factory's `components` option.
+- **The dashboard ships a stylesheet** (`dist/styles.css`, imported by the
+  `next` entry so the mount is styled with zero config): light + dark via
+  `prefers-color-scheme` with a `data-mdmx-theme` override, every value on
+  `--mdmx-*` custom properties. This deliberately diverges from the editor's
+  headless stance (ADR: editor stays unstyled): a drop-in product must look
+  like one out of the box, while the editor remains embeddable in any design
+  system. Consumers theme by overriding tokens or replacing the file.
+- **Routing is one pure function** (`resolveRoute(slug)`): the catch-all's
+  slug segments map to views (`home`, `collection`, `collection-new`,
+  `collection-edit`, `entry-new`, `editor`, `media`, `settings`), so the URL
+  scheme is unit-tested without React and navigation is plain `next/link`
+  server round-trips (fresh registry per view, no client cache to invalidate).
+- **Auth is a client gate over `/me`.** The page renders unconditionally; the
+  client asks the API who it is (401 → GitHub login screen → the existing
+  OAuth routes; localMode → synthetic `local` session, shown as a "local"
+  badge). The API remains the sole enforcement point — the gate is UX, not
+  security, matching the existing model where every mutation re-checks the
+  session server-side.
+
+**Alternatives rejected.** A `./dashboard` subpath of `@mdmx/next` (drags
+React into the glue package and still violates the sibling rule toward the
+editor, just implicitly). Growing `@mdmx/editor/react` into the shell (the
+editor package would take on `next` as a peer and auth/routing concerns).
+Server-gating the page via cookie unsealing in the page factory (would need
+the session secret in the page's config too — two places to misconfigure —
+for no security gain, since the API enforces everything). CSS Modules baked
+into components (hardest to theme; the single tokenized stylesheet is
+replaceable wholesale).
+
+**Status.** `packages/dashboard` scaffolded: config resolution, route
+resolver, typed API client, `AuthGate`, `DashboardShell` (navbar / left nav /
+main / contextual right panel), `HomeView`, placeholder views, stylesheet
+foundation, `createDashboardPage()` factory, `next/link` CJS-interop shim;
+19 tests (routes, gate, shell). Collection CRUD API + the real views land in
+the following 0.4.0 milestones. Root `test`/`check` scripts now build all
+packages first (dashboard typecheck/tests need sibling dists).

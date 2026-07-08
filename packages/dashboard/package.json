@@ -1,0 +1,43 @@
+{
+  "name": "@mdmx/dashboard",
+  "version": "0.3.1",
+  "description": "Drop-in CMS dashboard for Next.js: mount one page + one API route, get the full MDMX authoring UI",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./next": {
+      "types": "./dist/next/index.d.ts",
+      "default": "./dist/next/index.js"
+    },
+    "./styles.css": "./dist/styles.css"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json && cp src/styles.css dist/styles.css",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@mdmx/core": "workspace:*",
+    "@mdmx/editor": "workspace:*",
+    "@mdmx/next": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "~22.10.10",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "jsdom": "~25.0.1",
+    "next": "^15.3.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
+  },
+  "peerDependencies": {
+    "next": ">=15",
+    "react": ">=18",
+    "react-dom": ">=18"
+  }
+}
