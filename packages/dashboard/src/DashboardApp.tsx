@@ -1,10 +1,11 @@
 "use client";
-import { useMemo } from "react";
-import { Registry, type RegistrySpec } from "@mdmx/core";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { Registry, type CollectionSpec, type RegistrySpec } from "@mdmx/core";
 import type { ComponentMap } from "@mdmx/editor/react";
-import { createApiClient } from "./api-client.js";
+import { createApiClient, type ApiClient, type Me } from "./api-client.js";
 import type { ResolvedDashboardConfig } from "./config.js";
-import { resolveRoute } from "./routes.js";
+import { DashboardContext, type DashboardContextValue } from "./context.js";
+import { resolveRoute, type DashboardRoute } from "./routes.js";
 import { AuthGate } from "./shell/AuthGate.js";
 import { DashboardShell } from "./shell/DashboardShell.js";
 import { HomeView } from "./views/HomeView.js";
@@ -28,51 +29,99 @@ export function DashboardApp({
   /** Author components (client references) for live rendering in the editor. */
   components?: ComponentMap;
 }) {
-  void components; // threaded to the editor view in M4
   const registry = useMemo(() => new Registry(registrySpec), [registrySpec]);
   const api = useMemo(() => createApiClient(config.basePath), [config.basePath]);
   const route = useMemo(() => resolveRoute(slug), [slug]);
+
+  return (
+    <AuthGate api={api} loginHref={`${config.basePath}/auth/login`} title={config.title}>
+      {(me) => (
+        <AuthedDashboard
+          config={config}
+          api={api}
+          me={me}
+          registry={registry}
+          route={route}
+          components={components}
+        />
+      )}
+    </AuthGate>
+  );
+}
+
+function AuthedDashboard({
+  config,
+  api,
+  me,
+  registry,
+  route,
+  components,
+}: {
+  config: ResolvedDashboardConfig;
+  api: ApiClient;
+  me: Me;
+  registry: Registry;
+  route: DashboardRoute;
+  components?: ComponentMap;
+}) {
+  // The live collection set (config-as-code, resolved by the API per request).
+  // The baked registry's collections are only the initial value.
+  const [collections, setCollections] = useState<readonly CollectionSpec[]>(
+    registry.collections,
+  );
+  const refreshCollections = useCallback(async () => {
+    setCollections(await api.listCollections());
+  }, [api]);
+
+  useEffect(() => {
+    refreshCollections().catch(() => {
+      // Keep the baked fallback; views surface their own load errors.
+    });
+  }, [refreshCollections]);
+
+  const value: DashboardContextValue = useMemo(
+    () => ({ config, api, me, registry, collections, refreshCollections, components }),
+    [config, api, me, registry, collections, refreshCollections, components],
+  );
 
   const onLogout = () => {
     void api.logout().finally(() => window.location.assign(config.mountPath));
   };
 
   return (
-    <AuthGate api={api} loginHref={`${config.basePath}/auth/login`} title={config.title}>
-      {(me) => (
-        <DashboardShell
-          config={config}
-          me={me}
-          collections={registry.collections}
-          route={route}
-          onLogout={onLogout}
-        >
-          {renderView()}
-        </DashboardShell>
-      )}
-    </AuthGate>
+    <DashboardContext.Provider value={value}>
+      <DashboardShell
+        config={config}
+        me={me}
+        collections={collections}
+        route={route}
+        onLogout={onLogout}
+      >
+        <RouteView route={route} />
+      </DashboardShell>
+    </DashboardContext.Provider>
   );
+}
 
-  function renderView() {
-    switch (route.view) {
-      case "home":
-        return <HomeView config={config} collections={registry.collections} />;
-      case "collection":
-        return <PlaceholderView title={route.name} />;
-      case "collection-new":
-        return <PlaceholderView title="New collection" />;
-      case "collection-edit":
-        return <PlaceholderView title={`Edit ${route.name}`} />;
-      case "entry-new":
-        return <PlaceholderView title={`New ${route.collection} entry`} />;
-      case "editor":
-        return <PlaceholderView title={route.path.join("/")} />;
-      case "media":
-        return <PlaceholderView title="Media" />;
-      case "settings":
-        return <PlaceholderView title="Settings" />;
-      case "not-found":
-        return <PlaceholderView title={`No such page: ${route.slug.join("/")}`} />;
-    }
+function RouteView({ route }: { route: DashboardRoute }) {
+  switch (route.view) {
+    case "home":
+      return <HomeView />;
+    case "collection":
+      return <PlaceholderView title={route.name} />;
+    case "collection-new":
+      return <PlaceholderView title="New collection" />;
+    case "collection-edit":
+      return <PlaceholderView title={`Edit ${route.name}`} />;
+    case "entry-new":
+      return <PlaceholderView title={`New ${route.collection} entry`} />;
+    case "editor":
+      return <PlaceholderView title={route.path.join("/")} />;
+    case "media":
+      return <PlaceholderView title="Media" />;
+    case "settings":
+      return <PlaceholderView title="Settings" />;
+    case "not-found":
+      return <PlaceholderView title={`No such page: ${route.slug.join("/")}`} />;
   }
 }

@@ -1,4 +1,8 @@
-import type { Diagnostic } from "@mdmx/core";
+import type {
+  CollectionFieldConfig,
+  CollectionSpec,
+  Diagnostic,
+} from "@mdmx/core";
 
 /**
  * Thin typed client over the MDMX content API (see @mdmx/next). All calls are
@@ -26,6 +30,10 @@ export class UnauthorizedError extends ApiError {
 export interface Me {
   login: string;
   repo: { owner: string; name: string; branch: string };
+  contentDir: string;
+  mediaDir: string;
+  validation: "strict" | "report";
+  localMode: boolean;
 }
 
 export interface FileEntry {
@@ -101,6 +109,29 @@ export function createApiClient(basePath: string) {
 
     uploadMedia: (args: { path: string; dataBase64: string; message?: string }) =>
       request<{ commit: CommitInfo; path: string }>(`${basePath}/media`, jsonInit("POST", args)),
+
+    listCollections: async (): Promise<CollectionSpec[]> => {
+      const { collections } = await request<{ collections: CollectionSpec[] }>(
+        `${basePath}/collections`,
+      );
+      return collections;
+    },
+
+    createCollection: (args: {
+      name: string;
+      dir?: string;
+      fields: Record<string, CollectionFieldConfig>;
+    }) =>
+      request<{ collection: CollectionSpec; commit: CommitInfo }>(
+        `${basePath}/collections`,
+        jsonInit("POST", args),
+      ),
+
+    updateCollection: (name: string, fields: Record<string, CollectionFieldConfig>) =>
+      request<{ collection: CollectionSpec; commit: CommitInfo }>(
+        `${basePath}/collections/${encodeURIComponent(name)}`,
+        jsonInit("PUT", { fields }),
+      ),
 
     logout: () => request<{ ok: boolean }>(`${basePath}/auth/logout`, { method: "POST" }),
   };

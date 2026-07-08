@@ -49,6 +49,10 @@ describe("AuthGate", () => {
         jsonResponse(200, {
           login: "octocat",
           repo: { owner: "o", name: "r", branch: "main" },
+          contentDir: "content",
+          mediaDir: "public/media",
+          validation: "report",
+          localMode: false,
         }),
       ),
     );

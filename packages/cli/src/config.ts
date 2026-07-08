@@ -1,22 +1,16 @@
 import { existsSync, readFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { pathToFileURL } from "node:url";
-import type { ControlSpec, JsonValue } from "@mdmx/core";
+import type { CollectionsConfig } from "@mdmx/core";
 
-/** Frontmatter field as authored in `mdmx.config.json` (keyed by field name). */
-export interface FieldConfig {
-  control: ControlSpec;
-  required?: boolean;
-  default?: JsonValue;
-  description?: string;
-}
-
-/** A collection as authored in config (keyed by collection name). */
-export interface CollectionConfig {
-  /** Content directory for this collection, relative to the project root. */
-  dir: string;
-  fields: Record<string, FieldConfig>;
-}
+// The authored collection shape lives in @mdmx/core, shared with the
+// request-time resolution in @mdmx/next (ADR-035); re-exported here so
+// existing CLI-side imports keep working.
+export type {
+  CollectionFieldConfig as FieldConfig,
+  CollectionConfig,
+  CollectionsConfig,
+} from "@mdmx/core";
 
 export interface MDMXConfig {
   /** Glob(s) for component definition files, relative to the project root. */
@@ -26,7 +20,7 @@ export interface MDMXConfig {
   /** Directory the generated registry artifacts are written to. */
   outDir: string;
   /** Content collections with typed frontmatter, keyed by collection name. */
-  collections?: Record<string, CollectionConfig>;
+  collections?: CollectionsConfig;
 }
 
 export const DEFAULT_CONFIG: MDMXConfig = {

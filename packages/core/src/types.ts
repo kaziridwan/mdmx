@@ -187,16 +187,28 @@ export class Registry {
    * `content/posts`.
    */
   collectionForPath(path: string): CollectionSpec | undefined {
-    const norm = path.replace(/^\.?\//, "");
-    let best: CollectionSpec | undefined;
-    for (const c of this.collections) {
-      const dir = c.dir.replace(/^\.?\//, "").replace(/\/$/, "");
-      if (norm === dir || norm.startsWith(dir + "/")) {
-        if (!best || dir.length > best.dir.length) best = c;
-      }
-    }
-    return best;
+    return collectionForPath(this.collections, path);
   }
+}
+
+/**
+ * The collection a content path belongs to, matched by the longest `dir`
+ * prefix. Standalone so request-time collection lists (resolved from config,
+ * not baked into a registry) can use the same matching rule.
+ */
+export function collectionForPath(
+  collections: readonly CollectionSpec[],
+  path: string,
+): CollectionSpec | undefined {
+  const norm = path.replace(/^\.?\//, "");
+  let best: CollectionSpec | undefined;
+  for (const c of collections) {
+    const dir = c.dir.replace(/^\.?\//, "").replace(/\/$/, "");
+    if (norm === dir || norm.startsWith(dir + "/")) {
+      if (!best || dir.length > best.dir.length) best = c;
+    }
+  }
+  return best;
 }
 
 // ---------------------------------------------------------------------------

@@ -2,11 +2,20 @@ import { Buffer } from "node:buffer";
 import { randomBytes } from "node:crypto";
 import {
   assertSafePath,
+  collectionForPath,
+  collectionFromConfig,
+  collectionsFromConfig,
+  collectionToConfig,
   ConflictError,
   parseDocument,
   PathSafetyError,
+  validateCollectionConfig,
   validateFrontmatter,
   validateSource,
+  type CollectionConfig,
+  type CollectionFieldConfig,
+  type CollectionSpec,
+  type CollectionsConfig,
   type ContentProvider,
   type Diagnostic,
   type Registry,
@@ -46,6 +55,12 @@ export interface MDMXHandlerOptions {
   createProvider: (session: SessionData) => ContentProvider;
   /** Validate .mdx saves against this registry when present. */
   registry?: Registry;
+  /**
+   * Project config file (JSON) collections are resolved from at request time
+   * and written back to by the collection routes (ADR-035). Collections in
+   * this file take precedence over the ones baked into `registry`.
+   */
+  configPath?: string;
   /** "strict": reject saves with error diagnostics (422). "report": save and return them. */
   validation?: "strict" | "report";
   /** Route prefix the handlers are mounted under. */
@@ -83,11 +98,13 @@ export function createMDMXHandlers(options: MDMXHandlerOptions): MDMXHandlers {
   const o = {
     basePath: "/api/mdmx",
     editorPath: "/mdmx",
+    configPath: "mdmx.config.json",
     validation: "report" as const,
     maxMediaBytes: 10 * 1024 * 1024,
     now: () => Date.now(),
     ...options,
   };
+  assertSafePath(o.configPath);
   const authConfig: AuthConfig = o.auth
     ? { ...o.auth, repo: { owner: o.repo.owner, name: o.repo.name } }
     : (undefined as unknown as AuthConfig);
@@ -129,7 +146,92 @@ export function createMDMXHandlers(options: MDMXHandlerOptions): MDMXHandlers {
       const provider = o.createProvider(session);
 
       if (route === "/me" && method === "GET") {
-        return withSession(json(200, { login: session.login, repo: o.repo }));
+        return withSession(
+          json(200, {
+            login: session.login,
+            repo: o.repo,
+            contentDir: o.contentDir,
+            mediaDir: o.mediaDir,
+            validation: o.validation,
+            localMode: Boolean(o.localMode),
+          }),
+        );
+      }
+
+      // ---- collections (config-as-code, resolved at request time) ---------
+
+      if (route === "/collections" && method === "GET") {
+        return withSession(json(200, { collections: await resolveCollections(provider) }));
+      }
+
+      if (route === "/collections" && method === "POST") {
+        const body = (await req.json()) as {
+          name?: string;
+          dir?: string;
+          fields?: Record<string, CollectionFieldConfig>;
+        };
+        if (typeof body.name !== "string" || body.name.length === 0) {
+          return withSession(json(400, { error: "collection name is required" }));
+        }
+        const candidate: CollectionConfig = {
+          dir: body.dir ?? `${o.contentDir}/${body.name}`,
+          fields: body.fields ?? {},
+        };
+        const problems = validateCollectionConfig(body.name, candidate);
+        const dirError = checkCollectionDir(candidate.dir);
+        if (dirError) problems.push(dirError);
+        if (problems.length > 0) {
+          return withSession(json(400, { error: "invalid collection", problems }));
+        }
+
+        const { config, sha } = await readProjectConfig(provider);
+        const current = effectiveCollectionsConfig(config);
+        if (current[body.name]) {
+          return withSession(json(409, { error: `collection "${body.name}" already exists` }));
+        }
+        const result = await writeProjectConfig(
+          provider,
+          config,
+          { ...current, [body.name]: candidate },
+          sha,
+          `mdmx: create collection ${body.name}`,
+        );
+        return withSession(
+          json(201, { collection: collectionFromConfig(body.name, candidate), commit: result }),
+        );
+      }
+
+      const collectionRoute = route.match(/^\/collections\/([^/]+)$/);
+      if (collectionRoute && method === "PUT") {
+        const name = decodeURIComponent(collectionRoute[1]!);
+        const body = (await req.json()) as {
+          fields?: Record<string, CollectionFieldConfig>;
+        };
+        if (body.fields === null || typeof body.fields !== "object") {
+          return withSession(json(400, { error: "fields must be an object" }));
+        }
+
+        const { config, sha } = await readProjectConfig(provider);
+        const current = effectiveCollectionsConfig(config);
+        const existing = current[name];
+        if (!existing) {
+          return withSession(json(404, { error: `no collection "${name}"` }));
+        }
+        const candidate: CollectionConfig = { ...existing, fields: body.fields };
+        const problems = validateCollectionConfig(name, candidate);
+        if (problems.length > 0) {
+          return withSession(json(400, { error: "invalid collection", problems }));
+        }
+        const result = await writeProjectConfig(
+          provider,
+          config,
+          { ...current, [name]: candidate },
+          sha,
+          `mdmx: update collection ${name}`,
+        );
+        return withSession(
+          json(200, { collection: collectionFromConfig(name, candidate), commit: result }),
+        );
       }
 
       if (route === "/files" && method === "GET") {
@@ -157,11 +259,14 @@ export function createMDMXHandlers(options: MDMXHandlerOptions): MDMXHandlers {
 
         let diagnostics: Diagnostic[] = [];
         if (/\.mdx?$/.test(path) && o.registry) {
+          // Frontmatter schemas come from the request-time collection set, so
+          // entries in dashboard-created collections validate immediately.
+          // (Resolved outside the try: a config failure is not a parse error.)
+          const collection = collectionForPath(await resolveCollections(provider), path);
           // Never trust the editor client: re-validate on the server. A parse
           // failure (malformed MDX) is a client error, not a 500.
           try {
             diagnostics = validateSource(body.content, { registry: o.registry });
-            const collection = o.registry.collectionForPath(path);
             if (collection) {
               const { frontmatter } = parseDocument(body.content);
               diagnostics = diagnostics.concat(validateFrontmatter(frontmatter, collection));
@@ -249,6 +354,84 @@ export function createMDMXHandlers(options: MDMXHandlerOptions): MDMXHandlers {
       throw err;
     }
   };
+
+  // -- collections: config-as-code, resolved per request (ADR-035) -----------
+
+  interface ProjectConfigFile {
+    collections?: CollectionsConfig;
+    [key: string]: unknown;
+  }
+
+  /** Read the project config through the provider; missing file → empty. */
+  async function readProjectConfig(
+    provider: ContentProvider,
+  ): Promise<{ config: ProjectConfigFile; sha: string | null }> {
+    let content: string;
+    let sha: string;
+    try {
+      ({ content, sha } = await provider.read(o.configPath));
+    } catch (err) {
+      if (isNotFound(err)) return { config: {}, sha: null };
+      throw err;
+    }
+    try {
+      return { config: JSON.parse(content) as ProjectConfigFile, sha };
+    } catch {
+      const parseError = new Error(
+        `${o.configPath} is not valid JSON; fix it before managing collections`,
+      ) as Error & { status: number };
+      parseError.status = 500;
+      throw parseError;
+    }
+  }
+
+  /**
+   * The authored collections, with a migration path: when the config file has
+   * no collections block but the baked registry does (older project, or an
+   * .mjs config), seed from the registry so edits write a complete block.
+   */
+  function effectiveCollectionsConfig(config: ProjectConfigFile): CollectionsConfig {
+    if (config.collections) return config.collections;
+    const seeded: CollectionsConfig = {};
+    for (const spec of o.registry?.collections ?? []) {
+      seeded[spec.name] = collectionToConfig(spec);
+    }
+    return seeded;
+  }
+
+  async function writeProjectConfig(
+    provider: ContentProvider,
+    config: ProjectConfigFile,
+    collections: CollectionsConfig,
+    sha: string | null,
+    message: string,
+  ) {
+    const next: ProjectConfigFile = { ...config, collections };
+    return provider.commit(
+      [{ path: o.configPath, content: JSON.stringify(next, null, 2) + "\n" }],
+      message,
+      { expectedShas: { [o.configPath]: sha } },
+    );
+  }
+
+  /** The request-time collection set: config file first, baked registry as fallback. */
+  async function resolveCollections(provider: ContentProvider): Promise<CollectionSpec[]> {
+    const { config } = await readProjectConfig(provider);
+    return collectionsFromConfig(effectiveCollectionsConfig(config));
+  }
+
+  /** Collection dirs must sit under the content dir or the file API can't reach them. */
+  function checkCollectionDir(dir: string): string | null {
+    try {
+      const safe = assertSafePath(dir);
+      if (!within(safe, o.contentDir)) {
+        return `collection dir must be under ${o.contentDir}/ (got "${dir}")`;
+      }
+      return null;
+    } catch (err) {
+      return (err as Error).message;
+    }
+  }
 
   // -- auth flow ---------------------------------------------------------------
 
@@ -356,6 +539,12 @@ export function createMDMXHandlers(options: MDMXHandlerOptions): MDMXHandlers {
 
 function within(path: string, dir: string): boolean {
   return path === dir || path.startsWith(dir + "/");
+}
+
+/** ENOENT (local FS) or a 404-carrying provider error (GitHub API). */
+function isNotFound(err: unknown): boolean {
+  if ((err as NodeJS.ErrnoException)?.code === "ENOENT") return true;
+  return (err as { status?: unknown })?.status === 404;
 }
 
 function json(

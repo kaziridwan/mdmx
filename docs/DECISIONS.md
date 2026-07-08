@@ -860,3 +860,69 @@ foundation, `createDashboardPage()` factory, `next/link` CJS-interop shim;
 19 tests (routes, gate, shell). Collection CRUD API + the real views land in
 the following 0.4.0 milestones. Root `test`/`check` scripts now build all
 packages first (dashboard typecheck/tests need sibling dists).
+
+## ADR-035 — Collections are config-as-code, resolved at request time
+
+**Context.** The 0.4.0 dashboard creates and edits collections. Collections
+live in `mdmx.config.json` and were baked into `.mdmx/registry.json` by
+`mdmx generate` — so a dashboard-created collection would not exist until the
+next generate + rebuild, which in GitHub mode means a redeploy before the
+author can add a first entry. Moving collections to a runtime store would fix
+the latency but fork the source of truth away from the config file the CLI
+and generate pipeline read.
+
+**Decision.**
+- **`mdmx.config.json` stays the single source of truth.** The dashboard
+  mutates collections by writing that file through the ContentProvider —
+  the same commit pipeline as content, with `expectedShas` conflict safety
+  (a concurrent config edit → 409, like any stale save).
+- **The API resolves collections per request** (`@mdmx/next`): new option
+  `configPath` (default `mdmx.config.json`); `GET /collections`,
+  `POST /collections`, `PUT /collections/:name` and the frontmatter
+  validation inside `PUT /file` all read the file via the provider and derive
+  `CollectionSpec[]` on the spot. A collection created from the dashboard is
+  therefore live immediately — in localMode *and* GitHub mode — while
+  `mdmx generate` keeps baking the same data into the registry for the CLI,
+  `mdmx check`, and build-time readers. No cache in 0.4.0: one provider read
+  per request that needs collections (a file read locally, one API call on
+  GitHub) is the predictable baseline; add caching only if it hurts.
+- **The conversion lives in core** (`collections-config.ts`):
+  record-form (authored) ⇄ array-form (registry) plus
+  `validateCollectionConfig` (name/dir shape, recursive `ControlSpec`
+  checking) and a standalone `collectionForPath`. The CLI's private
+  `normalizeCollections` was replaced by the same function — one canonical
+  derivation everywhere.
+- **Fallback + migrate-on-write.** When the config file is missing or has no
+  `collections` block, reads fall back to the collections baked into the
+  registry; the first collection write seeds those into the file so it
+  becomes complete and authoritative from then on. `PUT` edits fields only
+  (renaming a collection's `dir` means moving committed files — out of scope
+  for 0.4.0). Update uses `PUT /collections/:name`, not PATCH, so the
+  `MDMXHandlers` surface stays `{GET, POST, PUT, DELETE}` and existing mount
+  files keep working.
+- **Constraints enforced server-side:** collection names and field names are
+  `^[a-z0-9][a-z0-9_-]*$`; a collection's `dir` must sit under `contentDir`
+  (else the file API could never reach its entries); duplicates → 409;
+  invalid shapes → 400 with a `problems` list. `/me` now also reports
+  `contentDir`/`mediaDir`/`validation`/`localMode` for the settings surface.
+
+**Alternatives rejected.** A runtime collections store (`.mdmx/collections.
+json`) — instant but forks the source of truth and the CLI would need to
+merge two inputs. Regenerating the registry from the server (drags the TS
+compiler / `@mdmx/cli` into the request path). PATCH for updates (new method
+export forced into every consumer's route file). Writing config only at
+generate time (the status quo — exactly the redeploy latency this removes).
+
+**Limitation.** Runtime collection management requires a *JSON* config; a
+project configured only via `mdmx.config.mjs` gets read-fallback from the
+baked registry, but a dashboard write creates `mdmx.config.json`, which
+`loadConfig` prefers — such projects should migrate their config to JSON
+before using dashboard collection management.
+
+**Status.** `core/src/collections-config.ts` (+7 tests),
+`collectionForPath` extracted; `next/src/api.ts` collection routes +
+request-time resolution (+12 tests, incl. strict-mode MDMX008 on a
+just-created collection); CLI reuses the core derivation; dashboard client
+(`listCollections`/`createCollection`/`updateCollection`, richer `Me`) and a
+`DashboardContext` feeding live collections to the shell. Verified live:
+create → list → validated save, then config restored.

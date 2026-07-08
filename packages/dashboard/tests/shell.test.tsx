@@ -47,10 +47,7 @@ async function mountShell(me: Me): Promise<HTMLElement> {
 
 describe("DashboardShell", () => {
   it("renders nav links for home, collections, media, settings", async () => {
-    const el = await mountShell({
-      login: "octocat",
-      repo: { owner: "o", name: "r", branch: "main" },
-    });
+    const el = await mountShell({ login: "octocat", repo: { owner: "o", name: "r", branch: "main" }, contentDir: "content", mediaDir: "public/media", validation: "report", localMode: false });
     const hrefs = Array.from(el.querySelectorAll("nav a")).map((a) =>
       a.getAttribute("href"),
     );
@@ -63,29 +60,20 @@ describe("DashboardShell", () => {
   });
 
   it("marks the active collection and renders the main content", async () => {
-    const el = await mountShell({
-      login: "octocat",
-      repo: { owner: "o", name: "r", branch: "main" },
-    });
+    const el = await mountShell({ login: "octocat", repo: { owner: "o", name: "r", branch: "main" }, contentDir: "content", mediaDir: "public/media", validation: "report", localMode: false });
     const active = el.querySelector('nav a[aria-current="page"]');
     expect(active?.textContent).toBe("posts");
     expect(el.querySelector('[data-role="content"]')?.textContent).toBe("hello");
   });
 
   it("shows the local badge (and no logout) for the synthetic local session", async () => {
-    const el = await mountShell({
-      login: "local",
-      repo: { owner: "local", name: "demo", branch: "main" },
-    });
+    const el = await mountShell({ login: "local", repo: { owner: "local", name: "demo", branch: "main" }, contentDir: "content", mediaDir: "public/media", validation: "report", localMode: true });
     expect(el.querySelector(".mdmx-dash-badge")?.textContent).toBe("local");
     expect(el.textContent).not.toContain("Log out");
   });
 
   it("shows user + logout for a real session", async () => {
-    const el = await mountShell({
-      login: "octocat",
-      repo: { owner: "o", name: "r", branch: "main" },
-    });
+    const el = await mountShell({ login: "octocat", repo: { owner: "o", name: "r", branch: "main" }, contentDir: "content", mediaDir: "public/media", validation: "report", localMode: false });
     expect(el.querySelector(".mdmx-dash-badge")).toBeNull();
     expect(el.textContent).toContain("octocat");
     expect(el.textContent).toContain("Log out");
