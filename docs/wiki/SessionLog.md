@@ -11,6 +11,32 @@ initial design-and-build conversation (12 commits).
 
 <!-- APPEND NEW ENTRIES ABOVE THIS LINE -->
 
+### S23 — Road to 0.4.0: platform upgrade + `@mdmx/dashboard` scaffold (in progress)
+Executing the 0.4.0 milestone plan on `release/0.4.0` (autonomous run; one
+commit per green milestone). This entry grows as milestones land.
+
+- **M1 — Next 15 + React 19** (`c913cf2`): next `^15.3` (→15.5.20),
+  react/react-dom `^19` (→19.2.7) across demo-next, editor devDeps,
+  playground, cli/demo type deps. Next 15 async request APIs: demo pages now
+  `await params`. Editor mount tests: settle loop 4→8 ticks (React 19
+  schedules nested-root renders across more macrotasks). Verified: 210 tests,
+  demo production build, dev-server smoke (pages 200, content API serving).
+- **M2 — `@mdmx/dashboard` scaffold** (ADR-034): new app-layer package
+  (core+editor+next; amends Invariant #9 with the one composition point).
+  Ships: `createDashboardPage()` optional-catch-all factory reading
+  `.mdmx/registry.json` per request; `@mdmx/dashboard/next` re-exports the
+  `@mdmx/next` surface (two ~3-line mount files); client `DashboardApp` with
+  pure `resolveRoute(slug)` view router; `AuthGate` over `/me` (login screen
+  / unreachable-API help / localMode auto-enter with "local" badge);
+  `DashboardShell` (navbar, left nav, main, contextual right slot); typed
+  API client (`UnauthorizedError` drops to login); shipped stylesheet
+  (`--mdmx-*` tokens, light+dark, `data-mdmx-theme` override) imported by the
+  package itself → zero-config styling via transpilePackages; `next/link`
+  NodeNext-CJS interop shim. 19 new tests (routes/gate/shell). Root
+  `test`/`check` now build all packages first. Demo mounts the dashboard at
+  `/mdmx` alongside its old pages (replaced in M8); smoke-verified: `/mdmx`
+  200, route-scoped CSS chunk contains tokens, `/me` answers local.
+
 ### S22 — Next.js integration guide series (docs only)
 - **docs/guides/next-js/** (new): seven consumer-facing guides documenting how
   to integrate MDMX into a Next.js App Router site, written against the actual

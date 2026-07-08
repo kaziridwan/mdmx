@@ -13,6 +13,7 @@
   },
   "dependencies": {
     "@mdmx/core": "workspace:*",
+    "@mdmx/dashboard": "workspace:*",
     "@mdmx/editor": "workspace:*",
     "@mdmx/next": "workspace:*",
     "next": "^15.3.0",
