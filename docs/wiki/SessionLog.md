@@ -66,6 +66,15 @@ commit per green milestone). This entry grows as milestones land.
   repo-relative path (`/mdmx/edit/content/posts/x.mdx`). Styles: forms,
   field rows, entry table, status badges. +11 tests (2 next, 9 dashboard) →
   259 total; all dashboard routes smoke-tested live against the demo.
+- **M5 — media library + settings**: `MediaView` (image grid over
+  `GET /files`, upload via local `media-upload.ts` helpers — the editor's
+  equivalents can't be imported statically without dragging ProseMirror into
+  the SSR graph; `Blob.arrayBuffer` with FileReader fallback; copy-URL;
+  confirmed delete with listed sha). `SettingsView` (session + repo,
+  content/media dirs, validation mode, registry stats, logout) plus a
+  **theme pin**: system/light/dark radio persisting to localStorage and
+  applying `data-mdmx-theme` on the root; re-applied on dashboard load.
+  +5 tests → 264 total; media/settings routes smoke-tested live.
 
 ### S22 — Next.js integration guide series (docs only)
 - **docs/guides/next-js/** (new): seven consumer-facing guides documenting how
