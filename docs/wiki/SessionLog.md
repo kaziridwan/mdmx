@@ -11,6 +11,72 @@ initial design-and-build conversation (12 commits).
 
 <!-- APPEND NEW ENTRIES ABOVE THIS LINE -->
 
+### S24 — Road to 0.4.1: responsive preview modes, private publishing, Component Studio
+Executed the 0.4.1 brief on `release/0.4.1` (autonomous run; one commit per
+verified milestone, browser-driven end-to-end checks via playwright).
+
+- **M1 — responsive preview modes** (ADR-036): mobile/tablet/desktop switch
+  in the editor toolbar; canvas renders at real device width (390/768/1280)
+  under CSS `zoom` scale-to-fit; canvas is a named inline-size container and
+  the demo `mk-*` styles moved from `@media` to `@container` so modes
+  actually reflow. Root cause fix shipped alongside: `.mdmx-content` +
+  `.mdmx-contentdom` are `display: contents`, so grid/flex container
+  components (FeatureGrid, PricingTable, TwoColumn) finally lay out child
+  blocks as real items inside the editor. New `viewport.ts` (widths, storage,
+  zoom math) exported from `@mdmx/editor/react`.
+- **M2 — private status groundwork** (ADR-037): `status` gains `private`
+  (demo config select; dashboard badge); `@mdmx/next` exports
+  `getSession(cookieHeader, {sessionSecret|localMode})` and
+  `privateHref(collectionPath, slug)`; `SESSION_COOKIE` moved to session.ts
+  as shared API. +7 next tests.
+- **M3 — public rendering** (ADR-037): new `@mdmx/next/render` subpath
+  (react optional peer): `MDMXContent` renders mdast → React (markdown +
+  GFM + component tags via `evaluateAttributes`); demo-next grew a public
+  site — home lists published (+ Private section for sessions),
+  `/posts/[slug]` published-only, `/private/[...path]` session-guarded
+  private-only, drafts 404 everywhere. Newsletter became a client component
+  (RSC boundary). Demo gains a private `team-notes` post.
+- **M4 — studio backend** (ADR-038): core `studio.ts` — template-tree model
+  (tag/attr allowlists, URL-scheme checks, node caps), validation,
+  `studioComponentToSpec`, storage path under `<contentDir>/_components/`;
+  `@mdmx/next` routes `GET/PUT/DELETE /studio/components(/:name)` via the
+  provider (conflict-safe, collision-checked) and merges stored defs into
+  save-time validation; `@mdmx/next/render` gains `studioComponent(def)`
+  (tree → React, no dangerouslySetInnerHTML) + `getStudioComponentDefs`
+  reader; dashboard merges defs into registry + ComponentMap after auth
+  (rail "Studio" group, slash menu, prop panel, live render). +8 core tests.
+- **M5 — studio UI stage 1**: `/mdmx/studio` list (live preview cards) +
+  editor view: HTML+Tailwind source pane ⇄ sanitized tree (DOMParser in,
+  pretty-printer out, dropped nodes reported), live in-page preview, prop
+  schema builder, conflict-safe save. Tailwind v4 browser runtime
+  (theme+utilities, **no preflight**; `tailwindSrc` config) loads on demand
+  in the dashboard and on public demo pages using studio components. The
+  initial studio fetch now gates dashboard rendering (registry swap would
+  reset a mounted editor mid-typing).
+- **M6 — studio UI stage 2**: click-to-select on the preview, inspector
+  (class string, group-wise quick controls for padding/radius/type/colors/
+  layout/gap, text editing with bind-text-to-prop, href/src/alt, delete),
+  element palette (+Section/+Heading/+Text/+Button/+Image/+Row). All edits
+  are immutable ops on the same tree the HTML pane serializes from
+  (`template-edit.ts`).
+- **M7 — eject to TSX** (ADR-038): core `studioComponentToTSX` codegen
+  (typed props interface, Impl with defaults, JSX from tree, defineMDMX
+  config); `POST /studio/components/:name/eject` writes
+  `components/mdmx/<Name>.tsx` (never overwrites); def stays active until
+  `mdmx generate` + rebuild promote the code version. `mdmx check` merges
+  studio defs. Verified: ejected file extracts via the real generate
+  pipeline and typechecks. +2 core tests.
+- **M8 — release hygiene**: all packages 0.4.0 → 0.4.1; ADR-036/037/038;
+  this entry; Packages/Roadmap/PROJECT_STATUS sync. Tests: 285 total
+  (core 55, cli 19, editor 109, next 57, provider-github 7, dashboard 38).
+- Wiki pages touched: SessionLog, Packages, Roadmap; DECISIONS.md;
+  PROJECT_STATUS.md.
+- Follow-ups: studio defs are leaf components (no children region yet);
+  quick-control palette is a curated subset; `mdmx dev` HMR for studio defs
+  not wired; pre-existing demo `welcome.mdx` has an empty `<Stat />`
+  flagged by `mdmx check` (MDMX006, unrelated to 0.4.1).
+
+
 ### S23 — Road to 0.4.0: platform upgrade + `@mdmx/dashboard` scaffold (in progress)
 Executing the 0.4.0 milestone plan on `release/0.4.0` (autonomous run; one
 commit per green milestone). This entry grows as milestones land.

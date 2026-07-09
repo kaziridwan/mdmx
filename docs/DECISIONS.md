@@ -926,3 +926,129 @@ just-created collection); CLI reuses the core derivation; dashboard client
 (`listCollections`/`createCollection`/`updateCollection`, richer `Me`) and a
 `DashboardContext` feeding live collections to the shell. Verified live:
 create → list → validated save, then config restored.
+
+## ADR-036 — Responsive preview modes: device-width canvas under CSS `zoom`, container queries for authors
+
+**Context.** The editor canvas was a fixed `max-width: 720px` column, so
+every component rendered in its narrow/"mobile" form regardless of how it
+would look on a real page (the headline complaint of the 0.4.1 brief). Two
+structural facts constrain the fix: window-level `@media` queries respond to
+the browser viewport, never to a canvas width; and container components
+(FeatureGrid, PricingTable, TwoColumn) laid out ALL children in one grid cell
+inside the editor, because ProseMirror's contentDOM wrapper sat between the
+component's grid/flex element and the child blocks.
+
+**Decision.**
+- **Canvas width presets, not an iframe.** The toolbar gets a
+  mobile/tablet/desktop switch (390/768/1280 px, persisted to
+  `localStorage("mdmx:viewport")`, default desktop). The canvas renders at
+  the real device width and is scaled to fit the pane with CSS `zoom`
+  (`--mdmx-canvas-w`, `--mdmx-canvas-zoom`); `zoom` affects layout, so no
+  phantom scroll height, and prosemirror-view 1.40 handles caret math under
+  it. Editing stays live in every mode. An iframe would make window media
+  queries literally true but drags the whole editor across a frame boundary
+  (style injection, portals, event plumbing) — rejected.
+- **The canvas is a named inline-size container** (`mdmx-canvas`); author
+  components respond to it with `@container` queries. The demo's `mk-*`
+  styles migrated from `@media` to `@container`, and public pages wrap
+  articles in the same kind of container (`.mdmx-page`), so the editor's
+  desktop preview and the published page reflow identically.
+- **The editable hole is layout-transparent.** `.mdmx-content` and the
+  PM-managed `.mdmx-contentdom` inside it are `display: contents`, so a
+  container component's grid/flex finally sees child NodeViews as direct
+  items. This is the second half of "components don't render the way they're
+  meant to" and benefits every viewport mode.
+
+**Alternatives rejected.** `transform: scale` (visual-only — layout height
+stays unscaled, producing dead scroll space); per-component editor CSS that
+duplicates each grid onto the wrapper (unbounded duplication); read-only
+device preview pane (doesn't fix editing).
+
+## ADR-037 — Publishing modes: `draft | private | published` with a viewer-side session guard
+
+**Context.** 0.4.1 adds a third publishing state: private entries render at
+`/private/<collection>/<slug>` for authenticated viewers only. `status` was
+already a plain collection frontmatter field (`draft | published`), and the
+demo app had no public rendering at all — every route redirected into the
+dashboard.
+
+**Decision.**
+- **`private` is just a status value**, not a new mechanism: collections add
+  it to their `status` select options; readers filter on it
+  (`getDocuments(dir, { status })` already existed). Semantics: drafts render
+  nowhere, published renders publicly, private renders only behind the guard
+  — each status has exactly one home, and anything else 404s.
+- **"Authenticated" = the MDMX session.** `@mdmx/next` exports
+  `getSession(cookieHeader, { sessionSecret | localMode })` — the sealed
+  GitHub-OAuth cookie in GitHub mode, the synthetic session in localMode
+  (private pages are always viewable in local dev). Web-standard inputs
+  only, so it works in server components, route handlers, and middleware.
+  `privateHref(collectionPath, slug)` builds the URL scheme. A separate
+  visitor-auth system was rejected: private means "anyone who can use the
+  CMS can view".
+- **A real renderer ships as `@mdmx/next/render`** (react as an optional
+  peer, its own subpath so the API/reader entry stays react-free):
+  `MDMXContent` walks core's mdast straight to React — markdown + GFM nodes,
+  component tags resolved through a ComponentMap with `evaluateAttributes`
+  props, recursion into component children, unknown components degrade to a
+  marked `<div>` instead of dropping content. The demo grew the public face
+  that proves the three modes end-to-end (home list, `/posts/[slug]`,
+  guarded `/private/[...path]`).
+
+**Alternatives rejected.** A dedicated `visibility` frontmatter field
+(duplicates `status`); MDX compilation for public pages (drags the MDX
+toolchain into the app when core's parser + a tree walk suffice);
+middleware-only guarding in the package (Next middleware is app-level; the
+package supplies the primitive instead).
+
+## ADR-038 — Component Studio: template-tree components in the content repo, Tailwind browser runtime, eject-to-TSX
+
+**Context.** 0.4.1's studio lets authors build Tailwind-styled components in
+the browser and use them immediately. MDMX components are TSX compiled into
+a typed registry by `mdmx generate` — a browser can't produce those without
+codegen plus a rebuild (and in GitHub mode, a redeploy). The repo also had no
+Tailwind at all, and arbitrary user-typed classes defeat build-time JIT.
+
+**Decision.**
+- **A studio component is data, not code:** a restricted element tree
+  (tag/attr allowlists — no script/style/iframe, no `on*`, no
+  `javascript:`/`data:` URLs, node/prop caps) with typed props
+  (string|number|boolean), `{props.x}` interpolation in text/attribute
+  values, and explicit `{slot}` nodes. Stored as JSON at
+  `<contentDir>/_components/<Name>.json` — committed through the provider
+  like content, so it works identically in localMode and GitHub mode with
+  path-safety and conflict checks for free. HTML is only an input format:
+  the UI parses markup via DOMParser into the tree (dropping and reporting
+  anything outside the allowlist); the server validates the JSON tree shape
+  — no HTML parser dependency, and rendering never touches
+  `dangerouslySetInnerHTML`.
+- **Runtime registry merge, code wins.** The API merges stored defs into its
+  registry for save-time validation; the dashboard fetches defs after auth
+  and merges specs + a generic `studioComponent(def)` renderer into the
+  registry/ComponentMap (rail "Studio" group, slash menu, prop panel, live
+  canvas render — indistinguishable from code components). `mdmx check`
+  merges them too. On a name clash the code component shadows the studio
+  def everywhere. The first studio fetch gates dashboard rendering: a
+  registry identity change re-creates the ProseMirror editor, which must
+  not happen underneath someone typing.
+- **Tailwind v4 browser runtime** (`@tailwindcss/browser`, URL configurable
+  via dashboard `tailwindSrc`) loads on demand wherever studio components
+  render — studio views, editor canvas, and public pages that use them. The
+  injected stylesheet imports **theme + utilities only, no preflight**:
+  preflight would reset the dashboard chrome and the author's own `mk-*`
+  styles. Build-time Tailwind stays possible later; the runtime is what
+  makes "type any class, see it now" true.
+- **Eject graduates, never migrates.** `studioComponentToTSX` (core)
+  generates a `defineMDMX` component file matching hand-written conventions;
+  `POST /studio/components/:name/eject` writes it to `componentsDir`
+  (default `components/mdmx/`, refusing to overwrite). The JSON definition
+  intentionally stays active until `mdmx generate` + rebuild promote the
+  code version — deleting it at eject time would break the component until
+  the next deploy.
+
+**Alternatives rejected.** Generating TSX directly from the studio (instant
+use only in localMode; GitHub mode would need a redeploy before first use,
+and editing means re-parsing generated code). Raw HTML strings as the stored
+format (server-side sanitizing needs an HTML parser; rendering needs
+`dangerouslySetInnerHTML`; eject needs a parser again). A fixed utility-class
+subset shipped as static CSS (defeats "Tailwind-style" authoring).

@@ -1,6 +1,6 @@
 {
   "name": "@mdmx/provider-github",
-  "version": "0.4.0",
+  "version": "0.4.1",
   "description": "ContentProvider implementation over the GitHub Git Data API (atomic multi-file commits)",
   "type": "module",
   "main": "./dist/index.js",
