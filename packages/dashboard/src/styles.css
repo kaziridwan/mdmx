@@ -1927,3 +1927,82 @@ body.mdmx-resizing {
   font-size: 13px;
   color: var(--mdmx-fg-muted);
 }
+
+/* -- studio stage 2: palette, selection, inspector -------------------------- */
+
+.mdmx-dash .mdmx-studio-split.has-inspector {
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr) 300px;
+}
+@media (max-width: 1280px) {
+  .mdmx-dash .mdmx-studio-split.has-inspector {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  }
+  .mdmx-dash .mdmx-studio-inspector {
+    grid-column: 1 / -1;
+  }
+}
+.mdmx-dash .mdmx-studio-palette {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+.mdmx-dash .mdmx-studio-palette .mdmx-dash-button {
+  font-size: 12.5px;
+  padding: 4px 10px;
+}
+.mdmx-dash .mdmx-studio-preview-stage [data-studio-selected="true"] {
+  outline: 2px solid var(--mdmx-accent);
+  outline-offset: 2px;
+}
+.mdmx-dash .mdmx-studio-preview-stage * {
+  cursor: pointer;
+}
+.mdmx-dash .mdmx-studio-inspector {
+  border: 1px solid var(--mdmx-border);
+  border-radius: var(--mdmx-radius);
+  background: var(--mdmx-surface);
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  align-self: start;
+  max-height: 70vh;
+  overflow-y: auto;
+}
+.mdmx-dash .mdmx-studio-inspector-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.mdmx-dash .mdmx-studio-inspector-head code {
+  font-family: var(--mdmx-mono);
+  font-size: 13px;
+  color: var(--mdmx-accent);
+}
+.mdmx-dash .mdmx-studio-inspector-actions {
+  display: flex;
+  gap: 6px;
+}
+.mdmx-dash .mdmx-studio-inspector textarea,
+.mdmx-dash .mdmx-studio-inspector input,
+.mdmx-dash .mdmx-studio-inspector select {
+  font: inherit;
+  font-size: 13px;
+  padding: 6px 8px;
+  border: 1px solid var(--mdmx-border);
+  border-radius: var(--mdmx-radius);
+  background: var(--mdmx-surface);
+  color: var(--mdmx-fg);
+  box-sizing: border-box;
+  width: 100%;
+}
+.mdmx-dash .mdmx-studio-inspector textarea {
+  font-family: var(--mdmx-mono);
+  resize: vertical;
+}
+.mdmx-dash .mdmx-studio-quick {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
