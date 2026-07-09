@@ -3,7 +3,7 @@
 // API route handlers (web-standard Request/Response).
 // Pending: the editor mount page (catch-all UI route).
 export { LocalProvider, gitBlobSha } from "./local-provider.js";
-export { getDocuments, getDocumentBySlug } from "./content.js";
+export { getDocuments, getDocumentBySlug, getStudioComponentDefs } from "./content.js";
 export type { MDMXDocument, GetDocumentsOptions } from "./content.js";
 export { createMDMXHandlers } from "./api.js";
 export type { MDMXHandlerOptions, MDMXHandlers } from "./api.js";

@@ -1,0 +1,62 @@
+{
+  "mdmxStudioVersion": 1,
+  "name": "PromoCard",
+  "description": "Dark promo card built in the studio",
+  "props": [
+    {
+      "name": "title",
+      "type": "string",
+      "required": true
+    },
+    {
+      "name": "body",
+      "type": "string"
+    },
+    {
+      "name": "ctaLabel",
+      "type": "string",
+      "default": "Learn more"
+    },
+    {
+      "name": "ctaHref",
+      "type": "string",
+      "default": "#"
+    }
+  ],
+  "template": {
+    "tag": "section",
+    "classes": "p-8 rounded-2xl bg-slate-900 text-white flex flex-col gap-3",
+    "children": [
+      {
+        "tag": "h2",
+        "classes": "text-2xl font-semibold tracking-tight",
+        "children": [
+          {
+            "slot": "title"
+          }
+        ]
+      },
+      {
+        "tag": "p",
+        "classes": "text-slate-300",
+        "children": [
+          {
+            "slot": "body"
+          }
+        ]
+      },
+      {
+        "tag": "a",
+        "classes": "self-start px-4 py-2 rounded-lg bg-indigo-500 hover:bg-indigo-400 font-medium",
+        "attrs": {
+          "href": "{props.ctaHref}"
+        },
+        "children": [
+          {
+            "slot": "ctaLabel"
+          }
+        ]
+      }
+    ]
+  }
+}

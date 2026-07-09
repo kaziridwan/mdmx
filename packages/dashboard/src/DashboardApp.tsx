@@ -1,8 +1,19 @@
 "use client";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Registry, type CollectionSpec, type RegistrySpec } from "@mdmx/core";
+import {
+  Registry,
+  studioComponentToSpec,
+  type CollectionSpec,
+  type RegistrySpec,
+} from "@mdmx/core";
 import type { ComponentMap } from "@mdmx/editor/react";
-import { createApiClient, type ApiClient, type Me } from "./api-client.js";
+import { studioComponent } from "@mdmx/next/render";
+import {
+  createApiClient,
+  type ApiClient,
+  type Me,
+  type StudioComponentEntry,
+} from "./api-client.js";
 import type { ResolvedDashboardConfig } from "./config.js";
 import { DashboardContext, type DashboardContextValue } from "./context.js";
 import { resolveRoute, type DashboardRoute } from "./routes.js";
@@ -87,14 +98,66 @@ function AuthedDashboard({
     });
   }, [refreshCollections]);
 
+  // Studio components (runtime template components stored in the content
+  // repo): fetched after auth, merged into the registry and component map so
+  // they behave exactly like code components in the editor.
+  const [studioEntries, setStudioEntries] = useState<readonly StudioComponentEntry[]>([]);
+  const refreshStudio = useCallback(async () => {
+    setStudioEntries(await api.listStudioComponents());
+  }, [api]);
+
+  useEffect(() => {
+    refreshStudio().catch(() => {
+      // Studio stays empty; the studio views surface their own load errors.
+    });
+  }, [refreshStudio]);
+
+  const effectiveRegistry = useMemo(() => {
+    if (studioEntries.length === 0) return registry;
+    const taken = new Set(registry.components.map((c) => c.name));
+    const merged = [
+      ...registry.spec.components,
+      ...studioEntries
+        .filter((e) => !taken.has(e.def.name))
+        .map((e) => studioComponentToSpec(e.def)),
+    ];
+    return new Registry({ ...registry.spec, components: merged });
+  }, [registry, studioEntries]);
+
+  const effectiveComponents = useMemo(() => {
+    if (studioEntries.length === 0) return components;
+    const studio: ComponentMap = {};
+    for (const entry of studioEntries) studio[entry.def.name] = studioComponent(entry.def);
+    return { ...studio, ...components };
+  }, [components, studioEntries]);
+
   // Re-apply the stored theme pin (settings) on every dashboard load.
   useEffect(() => {
     applyThemePreference(readThemePreference());
   }, []);
 
   const value: DashboardContextValue = useMemo(
-    () => ({ config, api, me, registry, collections, refreshCollections, components }),
-    [config, api, me, registry, collections, refreshCollections, components],
+    () => ({
+      config,
+      api,
+      me,
+      registry: effectiveRegistry,
+      collections,
+      refreshCollections,
+      components: effectiveComponents,
+      studio: { entries: studioEntries, refresh: refreshStudio },
+    }),
+    [
+      config,
+      api,
+      me,
+      effectiveRegistry,
+      collections,
+      refreshCollections,
+      effectiveComponents,
+      studioEntries,
+      refreshStudio,
+    ],
   );
 
   const onLogout = () => {

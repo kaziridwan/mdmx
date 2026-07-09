@@ -2,7 +2,7 @@
 import { createContext, useContext } from "react";
 import type { CollectionSpec, Registry } from "@mdmx/core";
 import type { ComponentMap } from "@mdmx/editor/react";
-import type { ApiClient, Me } from "./api-client.js";
+import type { ApiClient, Me, StudioComponentEntry } from "./api-client.js";
 import type { ResolvedDashboardConfig } from "./config.js";
 
 /**
@@ -20,6 +20,8 @@ export interface DashboardContextValue {
   /** Re-fetch collections (after create/edit). */
   refreshCollections: () => Promise<void>;
   components?: ComponentMap;
+  /** Studio components (runtime template components) + re-fetch after save. */
+  studio: { entries: readonly StudioComponentEntry[]; refresh: () => Promise<void> };
 }
 
 export const DashboardContext = createContext<DashboardContextValue | null>(null);

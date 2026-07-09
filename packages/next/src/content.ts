@@ -2,9 +2,12 @@ import { readdir, readFile } from "node:fs/promises";
 import { join } from "node:path";
 import {
   parseDocument,
+  parseStudioComponent,
+  STUDIO_COMPONENTS_DIR,
   validateTree,
   type Diagnostic,
   type Registry,
+  type StudioComponentDef,
 } from "@mdmx/core";
 
 /**
@@ -82,6 +85,31 @@ async function loadDocument(
       ? { diagnostics: validateTree(tree, { registry: options.registry }) }
       : {}),
   };
+}
+
+/**
+ * Read the valid studio component definitions stored under
+ * `<contentDir>/_components` (build-time filesystem read, like the document
+ * readers — invalid files are skipped). Pair with `studioRenderComponents`
+ * from `@mdmx/next/render` to render them on public pages.
+ */
+export async function getStudioComponentDefs(
+  contentDir = "content",
+): Promise<StudioComponentDef[]> {
+  const dir = join(contentDir, STUDIO_COMPONENTS_DIR);
+  let entries;
+  try {
+    entries = await readdir(dir, { withFileTypes: true });
+  } catch {
+    return [];
+  }
+  const defs: StudioComponentDef[] = [];
+  for (const entry of entries) {
+    if (!entry.isFile() || !entry.name.endsWith(".json")) continue;
+    const { def } = parseStudioComponent(await readFile(join(dir, entry.name), "utf8"));
+    if (def) defs.push(def);
+  }
+  return defs.sort((a, b) => a.name.localeCompare(b.name));
 }
 
 async function listContentFiles(dir: string, prefix = ""): Promise<string[]> {
