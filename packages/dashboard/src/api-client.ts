@@ -186,6 +186,12 @@ export function createApiClient(basePath: string) {
         { method: "DELETE" },
       ),
 
+    ejectStudioComponent: (name: string) =>
+      request<{ commit: CommitInfo; path: string; note: string }>(
+        `${basePath}/studio/components/${encodeURIComponent(name)}/eject`,
+        { method: "POST" },
+      ),
+
     logout: () => request<{ ok: boolean }>(`${basePath}/auth/logout`, { method: "POST" }),
   };
 }

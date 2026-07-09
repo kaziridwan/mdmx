@@ -91,3 +91,4 @@ export type {
   TemplateSlot,
   TemplateText,
 } from "./studio.js";
+export { studioComponentToTSX } from "./studio.js";
