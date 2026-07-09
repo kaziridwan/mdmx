@@ -22,6 +22,17 @@ export {
   MIN_SIDEBAR_WIDTH,
   MAX_SIDEBAR_WIDTH,
 } from "./sidebar-resize.js";
+export {
+  VIEWPORT_WIDTHS,
+  VIEWPORT_MODES,
+  DEFAULT_VIEWPORT,
+  CANVAS_GUTTER,
+  canvasZoom,
+  isViewportMode,
+  readStoredViewport,
+  storeViewport,
+} from "./viewport.js";
+export type { ViewportMode } from "./viewport.js";
 export { PropPanel } from "./PropPanel.js";
 export type { PropPanelProps } from "./PropPanel.js";
 export { FrontmatterPanel } from "./FrontmatterPanel.js";

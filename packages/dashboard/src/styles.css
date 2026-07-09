@@ -1161,10 +1161,24 @@ body.mdmx-resizing {
   position: relative;
   overflow-y: auto;
 }
+/* Responsive preview: the editor sets --mdmx-canvas-w to the device width of
+   the selected viewport mode and --mdmx-canvas-zoom to fit it into the pane.
+   `zoom` (not transform) so layout height tracks visual height. The canvas is
+   a named inline-size container: author components respond to it with
+   container queries (window media queries can't see the canvas width). */
 .mdmx-dash-editor .mdmx-canvas {
-  max-width: 720px;
+  box-sizing: border-box;
+  width: var(--mdmx-canvas-w, 720px);
+  max-width: none;
   margin: 0 auto;
   padding: 48px 40px 240px;
+  zoom: var(--mdmx-canvas-zoom, 1);
+  container: mdmx-canvas / inline-size;
+}
+.mdmx-dash-editor .mdmx-canvas[data-viewport="mobile"],
+.mdmx-dash-editor .mdmx-canvas[data-viewport="tablet"] {
+  border-left: 1px dashed var(--mdmx-border);
+  border-right: 1px dashed var(--mdmx-border);
 }
 .mdmx-dash-editor .mdmx-canvas .ProseMirror {
   outline: none;
@@ -1225,6 +1239,14 @@ body.mdmx-resizing {
 }
 .mdmx-dash-editor .mdmx-content {
   font-family: var(--mdmx-content-font);
+  /* Layout-transparent editable hole: a container component's flex/grid must
+     see the child blocks as direct items (FeatureGrid, PricingTable, …), not
+     one wrapper that swallows the whole layout into a single cell. Both the
+     React hole and the PM-managed contentDOM inside it must be transparent. */
+  display: contents;
+}
+.mdmx-dash-editor .mdmx-contentdom {
+  display: contents;
 }
 .mdmx-dash-editor .mdmx-placeholder {
   border: 1px dashed var(--mdmx-border);
@@ -1251,7 +1273,9 @@ body.mdmx-resizing {
   display: flex;
   gap: 16px;
 }
-.mdmx-dash-editor .mdmx-component .twocol > * {
+/* Both content wrappers are display:contents, so the real flex items are the
+   child NodeView roots two levels down. */
+.mdmx-dash-editor .mdmx-component .twocol > .mdmx-content > .mdmx-contentdom > * {
   flex: 1;
   min-width: 0;
 }
@@ -1259,6 +1283,12 @@ body.mdmx-resizing {
   border: 1px dashed var(--mdmx-border);
   border-radius: var(--mdmx-radius);
   padding: 8px 12px;
+}
+/* Stack columns in the mobile preview (canvas is the container). */
+@container mdmx-canvas (max-width: 640px) {
+  .mdmx-dash-editor .mdmx-component .twocol {
+    flex-direction: column;
+  }
 }
 
 /* -- slash menu -- */
@@ -1470,6 +1500,33 @@ body.mdmx-resizing {
   font-family: var(--mdmx-mono);
   font-size: 13px;
   color: var(--mdmx-fg-muted);
+}
+.mdmx-dash-editor .mdmx-viewport-switch {
+  display: inline-flex;
+  border: 1px solid var(--mdmx-border);
+  border-radius: var(--mdmx-radius);
+  overflow: hidden;
+}
+.mdmx-dash-editor .mdmx-viewport-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 26px;
+  border: 0;
+  background: var(--mdmx-surface);
+  color: var(--mdmx-fg-muted);
+  cursor: pointer;
+}
+.mdmx-dash-editor .mdmx-viewport-btn + .mdmx-viewport-btn {
+  border-left: 1px solid var(--mdmx-border);
+}
+.mdmx-dash-editor .mdmx-viewport-btn:hover {
+  color: var(--mdmx-fg);
+}
+.mdmx-dash-editor .mdmx-viewport-btn[aria-pressed="true"] {
+  background: var(--mdmx-accent-wash);
+  color: var(--mdmx-accent);
 }
 .mdmx-dash-editor .mdmx-toolbar-status {
   margin-left: auto;
