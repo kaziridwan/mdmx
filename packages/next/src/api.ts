@@ -8,17 +8,23 @@ import {
   collectionToConfig,
   ConflictError,
   parseDocument,
+  parseStudioComponent,
   PathSafetyError,
+  Registry,
+  STUDIO_COMPONENTS_DIR,
+  studioComponentPath,
+  studioComponentToSpec,
   validateCollectionConfig,
   validateFrontmatter,
   validateSource,
+  validateStudioComponent,
   type CollectionConfig,
   type CollectionFieldConfig,
   type CollectionSpec,
   type CollectionsConfig,
   type ContentProvider,
   type Diagnostic,
-  type Registry,
+  type StudioComponentDef,
 } from "@mdmx/core";
 import {
   AuthError,
@@ -283,10 +289,13 @@ export function createMDMXHandlers(options: MDMXHandlerOptions): MDMXHandlers {
           // entries in dashboard-created collections validate immediately.
           // (Resolved outside the try: a config failure is not a parse error.)
           const collection = collectionForPath(await resolveCollections(provider), path);
+          // Studio components merge in at request time so documents using
+          // them don't trip MDMX001 on save.
+          const registry = await effectiveRegistry(provider, o.registry);
           // Never trust the editor client: re-validate on the server. A parse
           // failure (malformed MDX) is a client error, not a 500.
           try {
-            diagnostics = validateSource(body.content, { registry: o.registry });
+            diagnostics = validateSource(body.content, { registry });
             if (collection) {
               const { frontmatter } = parseDocument(body.content);
               diagnostics = diagnostics.concat(validateFrontmatter(frontmatter, collection));
@@ -354,6 +363,67 @@ export function createMDMXHandlers(options: MDMXHandlerOptions): MDMXHandlers {
           { expectedShas: { [path]: null } }, // never overwrite media silently
         );
         return withSession(json(201, { commit: result, path }));
+      }
+
+      // ---- studio components (runtime template components) -----------------
+
+      if (route === "/studio/components" && method === "GET") {
+        const entries = await listStudioDefs(provider);
+        return withSession(
+          json(200, {
+            components: entries
+              .filter((e) => e.def != null)
+              .map((e) => ({ path: e.path, sha: e.sha, def: e.def })),
+            invalid: entries
+              .filter((e) => e.def == null)
+              .map((e) => ({ path: e.path, problems: e.problems })),
+          }),
+        );
+      }
+
+      const studioRoute = route.match(/^\/studio\/components\/([^/]+)$/);
+      if (studioRoute && method === "PUT") {
+        const name = decodeURIComponent(studioRoute[1]!);
+        const body = (await req.json()) as {
+          def?: unknown;
+          message?: string;
+          expectedSha?: string | null;
+        };
+        const defName = (body.def as Partial<StudioComponentDef> | undefined)?.name;
+        if (defName !== name) {
+          return withSession(json(400, { error: "definition name must match the route" }));
+        }
+        // Collisions: the baked code registry plus every OTHER stored def.
+        const taken = new Set<string>(o.registry?.components.map((c) => c.name) ?? []);
+        for (const entry of await listStudioDefs(provider)) {
+          if (entry.def && entry.def.name !== name) taken.add(entry.def.name);
+        }
+        const problems = validateStudioComponent(body.def, taken);
+        if (problems.length > 0) {
+          return withSession(json(400, { error: "invalid studio component", problems }));
+        }
+        const path = studioComponentPath(o.contentDir, name);
+        const result = await provider.commit(
+          [{ path, content: JSON.stringify(body.def, null, 2) + "\n" }],
+          body.message ?? `mdmx: studio component ${name}`,
+          body.expectedSha !== undefined
+            ? { expectedShas: { [path]: body.expectedSha } }
+            : undefined,
+        );
+        return withSession(
+          json(200, {
+            commit: result,
+            path,
+            spec: studioComponentToSpec(body.def as StudioComponentDef),
+          }),
+        );
+      }
+
+      if (studioRoute && method === "DELETE") {
+        const name = decodeURIComponent(studioRoute[1]!);
+        const path = studioComponentPath(o.contentDir, name);
+        const result = await provider.delete(path, `mdmx: delete studio component ${name}`);
+        return withSession(json(200, { commit: result }));
       }
 
       return json(404, { error: `no route ${method} ${route}` });
@@ -438,6 +508,48 @@ export function createMDMXHandlers(options: MDMXHandlerOptions): MDMXHandlers {
   async function resolveCollections(provider: ContentProvider): Promise<CollectionSpec[]> {
     const { config } = await readProjectConfig(provider);
     return collectionsFromConfig(effectiveCollectionsConfig(config));
+  }
+
+  // -- studio components: stored under <contentDir>/_components ---------------
+
+  interface StudioEntry {
+    path: string;
+    sha: string;
+    def: StudioComponentDef | null;
+    problems: string[];
+  }
+
+  /** Read every stored studio definition; malformed files carry problems. */
+  async function listStudioDefs(provider: ContentProvider): Promise<StudioEntry[]> {
+    const dir = `${o.contentDir}/${STUDIO_COMPONENTS_DIR}`;
+    let files;
+    try {
+      files = await provider.list(dir);
+    } catch (err) {
+      if (isNotFound(err)) return [];
+      throw err;
+    }
+    const out: StudioEntry[] = [];
+    for (const f of files) {
+      if (!f.path.endsWith(".json")) continue;
+      const { content, sha } = await provider.read(f.path);
+      const { def, problems } = parseStudioComponent(content);
+      out.push({ path: f.path, sha, def, problems });
+    }
+    return out;
+  }
+
+  /** Baked registry + valid stored studio defs, for save-time validation. */
+  async function effectiveRegistry(provider: ContentProvider, base: Registry): Promise<Registry> {
+    const entries = await listStudioDefs(provider);
+    const defs = entries.filter((e) => e.def != null);
+    if (defs.length === 0) return base;
+    const existing = new Set(base.components.map((c) => c.name));
+    const merged = [
+      ...base.spec.components,
+      ...defs.filter((e) => !existing.has(e.def!.name)).map((e) => studioComponentToSpec(e.def!)),
+    ];
+    return new Registry({ ...base.spec, components: merged });
   }
 
   /** Collection dirs must sit under the content dir or the file API can't reach them. */

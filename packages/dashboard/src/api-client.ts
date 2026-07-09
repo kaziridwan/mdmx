@@ -2,6 +2,7 @@ import type {
   CollectionFieldConfig,
   CollectionSpec,
   Diagnostic,
+  StudioComponentDef,
 } from "@mdmx/core";
 
 /**
@@ -62,6 +63,12 @@ export interface CommitInfo {
 export interface SaveResult {
   commit: CommitInfo;
   diagnostics: Diagnostic[];
+}
+
+export interface StudioComponentEntry {
+  path: string;
+  sha: string;
+  def: StudioComponentDef;
 }
 
 async function request<T>(url: string, init?: RequestInit): Promise<T> {
@@ -149,6 +156,34 @@ export function createApiClient(basePath: string) {
       request<{ collection: CollectionSpec; commit: CommitInfo }>(
         `${basePath}/collections/${encodeURIComponent(name)}`,
         jsonInit("PUT", { fields }),
+      ),
+
+    listStudioComponents: async (): Promise<StudioComponentEntry[]> => {
+      try {
+        const { components } = await request<{ components: StudioComponentEntry[] }>(
+          `${basePath}/studio/components`,
+        );
+        return components;
+      } catch (err) {
+        if (err instanceof ApiError && err.status === 404) return [];
+        throw err;
+      }
+    },
+
+    saveStudioComponent: (args: {
+      def: StudioComponentDef;
+      message?: string;
+      expectedSha?: string | null;
+    }) =>
+      request<{ commit: CommitInfo; path: string }>(
+        `${basePath}/studio/components/${encodeURIComponent(args.def.name)}`,
+        jsonInit("PUT", args),
+      ),
+
+    deleteStudioComponent: (name: string) =>
+      request<{ commit: CommitInfo }>(
+        `${basePath}/studio/components/${encodeURIComponent(name)}`,
+        { method: "DELETE" },
       ),
 
     logout: () => request<{ ok: boolean }>(`${basePath}/auth/logout`, { method: "POST" }),
