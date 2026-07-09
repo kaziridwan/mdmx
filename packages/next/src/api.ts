@@ -33,6 +33,7 @@ import {
   seal,
   serializeCookie,
   unseal,
+  SESSION_COOKIE,
   type SessionData,
 } from "./session.js";
 
@@ -73,7 +74,6 @@ export interface MDMXHandlerOptions {
   now?: () => number;
 }
 
-const SESSION_COOKIE = "mdmx_session";
 const STATE_COOKIE = "mdmx_oauth_state";
 const SESSION_TTL_MS = 8 * 60 * 60 * 1000;
 const REVERIFY_MS = 5 * 60 * 1000;
