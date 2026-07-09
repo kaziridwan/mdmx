@@ -28,7 +28,10 @@ import { HomeView } from "./views/HomeView.js";
 import { MediaView } from "./views/MediaView.js";
 import { PlaceholderView } from "./views/PlaceholderView.js";
 import { SettingsView } from "./views/SettingsView.js";
+import { StudioView } from "./views/StudioView.js";
+import { StudioEditorView } from "./views/StudioEditorView.js";
 import { applyThemePreference, readThemePreference } from "./theme.js";
+import { ensureTailwindRuntime } from "./tailwind-runtime.js";
 
 /**
  * Client root of the dashboard. The server page hands us the slug segments,
@@ -100,16 +103,21 @@ function AuthedDashboard({
 
   // Studio components (runtime template components stored in the content
   // repo): fetched after auth, merged into the registry and component map so
-  // they behave exactly like code components in the editor.
+  // they behave exactly like code components in the editor. The first fetch
+  // gates rendering: a registry identity change re-creates the ProseMirror
+  // editor, which must not happen underneath someone already typing.
   const [studioEntries, setStudioEntries] = useState<readonly StudioComponentEntry[]>([]);
+  const [studioReady, setStudioReady] = useState(false);
   const refreshStudio = useCallback(async () => {
     setStudioEntries(await api.listStudioComponents());
   }, [api]);
 
   useEffect(() => {
-    refreshStudio().catch(() => {
-      // Studio stays empty; the studio views surface their own load errors.
-    });
+    refreshStudio()
+      .catch(() => {
+        // Studio stays empty; the studio views surface their own load errors.
+      })
+      .finally(() => setStudioReady(true));
   }, [refreshStudio]);
 
   const effectiveRegistry = useMemo(() => {
@@ -130,6 +138,12 @@ function AuthedDashboard({
     for (const entry of studioEntries) studio[entry.def.name] = studioComponent(entry.def);
     return { ...studio, ...components };
   }, [components, studioEntries]);
+
+  // Studio components carry Tailwind classes; load the browser runtime so the
+  // editor canvas (and studio previews) style them.
+  useEffect(() => {
+    if (studioEntries.length > 0) ensureTailwindRuntime(config.tailwindSrc);
+  }, [studioEntries, config.tailwindSrc]);
 
   // Re-apply the stored theme pin (settings) on every dashboard load.
   useEffect(() => {
@@ -164,6 +178,14 @@ function AuthedDashboard({
     void api.logout().finally(() => window.location.assign(config.mountPath));
   };
 
+  if (!studioReady) {
+    return (
+      <div className="mdmx-dash-gate" role="status" aria-label="Loading components">
+        <div className="mdmx-dash-spinner" />
+      </div>
+    );
+  }
+
   return (
     <DashboardContext.Provider value={value}>
       <DashboardShell
@@ -196,6 +218,12 @@ function RouteView({ route }: { route: DashboardRoute }) {
       return <EditorView path={route.path} />;
     case "media":
       return <MediaView />;
+    case "studio":
+      return <StudioView />;
+    case "studio-new":
+      return <StudioEditorView />;
+    case "studio-edit":
+      return <StudioEditorView name={route.name} />;
     case "settings":
       return <SettingsView />;
     case "not-found":

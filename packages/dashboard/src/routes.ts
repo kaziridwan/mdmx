@@ -9,6 +9,9 @@
  *   /mdmx/collections/:name/new   → scaffold a new entry
  *   /mdmx/edit/<content path>     → entry editor for content/<path>
  *   /mdmx/media                   → media library
+ *   /mdmx/studio                  → component studio (list)
+ *   /mdmx/studio/new              → create a studio component
+ *   /mdmx/studio/:name            → edit a studio component
  *   /mdmx/settings                → settings
  */
 export type DashboardRoute =
@@ -19,6 +22,9 @@ export type DashboardRoute =
   | { view: "entry-new"; collection: string }
   | { view: "editor"; path: string[] }
   | { view: "media" }
+  | { view: "studio" }
+  | { view: "studio-new" }
+  | { view: "studio-edit"; name: string }
   | { view: "settings" }
   | { view: "not-found"; slug: string[] };
 
@@ -38,6 +44,13 @@ export function resolveRoute(slug: readonly string[]): DashboardRoute {
 
   if (head === "edit" && rest.length > 0) return { view: "editor", path: rest };
   if (head === "media" && rest.length === 0) return { view: "media" };
+  if (head === "studio") {
+    const [name, ...extra] = rest;
+    if (name === undefined) return { view: "studio" };
+    if (extra.length > 0) return { view: "not-found", slug: [...slug] };
+    if (name === "new") return { view: "studio-new" };
+    return { view: "studio-edit", name };
+  }
   if (head === "settings" && rest.length === 0) return { view: "settings" };
 
   return { view: "not-found", slug: [...slug] };

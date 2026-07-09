@@ -103,6 +103,16 @@ export function DashboardShell({
             <SideLink href={routeHref(mountPath, "media")} active={route.view === "media"}>
               Media
             </SideLink>
+            <SideLink
+              href={routeHref(mountPath, "studio")}
+              active={
+                route.view === "studio" ||
+                route.view === "studio-new" ||
+                route.view === "studio-edit"
+              }
+            >
+              Studio
+            </SideLink>
             <SideLink href={routeHref(mountPath, "settings")} active={route.view === "settings"}>
               Settings
             </SideLink>
