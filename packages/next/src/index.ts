@@ -9,5 +9,14 @@ export { createMDMXHandlers } from "./api.js";
 export type { MDMXHandlerOptions, MDMXHandlers } from "./api.js";
 export { authorizeUrl, exchangeCode, verifyRepoAccess, AuthError } from "./auth.js";
 export type { AuthConfig } from "./auth.js";
-export { seal, unseal, parseCookies, serializeCookie, clearCookie } from "./session.js";
+export {
+  seal,
+  unseal,
+  parseCookies,
+  serializeCookie,
+  clearCookie,
+  SESSION_COOKIE,
+} from "./session.js";
 export type { SessionData } from "./session.js";
+export { getSession, privateHref } from "./guard.js";
+export type { GetSessionOptions } from "./guard.js";

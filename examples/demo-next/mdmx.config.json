@@ -8,7 +8,7 @@
       "fields": {
         "title": { "control": { "type": "text" }, "required": true },
         "status": {
-          "control": { "type": "select", "options": ["draft", "published"] },
+          "control": { "type": "select", "options": ["draft", "private", "published"] },
           "required": true,
           "default": "draft"
         },

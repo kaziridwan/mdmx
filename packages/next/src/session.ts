@@ -19,6 +19,9 @@ export interface SessionData {
 
 const VERSION = "v1";
 
+/** Name of the sealed-session cookie set by the auth flow. */
+export const SESSION_COOKIE = "mdmx_session";
+
 function keyFor(secret: string): Buffer {
   if (secret.length < 16) {
     throw new Error("MDMX session secret must be at least 16 characters");

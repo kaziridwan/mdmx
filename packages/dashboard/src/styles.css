@@ -661,6 +661,11 @@
   border-color: currentColor;
 }
 
+.mdmx-dash-status.is-private {
+  color: var(--mdmx-accent);
+  border-color: currentColor;
+}
+
 /* -- embedded editor -------------------------------------------------------------- */
 
 .mdmx-dash-editor {
