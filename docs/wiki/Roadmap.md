@@ -50,6 +50,19 @@ content; GitHub-mode deploy is wired but undocumented as a guide.
 | Shipped stylesheet incl. embedded editor | ✅ | `--mdmx-*` tokens, light+dark, scoped `.mdmx-dash-editor` chrome |
 | demo-next = two-file mount | ✅ | Hand-built CMS pages deleted; `/` → `/mdmx` |
 
+## Phase 2.6 — 0.4.1: render fidelity, private publishing, Component Studio
+
+| Item | Status | Notes |
+| --- | --- | --- |
+| Responsive preview modes (mobile/tab/desktop) | ✅ | Device-width canvas under CSS `zoom`; canvas is an inline-size container; demo styles moved to `@container` (ADR-036) |
+| Container components lay out correctly in the editor | ✅ | `.mdmx-content`/`.mdmx-contentdom` are `display: contents` — child blocks are real grid/flex items (ADR-036) |
+| `draft \| private \| published` | ✅ | `private` renders at `/private/<collection>/<slug>` behind the MDMX session; `getSession`/`privateHref` in `@mdmx/next` (ADR-037) |
+| Public rendering (`@mdmx/next/render`) | ✅ | `MDMXContent` mdast→React; demo has a real public site (home, `/posts/[slug]`, guarded `/private/[...path]`) (ADR-037) |
+| Component Studio (browser-built components) | ✅ | Template-tree defs in `content/_components/`, runtime registry merge, editor parity, Tailwind v4 browser runtime; two-stage WYSIWYG (source+preview, then click-to-select + inspector + palette) (ADR-038) |
+| Eject studio component to TSX | ✅ | `studioComponentToTSX` codegen + eject route; def stays active until generate/rebuild promotes the code version (ADR-038) |
+| Studio defs with children regions | ⬜ | v1 studio components are leaf components |
+| `mdmx dev` HMR into a running editor | ⬜ | Carried over from Phase 2 |
+
 ## Phase 3 — the moat
 
 | Item | Status | Notes |

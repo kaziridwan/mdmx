@@ -5,7 +5,7 @@ Per-package reference. Test counts are current as of the last session (see
 
 ---
 
-## @mdmx/core — 45 tests
+## @mdmx/core — 55 tests
 
 The format. Zero React/Next dependencies (Invariant #9).
 
@@ -19,6 +19,7 @@ The format. Zero React/Next dependencies (Invariant #9).
 | `provider.ts` | `ContentProvider` contract, `ConflictError`, `PathSafetyError`, `assertSafePath`. |
 | `frontmatter.ts` | `parseFrontmatter`/`stringifyFrontmatter` (canonical YAML, pinned `CANONICAL_YAML_OPTIONS`) + `validateFrontmatter` (MDMX008/009). Collections: `CollectionSpec`, `Registry.collectionForPath` (also standalone `collectionForPath`). |
 | `collections-config.ts` | The authored (record-keyed) collections shape: `collectionsFromConfig`/`collectionToConfig` derivation (canonical, shared by CLI and the runtime API), `validateCollectionConfig` (recursive `ControlSpec` checks). ADR-035. |
+| `studio.ts` | Component Studio model (ADR-038): restricted template tree + typed props, tag/attr allowlists, `validateStudioComponent`/`parseStudioComponent`, `studioComponentToSpec` (registry entry), `studioComponentToTSX` (eject codegen), storage path under `<contentDir>/_components/`. |
 
 Key exports: `parseMDX`, `parseDocument`, `validateTree`, `validateSource`,
 `validateFrontmatter`, `stringifyFrontmatter`, `toMDX`, `Registry`,
@@ -78,7 +79,7 @@ have landed; remaining polish is nested drop indicators + per-region slash.
 
 ---
 
-## @mdmx/next — 51 tests
+## @mdmx/next — 57 tests
 
 Next.js integration. The dashboard mount lives in `@mdmx/dashboard`;
 `examples/demo-next` is the runnable reference. Saves are validated against
@@ -87,10 +88,12 @@ the file's collection schema (MDMX008/009), resolved at request time.
 | File | Responsibility |
 | --- | --- |
 | `local-provider.ts` | `LocalProvider` — dev-mode FS storage; git-style blob shas (mirrors GitHub conflict semantics). |
-| `content.ts` | `getDocuments`/`getDocumentBySlug` — build-time readers; frontmatter, status filter, optional registry validation. |
+| `content.ts` | `getDocuments`/`getDocumentBySlug` — build-time readers; frontmatter, status filter (incl. `private`, ADR-037), optional registry validation; `getStudioComponentDefs` reads stored studio definitions. |
+| `guard.ts` | Viewer-side session guard for private pages (ADR-037): `getSession(cookieHeader, {sessionSecret\|localMode})`, `privateHref`. |
+| `render.tsx` | `@mdmx/next/render` subpath (react optional peer): `MDMXContent` mdast→React renderer for public pages; `studioComponent(def)`/`studioRenderComponents` render studio template trees without `dangerouslySetInnerHTML`. |
 | `session.ts` | AES-256-GCM sealed cookies; `seal`/`unseal`; cookie helpers. |
 | `auth.ts` | GitHub OAuth: `authorizeUrl`, `exchangeCode`, `verifyRepoAccess` (push-permission check). |
-| `api.ts` | `createMDMXHandlers` — web-standard Request→Response for auth + content/media CRUD. Supports **`localMode`** (no OAuth; synthetic `local` session; ADR-024) for local authoring; a parse failure on save returns 400, not 500. **Collections routes** (ADR-035): `GET/POST /collections`, `PUT /collections/:name` — read/write `mdmx.config.json` through the provider per request (registry fallback + seed-on-first-write; `configPath` option); `GET /documents?dir=` returns listing + parsed frontmatter for entry tables/search; `/me` reports repo/dirs/validation/localMode. |
+| `api.ts` | `createMDMXHandlers` — web-standard Request→Response for auth + content/media CRUD. Supports **`localMode`** (no OAuth; synthetic `local` session; ADR-024) for local authoring; a parse failure on save returns 400, not 500. **Collections routes** (ADR-035): `GET/POST /collections`, `PUT /collections/:name` — read/write `mdmx.config.json` through the provider per request (registry fallback + seed-on-first-write; `configPath` option); `GET /documents?dir=` returns listing + parsed frontmatter for entry tables/search; `/me` reports repo/dirs/validation/localMode. **Studio routes** (ADR-038): `GET/PUT/DELETE /studio/components(/:name)` + `POST …/:name/eject`; stored defs merge into save-time validation. |
 
 Security posture (ADR-016/017/018): server-side validation on every save,
 origin checks on mutations, prefix-confined paths, 5-min permission
