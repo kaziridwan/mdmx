@@ -14,6 +14,7 @@ import {
   STUDIO_COMPONENTS_DIR,
   studioComponentPath,
   studioComponentToSpec,
+  studioComponentToTSX,
   validateCollectionConfig,
   validateFrontmatter,
   validateSource,
@@ -70,6 +71,8 @@ export interface MDMXHandlerOptions {
   configPath?: string;
   /** "strict": reject saves with error diagnostics (422). "report": save and return them. */
   validation?: "strict" | "report";
+  /** Directory ejected studio components are written to (TSX files). */
+  componentsDir?: string;
   /** Route prefix the handlers are mounted under. */
   basePath?: string;
   /** Where to send the user after login. */
@@ -105,6 +108,7 @@ export function createMDMXHandlers(options: MDMXHandlerOptions): MDMXHandlers {
     basePath: "/api/mdmx",
     editorPath: "/mdmx",
     configPath: "mdmx.config.json",
+    componentsDir: "components/mdmx",
     validation: "report" as const,
     maxMediaBytes: 10 * 1024 * 1024,
     now: () => Date.now(),
@@ -424,6 +428,34 @@ export function createMDMXHandlers(options: MDMXHandlerOptions): MDMXHandlers {
         const path = studioComponentPath(o.contentDir, name);
         const result = await provider.delete(path, `mdmx: delete studio component ${name}`);
         return withSession(json(200, { commit: result }));
+      }
+
+      // Eject: write the definition as a real defineMDMX TSX file. The JSON
+      // definition stays put — it keeps the component working at runtime
+      // until `mdmx generate` + a rebuild promote the code version (which
+      // then shadows it everywhere).
+      const ejectRoute = route.match(/^\/studio\/components\/([^/]+)\/eject$/);
+      if (ejectRoute && method === "POST") {
+        const name = decodeURIComponent(ejectRoute[1]!);
+        const stored = (await listStudioDefs(provider)).find((e) => e.def?.name === name);
+        if (!stored?.def) {
+          return withSession(json(404, { error: `no studio component "${name}"` }));
+        }
+        const path = assertSafePath(`${o.componentsDir}/${name}.tsx`);
+        const result = await provider.commit(
+          [{ path, content: studioComponentToTSX(stored.def) }],
+          `mdmx: eject studio component ${name} to code`,
+          { expectedShas: { [path]: null } }, // never overwrite an existing file
+        );
+        return withSession(
+          json(201, {
+            commit: result,
+            path,
+            note:
+              `Run \`mdmx generate\` and rebuild to promote the code component; ` +
+              `the studio definition keeps working until then and can be deleted after.`,
+          }),
+        );
       }
 
       return json(404, { error: `no route ${method} ${route}` });

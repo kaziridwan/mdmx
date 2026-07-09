@@ -64,6 +64,8 @@ export function StudioEditorView({ name }: { name?: string }) {
   const [loadedFrom, setLoadedFrom] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
+  const [ejecting, setEjecting] = useState(false);
+  const [ejectNote, setEjectNote] = useState<string | null>(null);
   // Stage 2: element selected in the preview (child-index path; [] = root).
   const [selected, setSelected] = useState<NodePath | null>(null);
 
@@ -184,6 +186,25 @@ export function StudioEditorView({ name }: { name?: string }) {
         </div>
         <div className="mdmx-studio-savebar">
           {saveError ? <span className="mdmx-dash-error">{saveError}</span> : null}
+          {editing ? (
+            <button
+              type="button"
+              className="mdmx-dash-button"
+              disabled={ejecting}
+              title="Write this definition as a real defineMDMX .tsx file"
+              onClick={() => {
+                setEjecting(true);
+                setSaveError(null);
+                api
+                  .ejectStudioComponent(name!)
+                  .then((r) => setEjectNote(`Wrote ${r.path}. ${r.note}`))
+                  .catch((err: unknown) => setSaveError((err as Error).message))
+                  .finally(() => setEjecting(false));
+              }}
+            >
+              {ejecting ? "Ejecting…" : "Eject to TSX"}
+            </button>
+          ) : null}
           <button
             type="button"
             className="mdmx-dash-button mdmx-dash-button-primary"
@@ -194,6 +215,8 @@ export function StudioEditorView({ name }: { name?: string }) {
           </button>
         </div>
       </header>
+
+      {ejectNote ? <p className="mdmx-studio-eject-note">{ejectNote}</p> : null}
 
       <div className="mdmx-studio-form-row">
         <label className="mdmx-studio-field">

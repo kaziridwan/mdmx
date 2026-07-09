@@ -4,6 +4,7 @@ import {
   parseStudioComponent,
   studioComponentPath,
   studioComponentToSpec,
+  studioComponentToTSX,
   validateStudioComponent,
   type StudioComponentDef,
 } from "../src/index.js";
@@ -111,5 +112,39 @@ describe("parse + helpers", () => {
     expect(studioComponentPath("content", "PromoCard")).toBe(
       "content/_components/PromoCard.json",
     );
+  });
+});
+
+describe("studioComponentToTSX", () => {
+  it("generates a defineMDMX component file", () => {
+    const tsx = studioComponentToTSX(VALID);
+    expect(tsx).toContain('import { defineMDMX } from "@mdmx/core";');
+    expect(tsx).toContain("interface PromoCardProps {");
+    expect(tsx).toContain("  title: string;");
+    expect(tsx).toContain("  href?: string;");
+    expect(tsx).toContain('function PromoCardImpl({ title, href = "#", count }: PromoCardProps)');
+    expect(tsx).toContain('className="p-8 rounded-xl bg-slate-900"');
+    // whole-value interpolation → bare identifier; mixed → template literal
+    expect(tsx).toContain("href={href}");
+    expect(tsx).toContain("{`Open (${count})`}");
+    // slot child → expression
+    expect(tsx).toContain("{title}");
+    expect(tsx).toContain('export const PromoCard = defineMDMX(PromoCardImpl, {');
+    expect(tsx).toContain('  category: "Studio",');
+    expect(tsx).toContain('    href: { default: "#" },');
+  });
+
+  it("wraps brace-bearing text as string literals and self-closes voids", () => {
+    const tsx = studioComponentToTSX({
+      mdmxStudioVersion: 1,
+      name: "Edge",
+      props: [],
+      template: {
+        tag: "div",
+        children: [{ text: "a { b } c" }, { tag: "img", attrs: { src: "/x.png", alt: "" } }],
+      },
+    });
+    expect(tsx).toContain('{"a { b } c"}');
+    expect(tsx).toContain('<img src="/x.png" alt="" />');
   });
 });

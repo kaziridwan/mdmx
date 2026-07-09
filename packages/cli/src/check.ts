@@ -1,9 +1,12 @@
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { join, relative } from "node:path";
 import { glob } from "tinyglobby";
 import {
   parseDocument,
+  parseStudioComponent,
   Registry,
+  STUDIO_COMPONENTS_DIR,
+  studioComponentToSpec,
   validateFrontmatter,
   validateSource,
   type Diagnostic,
@@ -30,7 +33,7 @@ export async function check(cwd: string, config: MDMXConfig): Promise<CheckResul
     );
   }
   const spec = JSON.parse(readFileSync(registryPath, "utf8")) as RegistrySpec;
-  const registry = new Registry(spec);
+  const registry = new Registry(mergeStudioComponents(cwd, config, spec));
 
   const contentFiles = await glob([`${config.contentDir}/**/*.{md,mdx}`], {
     cwd,
@@ -62,6 +65,24 @@ export async function check(cwd: string, config: MDMXConfig): Promise<CheckResul
   }
 
   return { files, errorCount, warningCount };
+}
+
+/**
+ * Content may use studio components (runtime template components stored under
+ * `<contentDir>/_components/`); merge their specs so documents using them
+ * don't flag MDMX001. Code components take precedence on name clashes.
+ */
+function mergeStudioComponents(cwd: string, config: MDMXConfig, spec: RegistrySpec): RegistrySpec {
+  const dir = join(cwd, config.contentDir, STUDIO_COMPONENTS_DIR);
+  const files = existsSync(dir) ? readdirSync(dir).filter((f) => f.endsWith(".json")) : [];
+  if (files.length === 0) return spec;
+  const taken = new Set(spec.components.map((c) => c.name));
+  const merged = [...spec.components];
+  for (const file of files.sort()) {
+    const { def } = parseStudioComponent(readFileSync(join(dir, file), "utf8"));
+    if (def && !taken.has(def.name)) merged.push(studioComponentToSpec(def));
+  }
+  return { ...spec, components: merged };
 }
 
 export function formatDiagnostics(result: CheckResult): string {
