@@ -1,17 +1,30 @@
 "use client";
-import { useEffect, useMemo, useState } from "react";
+import { createElement, useEffect, useMemo, useState, type MouseEvent } from "react";
 import {
   validateStudioComponent,
+  type JsonValue,
   type StudioComponentDef,
   type StudioPropDef,
   type StudioPropType,
+  type TemplateElement,
 } from "@mdmx/core";
-import { studioComponent } from "@mdmx/next/render";
 import { useDashboard } from "../context.js";
 import { Link } from "../shell/link.js";
 import { routeHref } from "../routes.js";
 import { ensureTailwindRuntime } from "../tailwind-runtime.js";
 import { htmlToTemplate, templateToHtml } from "./template-html.js";
+import {
+  appendChild,
+  activeClassIn,
+  CLASS_GROUPS,
+  ELEMENT_SNIPPETS,
+  isElement,
+  nodeAtPath,
+  removeAtPath,
+  setClassIn,
+  updateAtPath,
+  type NodePath,
+} from "./template-edit.js";
 import { samplePropsFor } from "./StudioView.js";
 
 const STARTER_HTML = `<section class="p-8 rounded-2xl bg-slate-900 text-white flex flex-col gap-3">
@@ -51,6 +64,8 @@ export function StudioEditorView({ name }: { name?: string }) {
   const [loadedFrom, setLoadedFrom] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
+  // Stage 2: element selected in the preview (child-index path; [] = root).
+  const [selected, setSelected] = useState<NodePath | null>(null);
 
   // Populate the form once the stored definition is available.
   useEffect(() => {
@@ -103,10 +118,28 @@ export function StudioEditorView({ name }: { name?: string }) {
     return validateStudioComponent({ ...candidate, name: "PreviewComponent" });
   }, [candidate]);
 
-  const Preview = useMemo(
-    () => (candidate && templateProblems.length === 0 ? studioComponent(candidate) : null),
-    [candidate, templateProblems],
+  const sampleProps = useMemo(
+    () => (candidate ? samplePropsFor(candidate) : {}),
+    [candidate],
   );
+
+  const selectedNode =
+    selected !== null && conversion.template ? nodeAtPath(conversion.template, selected) : null;
+
+  /** Apply a tree edit; the HTML pane is the tree's serialized projection. */
+  const mutateTree = (fn: (root: TemplateElement) => TemplateElement) => {
+    if (!conversion.template) return;
+    setHtml(templateToHtml(fn(conversion.template)));
+  };
+
+  const insertSnippet = (make: () => TemplateElement) => {
+    if (!conversion.template) return;
+    const target =
+      selected !== null && selectedNode && selectedNode.tag !== "img" ? selected : [];
+    const { root, childPath } = appendChild(conversion.template, target, make());
+    setHtml(templateToHtml(root));
+    setSelected(childPath);
+  };
 
   const onSave = async () => {
     if (!candidate || validation.length > 0) return;
@@ -184,29 +217,69 @@ export function StudioEditorView({ name }: { name?: string }) {
         </label>
       </div>
 
-      <div className="mdmx-studio-split">
+      <div className={"mdmx-studio-split" + (selectedNode ? " has-inspector" : "")}>
         <section className="mdmx-studio-source">
           <h2>HTML + Tailwind classes</h2>
           <textarea
             value={html}
             spellCheck={false}
             aria-label="Component markup"
-            onChange={(e) => setHtml(e.target.value)}
+            onChange={(e) => {
+              setHtml(e.target.value);
+              setSelected(null); // manual edits may invalidate element paths
+            }}
           />
           <p className="mdmx-studio-hint">
             Bind props with <code>{"{props.name}"}</code> in text or attribute values.
           </p>
         </section>
         <section className="mdmx-studio-preview">
-          <h2>Preview</h2>
+          <h2>Preview — click an element to inspect</h2>
+          <div className="mdmx-studio-palette" role="toolbar" aria-label="Insert element">
+            {ELEMENT_SNIPPETS.map((snippet) => (
+              <button
+                key={snippet.label}
+                type="button"
+                className="mdmx-dash-button"
+                disabled={!conversion.template}
+                title={
+                  selectedNode
+                    ? `Insert into the selected <${selectedNode.tag}>`
+                    : "Insert into the root element"
+                }
+                onClick={() => insertSnippet(snippet.make)}
+              >
+                + {snippet.label}
+              </button>
+            ))}
+          </div>
           <div className="mdmx-studio-preview-stage">
-            {Preview && candidate ? (
-              <Preview {...samplePropsFor(candidate)} />
+            {conversion.template && templateProblems.length === 0 ? (
+              <PreviewTree
+                el={conversion.template}
+                path={[]}
+                props={sampleProps}
+                selected={selected}
+                onSelect={setSelected}
+              />
             ) : (
               <p className="mdmx-studio-preview-empty">Fix the problems below to preview.</p>
             )}
           </div>
         </section>
+        {selectedNode && selected !== null ? (
+          <Inspector
+            node={selectedNode}
+            path={selected}
+            props={propRows}
+            onChange={(updater) => mutateTree((root) => updateAtPath(root, selected, updater))}
+            onDelete={() => {
+              mutateTree((root) => removeAtPath(root, selected));
+              setSelected(null);
+            }}
+            onClose={() => setSelected(null)}
+          />
+        ) : null}
       </div>
 
       {conversion.problems.length > 0 || validation.length > 0 ? (
@@ -250,6 +323,235 @@ export function StudioEditorView({ name }: { name?: string }) {
         ))}
       </section>
     </div>
+  );
+}
+
+const INTERPOLATION_RE = /\{props\.([A-Za-z0-9]+)\}/g;
+const VOID_TAGS = new Set(["br", "hr", "img"]);
+
+function interpolate(value: string, props: Record<string, JsonValue>): string {
+  return value.replace(INTERPOLATION_RE, (_, name: string) => {
+    const v = props[name];
+    return v == null ? "" : String(v);
+  });
+}
+
+function samePath(a: NodePath, b: NodePath | null): boolean {
+  return b !== null && a.length === b.length && a.every((v, i) => v === b[i]);
+}
+
+/** The live preview: the template tree rendered with click-to-select paths. */
+function PreviewTree({
+  el,
+  path,
+  props,
+  selected,
+  onSelect,
+}: {
+  el: TemplateElement;
+  path: NodePath;
+  props: Record<string, JsonValue>;
+  selected: NodePath | null;
+  onSelect: (path: NodePath) => void;
+}) {
+  const attrs: Record<string, unknown> = {
+    onClick: (e: MouseEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+      onSelect(path);
+    },
+  };
+  if (samePath(path, selected)) attrs["data-studio-selected"] = "true";
+  if (el.classes) attrs.className = el.classes;
+  for (const [name, value] of Object.entries(el.attrs ?? {})) {
+    attrs[name] = interpolate(value, props);
+  }
+  if (VOID_TAGS.has(el.tag)) return createElement(el.tag, attrs);
+  const children = (el.children ?? []).map((child, i) => {
+    if (isElement(child)) {
+      return (
+        <PreviewTree
+          key={i}
+          el={child}
+          path={[...path, i]}
+          props={props}
+          selected={selected}
+          onSelect={onSelect}
+        />
+      );
+    }
+    if ("text" in child) return interpolate(child.text, props);
+    const v = props[child.slot];
+    return v == null ? null : String(v);
+  });
+  return createElement(el.tag, attrs, ...children);
+}
+
+/** Right-hand inspector for the selected element: classes, quick controls,
+    text/prop binding, link/image attributes. Everything writes classes or
+    tree edits — the HTML pane re-serializes from the same tree. */
+function Inspector({
+  node,
+  path,
+  props,
+  onChange,
+  onDelete,
+  onClose,
+}: {
+  node: TemplateElement;
+  path: NodePath;
+  props: readonly StudioPropDef[];
+  onChange: (updater: (el: TemplateElement) => TemplateElement) => void;
+  onDelete: () => void;
+  onClose: () => void;
+}) {
+  const children = node.children ?? [];
+  const onlyChild = children.length === 1 ? children[0] : undefined;
+  const editableText =
+    children.length === 0 || (onlyChild !== undefined && !isElement(onlyChild));
+  const textValue =
+    onlyChild !== undefined && "text" in onlyChild ? onlyChild.text : "";
+  const boundSlot = onlyChild !== undefined && "slot" in onlyChild ? onlyChild.slot : "";
+
+  const setAttr = (name: string, value: string) =>
+    onChange((el) => {
+      const attrs = { ...el.attrs };
+      if (value === "") delete attrs[name];
+      else attrs[name] = value;
+      return { ...el, ...(Object.keys(attrs).length ? { attrs } : { attrs: undefined }) };
+    });
+
+  return (
+    <aside className="mdmx-studio-inspector" aria-label="Element inspector">
+      <div className="mdmx-studio-inspector-head">
+        <code>&lt;{node.tag}&gt;</code>
+        <div className="mdmx-studio-inspector-actions">
+          {path.length > 0 ? (
+            <button type="button" className="mdmx-dash-button mdmx-dash-button-ghost" onClick={onDelete}>
+              Delete
+            </button>
+          ) : null}
+          <button type="button" className="mdmx-dash-button mdmx-dash-button-ghost" onClick={onClose}>
+            ✕
+          </button>
+        </div>
+      </div>
+
+      <label className="mdmx-studio-field">
+        <span>Classes</span>
+        <textarea
+          rows={3}
+          value={node.classes ?? ""}
+          spellCheck={false}
+          onChange={(e) =>
+            onChange((el) => ({
+              ...el,
+              classes: e.target.value.trim() === "" ? undefined : e.target.value,
+            }))
+          }
+        />
+      </label>
+
+      <div className="mdmx-studio-quick">
+        {CLASS_GROUPS.map((group) => (
+          <label key={group.label} className="mdmx-studio-field">
+            <span>{group.label}</span>
+            <select
+              value={activeClassIn(node.classes, group) ?? ""}
+              onChange={(e) =>
+                onChange((el) => {
+                  const next = setClassIn(el.classes, group, e.target.value);
+                  return { ...el, classes: next === "" ? undefined : next };
+                })
+              }
+            >
+              <option value="">—</option>
+              {group.options.map((opt) => (
+                <option key={opt} value={opt}>
+                  {opt}
+                </option>
+              ))}
+            </select>
+          </label>
+        ))}
+      </div>
+
+      {editableText ? (
+        <>
+          <label className="mdmx-studio-field">
+            <span>Bind text to prop</span>
+            <select
+              value={boundSlot}
+              onChange={(e) =>
+                onChange((el) => ({
+                  ...el,
+                  children: e.target.value
+                    ? [{ slot: e.target.value }]
+                    : textValue
+                      ? [{ text: textValue }]
+                      : undefined,
+                }))
+              }
+            >
+              <option value="">plain text</option>
+              {props
+                .filter((p) => p.name)
+                .map((p) => (
+                  <option key={p.name} value={p.name}>
+                    {`{props.${p.name}}`}
+                  </option>
+                ))}
+            </select>
+          </label>
+          {boundSlot === "" ? (
+            <label className="mdmx-studio-field">
+              <span>Text</span>
+              <textarea
+                rows={2}
+                value={textValue}
+                onChange={(e) =>
+                  onChange((el) => ({
+                    ...el,
+                    children: e.target.value === "" ? undefined : [{ text: e.target.value }],
+                  }))
+                }
+              />
+            </label>
+          ) : null}
+        </>
+      ) : null}
+
+      {node.tag === "a" ? (
+        <label className="mdmx-studio-field">
+          <span>href</span>
+          <input
+            type="text"
+            value={node.attrs?.href ?? ""}
+            onChange={(e) => setAttr("href", e.target.value)}
+          />
+        </label>
+      ) : null}
+      {node.tag === "img" ? (
+        <>
+          <label className="mdmx-studio-field">
+            <span>src</span>
+            <input
+              type="text"
+              value={node.attrs?.src ?? ""}
+              onChange={(e) => setAttr("src", e.target.value)}
+            />
+          </label>
+          <label className="mdmx-studio-field">
+            <span>alt</span>
+            <input
+              type="text"
+              value={node.attrs?.alt ?? ""}
+              onChange={(e) => setAttr("alt", e.target.value)}
+            />
+          </label>
+        </>
+      ) : null}
+    </aside>
   );
 }
 
