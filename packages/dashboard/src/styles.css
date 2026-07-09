@@ -1753,3 +1753,177 @@ body.mdmx-resizing {
   outline-offset: 2px;
   border-radius: var(--mdmx-radius-sm);
 }
+
+/* -- component studio ------------------------------------------------------- */
+
+.mdmx-dash .mdmx-studio-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 18px;
+}
+.mdmx-dash .mdmx-studio-card {
+  border: 1px solid var(--mdmx-border);
+  border-radius: var(--mdmx-radius);
+  background: var(--mdmx-surface);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+.mdmx-dash .mdmx-studio-card-preview {
+  padding: 18px;
+  background:
+    repeating-conic-gradient(var(--mdmx-surface-2) 0% 25%, var(--mdmx-surface) 0% 50%)
+    0 0 / 20px 20px;
+  border-bottom: 1px solid var(--mdmx-border);
+  overflow: auto;
+  max-height: 260px;
+}
+.mdmx-dash .mdmx-studio-card-meta {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 12px 14px;
+}
+.mdmx-dash .mdmx-studio-card-name {
+  font-weight: 600;
+  color: var(--mdmx-fg);
+  text-decoration: none;
+}
+.mdmx-dash .mdmx-studio-card-name:hover {
+  color: var(--mdmx-accent);
+}
+.mdmx-dash .mdmx-studio-card-desc {
+  margin: 4px 0 0;
+  font-size: 13px;
+  color: var(--mdmx-fg-muted);
+}
+
+.mdmx-dash .mdmx-studio-editor .mdmx-toolbar-back {
+  font-size: 13px;
+  color: var(--mdmx-accent);
+  text-decoration: none;
+  display: inline-block;
+  margin-bottom: 4px;
+}
+.mdmx-dash .mdmx-studio-savebar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.mdmx-dash .mdmx-studio-form-row {
+  display: flex;
+  gap: 14px;
+  margin-bottom: 16px;
+}
+.mdmx-dash .mdmx-studio-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 13px;
+  color: var(--mdmx-fg-muted);
+}
+.mdmx-dash .mdmx-studio-field-grow {
+  flex: 1;
+}
+.mdmx-dash .mdmx-studio-field input {
+  font: inherit;
+  font-size: 14px;
+  padding: 7px 10px;
+  border: 1px solid var(--mdmx-border);
+  border-radius: var(--mdmx-radius);
+  background: var(--mdmx-surface);
+  color: var(--mdmx-fg);
+}
+.mdmx-dash .mdmx-studio-split {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 18px;
+  align-items: stretch;
+}
+@media (max-width: 1000px) {
+  .mdmx-dash .mdmx-studio-split {
+    grid-template-columns: 1fr;
+  }
+}
+.mdmx-dash .mdmx-studio-split h2,
+.mdmx-dash .mdmx-studio-props h2 {
+  font-size: 13px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--mdmx-fg-muted);
+  margin: 0 0 8px;
+}
+.mdmx-dash .mdmx-studio-source textarea {
+  width: 100%;
+  min-height: 320px;
+  resize: vertical;
+  font-family: var(--mdmx-mono);
+  font-size: 13px;
+  line-height: 1.55;
+  padding: 12px 14px;
+  border: 1px solid var(--mdmx-border);
+  border-radius: var(--mdmx-radius);
+  background: var(--mdmx-surface);
+  color: var(--mdmx-fg);
+  box-sizing: border-box;
+}
+.mdmx-dash .mdmx-studio-hint {
+  font-size: 12.5px;
+  color: var(--mdmx-fg-muted);
+}
+.mdmx-dash .mdmx-studio-preview-stage {
+  min-height: 320px;
+  border: 1px solid var(--mdmx-border);
+  border-radius: var(--mdmx-radius);
+  padding: 18px;
+  background:
+    repeating-conic-gradient(var(--mdmx-surface-2) 0% 25%, var(--mdmx-surface) 0% 50%)
+    0 0 / 20px 20px;
+  overflow: auto;
+}
+.mdmx-dash .mdmx-studio-preview-empty {
+  color: var(--mdmx-fg-muted);
+  font-size: 13px;
+}
+.mdmx-dash .mdmx-studio-problems {
+  margin: 14px 0 0;
+}
+.mdmx-dash .mdmx-studio-warning {
+  color: var(--mdmx-warn);
+  font-size: 13px;
+  margin: 4px 0;
+}
+.mdmx-dash .mdmx-studio-props {
+  margin-top: 20px;
+}
+.mdmx-dash .mdmx-studio-props-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+.mdmx-dash .mdmx-studio-prop-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+.mdmx-dash .mdmx-studio-prop-row input[type="text"],
+.mdmx-dash .mdmx-studio-prop-row input[type="number"],
+.mdmx-dash .mdmx-studio-prop-row select {
+  font: inherit;
+  font-size: 13.5px;
+  padding: 6px 9px;
+  border: 1px solid var(--mdmx-border);
+  border-radius: var(--mdmx-radius);
+  background: var(--mdmx-surface);
+  color: var(--mdmx-fg);
+}
+.mdmx-dash .mdmx-studio-prop-required {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 13px;
+  color: var(--mdmx-fg-muted);
+}

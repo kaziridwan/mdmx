@@ -1,9 +1,10 @@
 import { cookies } from "next/headers";
 import { notFound, redirect } from "next/navigation";
-import { getDocumentBySlug, getSession } from "@mdmx/next";
-import { MDMXContent } from "@mdmx/next/render";
+import { getDocumentBySlug, getSession, getStudioComponentDefs } from "@mdmx/next";
+import { MDMXContent, studioRenderComponents } from "@mdmx/next/render";
 import { serverComponents } from "../../../lib/components-server";
 import { SiteHeader } from "../../site-header";
+import { StudioTailwindRuntime } from "../../studio-runtime";
 
 // /private/<collection path>/<slug> — entries with status "private", visible
 // only to an authenticated MDMX session (ADR: road-to-0.4.1). This demo runs
@@ -28,14 +29,19 @@ export default async function PrivatePostPage({
   const doc = await getDocumentBySlug(collectionDir, slug, { status: "private" });
   if (!doc) notFound();
 
+  const studioDefs = await getStudioComponentDefs("content");
+  const components = { ...serverComponents, ...studioRenderComponents(studioDefs) };
+  const usesStudio = studioDefs.some((def) => doc.source.includes(`<${def.name}`));
+
   return (
     <>
+      <StudioTailwindRuntime enabled={usesStudio} />
       <SiteHeader />
       <article className="mdmx-page">
         <span className="site-badge" data-status="private">
           private
         </span>
-        <MDMXContent source={doc.source} components={serverComponents} />
+        <MDMXContent source={doc.source} components={components} />
       </article>
     </>
   );

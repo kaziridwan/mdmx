@@ -19,6 +19,11 @@ export interface DashboardConfig {
   registryPath?: string;
   /** Product name shown in the top navbar. */
   title?: string;
+  /**
+   * Script URL of the Tailwind v4 browser runtime, loaded where studio
+   * components render. Point it at a self-hosted copy to avoid the CDN.
+   */
+  tailwindSrc?: string;
 }
 
 export type ResolvedDashboardConfig = Required<DashboardConfig>;
@@ -31,6 +36,7 @@ export function resolveConfig(config: DashboardConfig = {}): ResolvedDashboardCo
     mediaDir: "public/media",
     registryPath: ".mdmx/registry.json",
     title: "MDMX",
+    tailwindSrc: "https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4",
     ...config,
   };
 }
