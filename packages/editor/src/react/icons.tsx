@@ -51,3 +51,34 @@ export function LayersIcon({ size = 15 }: IconProps) {
     </svg>
   );
 }
+
+/** Mobile viewport preview. */
+export function SmartphoneIcon({ size = 15 }: IconProps) {
+  return (
+    <svg {...base(size)}>
+      <rect x="7" y="2" width="10" height="20" rx="2" />
+      <line x1="11" y1="18" x2="13" y2="18" />
+    </svg>
+  );
+}
+
+/** Tablet viewport preview. */
+export function TabletIcon({ size = 15 }: IconProps) {
+  return (
+    <svg {...base(size)}>
+      <rect x="4" y="2" width="16" height="20" rx="2" />
+      <line x1="11" y1="18" x2="13" y2="18" />
+    </svg>
+  );
+}
+
+/** Desktop viewport preview. */
+export function MonitorIcon({ size = 15 }: IconProps) {
+  return (
+    <svg {...base(size)}>
+      <rect x="2" y="3" width="20" height="14" rx="2" />
+      <line x1="8" y1="21" x2="16" y2="21" />
+      <line x1="12" y1="17" x2="12" y2="21" />
+    </svg>
+  );
+}

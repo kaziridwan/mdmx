@@ -54,6 +54,25 @@ body {
   line-height: 1.15;
   margin: 0 0 12px;
 }
+@container (min-width: 900px) {
+  .mk-hero {
+    padding: 88px 48px;
+  }
+  .mk-hero-title {
+    font-size: 46px;
+  }
+  .mk-hero-subtitle {
+    font-size: 19px;
+  }
+}
+@container (max-width: 640px) {
+  .mk-hero {
+    padding: 36px 20px;
+  }
+  .mk-hero-title {
+    font-size: 28px;
+  }
+}
 .mk-hero-subtitle {
   font-size: 17px;
   color: var(--muted);
@@ -129,11 +148,19 @@ body {
 .mk-features[data-columns="4"] {
   grid-template-columns: repeat(4, minmax(0, 1fr));
 }
-@media (max-width: 700px) {
+/* Width-driven, not window-driven: the editor canvas and the public page
+   wrapper are inline-size containers, so the editor's mobile/tablet/desktop
+   preview modes reflow these exactly like a real device would. */
+@container (max-width: 640px) {
   .mk-features,
   .mk-features[data-columns="2"],
   .mk-features[data-columns="4"] {
     grid-template-columns: 1fr;
+  }
+}
+@container (min-width: 641px) and (max-width: 1000px) {
+  .mk-features[data-columns="4"] {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 .mk-feature {
@@ -321,8 +348,148 @@ body {
   margin: 12px 0 0;
 }
 
+/* -- TwoColumn / Column (public pages; the editor ships its own chrome) ----- */
+.twocol {
+  display: flex;
+  gap: 24px;
+}
+.twocol > * {
+  flex: 1;
+  min-width: 0;
+}
+@container (max-width: 640px) {
+  .twocol {
+    flex-direction: column;
+  }
+}
+
 /* -- Html component --------------------------------------------------------- */
 .mk-html {
   border: 1px dashed var(--line);
   border-radius: 10px;
+}
+
+/* -- Public pages (published + private rendering) ---------------------------
+   The article wrapper is the container-query root, mirroring the editor
+   canvas: mk-* components respond to ITS width, so a post looks the same on
+   /posts/[slug] as it does in the editor's desktop preview. */
+.mdmx-page {
+  container: mdmx-page / inline-size;
+  box-sizing: border-box;
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 48px 40px 96px;
+  font-family: "Newsreader", Georgia, serif;
+  font-size: 18px;
+  line-height: 1.7;
+}
+.mdmx-page > * + * {
+  margin-top: 0.85em;
+}
+.mdmx-page h1,
+.mdmx-page h2,
+.mdmx-page h3 {
+  font-family: "Space Grotesk", system-ui, sans-serif;
+  line-height: 1.2;
+}
+.mdmx-page img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 10px;
+}
+.mdmx-page blockquote {
+  border-left: 3px solid var(--indigo);
+  margin: 0;
+  padding-left: 16px;
+  color: var(--muted);
+}
+.mdmx-page pre {
+  background: #14151c;
+  color: #d7d9e3;
+  padding: 16px 20px;
+  border-radius: 10px;
+  overflow-x: auto;
+  font-size: 15px;
+}
+.mdmx-page code {
+  font-family: ui-monospace, "IBM Plex Mono", monospace;
+  font-size: 0.86em;
+}
+.mdmx-page :not(pre) > code {
+  background: var(--indigo-wash);
+  padding: 1px 5px;
+  border-radius: 4px;
+}
+.mdmx-page a {
+  color: var(--indigo);
+}
+
+/* -- Site chrome for the demo's public pages -------------------------------- */
+.site-header {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 18px 40px;
+  border-bottom: 1px solid var(--line);
+  font-family: "Space Grotesk", system-ui, sans-serif;
+}
+.site-header-brand {
+  font-weight: 700;
+  color: var(--ink);
+  text-decoration: none;
+}
+.site-header-nav {
+  display: flex;
+  gap: 14px;
+  margin-left: auto;
+}
+.site-header-nav a {
+  color: var(--muted);
+  text-decoration: none;
+  font-size: 14px;
+}
+.site-header-nav a:hover {
+  color: var(--indigo);
+}
+.site-badge {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: var(--indigo-wash);
+  color: var(--indigo);
+}
+.site-badge[data-status="private"] {
+  background: #fef3c7;
+  color: #92400e;
+}
+.site-list {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 48px 40px 96px;
+  font-family: "Space Grotesk", system-ui, sans-serif;
+}
+.site-list-item {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  padding: 14px 0;
+  border-bottom: 1px solid var(--line);
+}
+.site-list-item a {
+  color: var(--ink);
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 18px;
+}
+.site-list-item a:hover {
+  color: var(--indigo);
+}
+.site-list-desc {
+  color: var(--muted);
+  font-size: 14px;
 }
