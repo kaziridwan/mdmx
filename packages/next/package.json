@@ -5,6 +5,16 @@
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./render": {
+      "types": "./dist/render.d.ts",
+      "default": "./dist/render.js"
+    }
+  },
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "typecheck": "tsc -p tsconfig.json --noEmit",
@@ -14,6 +24,18 @@
     "@mdmx/core": "workspace:*"
   },
   "devDependencies": {
-    "@types/node": "~22.10.10"
+    "@types/mdast": "~4.0.4",
+    "@types/node": "~22.10.10",
+    "@types/react": "^19.0.0",
+    "mdast-util-mdx-jsx": "~3.2.0",
+    "react": "^19.0.0"
+  },
+  "peerDependencies": {
+    "react": ">=18"
+  },
+  "peerDependenciesMeta": {
+    "react": {
+      "optional": true
+    }
   }
 }

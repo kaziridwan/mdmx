@@ -1,3 +1,6 @@
+"use client";
+// The submit handler makes this a client component; server-rendered pages
+// pass it serializable props across the RSC boundary.
 import { defineMDMX } from "@mdmx/core";
 
 interface NewsletterProps {

@@ -420,8 +420,51 @@ body {
   padding: 1px 5px;
   border-radius: 4px;
 }
-.mdmx-page a {
+/* Bare content links only — component-styled anchors (.mk-btn …) keep their
+   own colors. */
+.mdmx-page a:not([class]) {
   color: var(--indigo);
+}
+/* Callout / Stat (class-less demo components; the playground styles them for
+   its canvas, this is the public equivalent). */
+.mdmx-page aside[data-variant] {
+  border: 1px solid var(--line);
+  border-left: 3px solid var(--indigo);
+  border-radius: 10px;
+  padding: 14px 18px;
+  background: var(--canvas);
+}
+.mdmx-page aside[data-variant] > strong {
+  display: block;
+  margin-bottom: 4px;
+  font-family: "Space Grotesk", system-ui, sans-serif;
+}
+.mdmx-page aside[data-variant="warn"] {
+  border-left-color: #c77b12;
+}
+.mdmx-page aside[data-variant="danger"] {
+  border-left-color: #c0392b;
+}
+.mdmx-page figure {
+  margin: 0;
+  padding: 14px 18px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  display: inline-block;
+  min-width: 160px;
+  background: var(--canvas);
+}
+.mdmx-page figure > span {
+  display: block;
+  font-family: "Space Grotesk", system-ui, sans-serif;
+  font-size: 28px;
+  font-weight: 600;
+}
+.mdmx-page figcaption {
+  color: var(--muted);
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
 }
 
 /* -- Site chrome for the demo's public pages -------------------------------- */
