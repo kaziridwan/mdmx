@@ -38,7 +38,12 @@ initial design-and-build conversation (12 commits).
   to an extensionless specifier + regression test. Re-verified: home,
   published entry, private entry (studio component rendering compiled classes,
   no CDN script), dashboard, Component Studio, editor palette — all clean, no
-  console errors.
+  console errors. The **edit→save loop** was driven in the browser: typing
+  updated the live source pane, saving changed exactly one line of the file.
+  M2f's sha change was then exercised against the running server — save 1
+  returns a sha, save 2 using only that sha (no re-read) succeeds, and a stale
+  sha still 409s, so the extra request is gone and conflict detection is
+  intact.
 - **Publish readiness**: repository/homepage/bugs metadata added to all eight
   packages; `npm pack --dry-run` confirms each ships `dist` only.
 - Files/packages changed: studio (new ui/), dashboard (bridge + adapters),
