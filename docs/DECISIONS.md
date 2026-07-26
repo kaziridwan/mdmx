@@ -1325,8 +1325,16 @@ testability seam).
 template→React renderer, now consumed by `@mdmx/next/render`). Core no longer
 ships studio at all. The dashboard's private `interpolate` copy is gone; its
 `PreviewTree` keeps its own traversal because click-to-select paths are a
-genuinely different behaviour, not duplicated rendering. **Remaining:** the
-builder screens move to `@mdmx/studio/ui` behind `StudioClient` (M4).
+genuinely different behaviour, not duplicated rendering. **Shipped (UI)** — 0.5 M4b: `@mdmx/studio/ui` holds
+`StudioView`, `StudioEditorView`, `template-html`, `template-edit`, and the
+canvas Tailwind runtime. They take a `StudioClient` (entries / refresh / save
+/ remove / eject) and a `StudioHost` (contentDir, hrefFor, navigate, Link,
+tailwindSrc); `dashboard/src/studio-bridge.ts` implements both from the
+dashboard's context, and the dashboard's two view files are now three-line
+adapters. The seam paid immediately: `template-html`/`template-edit` — 330
+lines of pure logic with no tests while they lived in the dashboard — gained
+14. The shared stylesheet stays in the dashboard for now (one token system,
+one file); splitting it is a separate question from owning the feature.
 
 ## ADR-046 — Auth is an injectable strategy beside the provider seam
 
