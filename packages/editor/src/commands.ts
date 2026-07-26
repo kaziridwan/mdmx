@@ -44,6 +44,27 @@ export function markCommands(schema: Schema): Record<string, Command> {
   return out;
 }
 
+/**
+ * Keyboard shortcuts for the marks the schema actually has. Bindings follow
+ * the conventions writers already know from every other editor; a mark the
+ * registry's schema doesn't include simply gets no binding.
+ */
+export function markKeymap(schema: Schema): Record<string, Command> {
+  const marks = markCommands(schema);
+  const out: Record<string, Command> = {};
+  if (marks.strong) {
+    out["Mod-b"] = marks.strong;
+    out["Mod-B"] = marks.strong;
+  }
+  if (marks.em) {
+    out["Mod-i"] = marks.em;
+    out["Mod-I"] = marks.em;
+  }
+  if (marks.code) out["Mod-e"] = marks.code;
+  if (marks.strike) out["Mod-Shift-x"] = marks.strike;
+  return out;
+}
+
 export function setHeading(schema: Schema, level: number): Command {
   return setBlockType(schema.nodes.heading!, { level });
 }
