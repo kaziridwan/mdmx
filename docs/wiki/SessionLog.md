@@ -11,6 +11,38 @@ initial design-and-build conversation (12 commits).
 
 <!-- APPEND NEW ENTRIES ABOVE THIS LINE -->
 
+### S29 — M3: the convention layer (release/0.5.0)
+Milestone M3 — everything additive that makes the most-used recipe short
+(ADR-039…042). Three commits:
+- **M3a — zero-argument handlers**: `createMDMXHandlers()` resolves dirs,
+  repo, validation, registry, mode, and provider from `mdmx.config.json` +
+  the environment (`next/src/settings.ts`). Resolution is lazy, so the mount
+  file stays synchronous and a misconfiguration answers with a readable 500
+  naming the missing env vars instead of crashing the build.
+  `lib/mdmx-config.ts` is deleted from the demo.
+- **M3b + M3d — codegen owns the convention layer**: `mdmx generate` emits
+  `registry.json`, `registry.ts` (`serverComponents`), `components.ts`
+  (`"use client"`), `server.ts` (bound `listEntries`/`getEntry`/`MDMXEntry`/
+  `renderComponents`), and `studio.css` — real Tailwind utilities compiled
+  through the v4 `compile()` API, preflight excluded, Tailwind confined to the
+  CLI. `.mdmx/` is committed now, so `generatedAt` left the artifacts, writes
+  are hash-gated, and `mdmx check` fails on a stale committed registry. The
+  demo deleted `lib/components.ts`, `lib/components-server.ts` and
+  `app/studio-runtime.tsx`; its post page is one `<MDMXEntry>` call.
+- **M3c — `mdmx init nextjs`**: scaffolds config, both mounts, a starter
+  component and entry, adds the generate scripts, runs generate. Idempotent,
+  never overwrites, never rewrites `next.config.*` (prints the snippet;
+  `mdmx check` warns when `transpilePackages` is missing).
+- Files/packages changed: cli (emit/init/studio-css/studio-defs), next
+  (settings), core (RegistrySpec.generatedAt deprecated), project, demo-next.
+- ADRs: 039–042 moved to Shipped.
+- Tests: **352** (was 334 after M2), `pnpm verify` green; both examples pass
+  `mdmx check`.
+- Wiki pages touched: SessionLog, DECISIONS.
+- Follow-ups: M4 (internal structure: the deferred `handle()` route split,
+  `@mdmx/studio/ui` move, Editor.tsx split, dashboard primitives), then M5
+  (docs wave + publish). The guides still describe the pre-0.5 recipe.
+
 ### S28 — M2: the breaking wave (release/0.5.0)
 Milestone M2 of `.dev-context/plans/2026-07-26-0.5-plan.md` — everything whose
 cost explodes after the first publish. Six commits:
