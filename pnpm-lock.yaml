@@ -280,6 +280,9 @@ importers:
         specifier: workspace:*
         version: link:../studio
     devDependencies:
+      '@mdmx/provider-github':
+        specifier: workspace:*
+        version: link:../provider-github
       '@types/mdast':
         specifier: ~4.0.4
         version: 4.0.4

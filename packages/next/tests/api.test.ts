@@ -247,12 +247,34 @@ describe("auth guard", () => {
 });
 
 describe("configuration and response hygiene", () => {
-  it("fails at factory time when GitHub mode is missing auth/sessionSecret", () => {
-    expect(() => makeHandlers({ auth: undefined, sessionSecret: undefined })).toThrow(
-      /GitHub mode requires .*auth.* and .*sessionSecret/,
+  it("fails closed when GitHub mode is asked for without credentials", async () => {
+    // Resolution is lazy now (ADR-039), so the failure lands on the first
+    // request as a readable error rather than crashing the module import.
+    const h = makeHandlers({
+      auth: undefined,
+      sessionSecret: undefined,
+      mode: "github",
+      env: {},
+    });
+    const res = await h.GET(req("GET", "/me"));
+    expect(res.status).toBe(500);
+    const { error } = (await res.json()) as { error: string };
+    expect(error).toContain("MDMX_GITHUB_CLIENT_ID");
+    expect(error).toContain("MDMX_SESSION_SECRET");
+  });
+
+  it("refuses to run local mode in production without an explicit opt-in", async () => {
+    const h = makeHandlers({
+      auth: undefined,
+      sessionSecret: undefined,
+      mode: "local",
+      env: { NODE_ENV: "production" },
+    });
+    const res = await h.GET(req("GET", "/me"));
+    expect(res.status).toBe(500);
+    expect(((await res.json()) as { error: string }).error).toMatch(
+      /allowLocalModeInProduction/,
     );
-    expect(() => makeHandlers({ auth: undefined })).toThrow(/auth/);
-    expect(() => makeHandlers({ sessionSecret: undefined })).toThrow(/sessionSecret/);
   });
 
   it("clears cookies without Secure when insecureCookies is set (dev logout works over http)", async () => {
@@ -264,8 +286,8 @@ describe("configuration and response hygiene", () => {
     expect(cleared).not.toContain("Secure");
   });
 
-  it("keeps Secure on cleared cookies by default", async () => {
-    const h = makeHandlers();
+  it("keeps Secure on cleared cookies in production", async () => {
+    const h = makeHandlers({ env: { NODE_ENV: "production" } });
     const res = await h.POST(new Request(`${BASE}/auth/logout`, { method: "POST" }));
     expect(res.headers.get("set-cookie")).toContain("Secure");
   });

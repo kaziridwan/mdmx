@@ -1092,8 +1092,17 @@ Silent local fallback in production (fail-open on auth). Keeping explicit
 surprise of env-triggered OAuth is visible and recoverable, the boilerplate
 is not).
 
-**Status.** Planned — 0.5 M3 (`.dev-context/plans/2026-07-26-0.5-plan.md`
-D1–D3).
+**Status.** Shipped (handlers) — 0.5 M3a. `createMDMXHandlers()` takes no
+required arguments: `next/src/settings.ts` resolves structural values from
+`mdmx.config.json` via `@mdmx/project`, secrets and mode from the environment,
+the registry from `outDir`, and the provider from the mode (`LocalProvider`,
+or `GitHubProvider` via an optional peer import). Every value stays
+overridable. Resolution is lazy — first request, then cached — so the mount
+file stays three synchronous lines and a misconfiguration answers with a
+readable 500 naming the missing variables instead of crashing the build; a
+fixed environment recovers without a restart. Passing `auth` explicitly counts
+as choosing GitHub mode. `examples/demo-next` now mounts the API with
+`createMDMXHandlers()` and `lib/mdmx-config.ts` is deleted.
 
 ## ADR-040 — Codegen owns the convention layer: generated component maps, bound server entry, committed deterministic `.mdmx/`
 

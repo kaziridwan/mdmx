@@ -26,6 +26,7 @@
     "@mdmx/studio": "workspace:*"
   },
   "devDependencies": {
+    "@mdmx/provider-github": "workspace:*",
     "@types/mdast": "~4.0.4",
     "@types/node": "~22.10.10",
     "@types/react": "^19.0.0",
@@ -33,10 +34,14 @@
     "react": "^19.0.0"
   },
   "peerDependencies": {
-    "react": ">=18"
+    "react": ">=18",
+    "@mdmx/provider-github": "workspace:*"
   },
   "peerDependenciesMeta": {
     "react": {
+      "optional": true
+    },
+    "@mdmx/provider-github": {
       "optional": true
     }
   },
