@@ -17,6 +17,7 @@
     "@mdmx/core": "workspace:*",
     "@mdmx/project": "workspace:*",
     "@mdmx/studio": "workspace:*",
+    "tailwindcss": "^4.3.3",
     "tinyglobby": "~0.2.15",
     "typescript": "~5.5.4"
   },

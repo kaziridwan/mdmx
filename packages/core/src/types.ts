@@ -143,6 +143,10 @@ export interface CollectionSpec {
 
 export interface RegistrySpec {
   mdmxRegistryVersion: number;
+  /**
+   * @deprecated Not emitted since 0.5: the artifacts are committed, so they
+   * must be byte-stable (ADR-040). Kept optional so older registries parse.
+   */
   generatedAt?: string;
   hash?: string;
   components: ComponentSpec[];

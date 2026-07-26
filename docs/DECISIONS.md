@@ -1140,7 +1140,16 @@ packages (impossible across the userland import boundary). Ignoring `.mdmx/`
 clone-then-browse; the CI-regeneration argument is moot since `predev`/
 `prebuild` regenerate regardless).
 
-**Status.** Planned — 0.5 M3 (plan D4/D6/D10).
+**Status.** Shipped — 0.5 M3b. `mdmx generate` emits `registry.json`,
+`registry.ts` (spec + `serverComponents`, no directive), `components.ts`
+(`"use client"`), and `server.ts` (bound `listEntries`/`getEntry`/`MDMXEntry`
++ `renderComponents`, collections addressed by name). Determinism: no
+`generatedAt` in any artifact, writes skipped when bytes are unchanged
+(`GenerateResult.changed` reports what moved), and `mdmx check` fails when the
+committed registry's hash no longer matches the components. `.mdmx/` is no
+longer git-ignored. `examples/demo-next` deleted `lib/components.ts` and
+`lib/components-server.ts`; its post page is `<MDMXEntry collection="posts"
+slug={slug} />`.
 
 ## ADR-041 — `mdmx init nextjs`: scaffold the recipe, create-don't-mutate
 
@@ -1190,7 +1199,16 @@ under ADR-035's request-time model; documented, not machinery.
 path). Requiring the host to run Tailwind (breaks every non-Tailwind
 consumer).
 
-**Status.** Planned — 0.5 M3 (plan D7).
+**Status.** Shipped — 0.5 M3d. `cli/src/studio-css.ts`:
+`extractStudioClasses` walks the template trees, `compileStudioCss` builds the
+utilities through Tailwind v4's `compile()` API (a CLI dependency; preflight
+deliberately excluded so studio components don't reset the host's styles), and
+`generate` writes `.mdmx/studio.css`, which the generated `server.ts` imports.
+Without Tailwind installed it emits the class manifest plus the `@source`
+delegation instructions instead of failing. `examples/demo-next` deleted
+`app/studio-runtime.tsx` — the CDN script and the substring sniff that decided
+when to inject it are both gone; the demo's studio component now ships 2.5 KB
+of real CSS.
 
 ## ADR-043 — `@mdmx/project`: the project layer gets a package
 

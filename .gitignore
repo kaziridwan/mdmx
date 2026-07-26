@@ -1,6 +1,5 @@
 node_modules/
 dist/
-.mdmx/
 *.tsbuildinfo
 .DS_Store
 .claude/

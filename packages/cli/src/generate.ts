@@ -1,6 +1,6 @@
 import { createHash } from "node:crypto";
-import { mkdirSync, writeFileSync } from "node:fs";
-import { join, relative } from "node:path";
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { join } from "node:path";
 import { glob } from "tinyglobby";
 import {
   MDMX_SPEC_VERSION,
@@ -13,13 +13,51 @@ import {
   type ExtractionIssue,
   type ExtractedComponent,
 } from "./extract.js";
+import {
+  emitClientComponents,
+  emitRegistryModule,
+  emitServerModule,
+} from "./emit.js";
+import { compileStudioCss } from "./studio-css.js";
+import { loadStudioDefs } from "./studio-defs.js";
 
 export interface GenerateResult {
   spec: RegistrySpec;
   issues: ExtractionIssue[];
   /** Absolute paths of the emitted artifacts. */
-  written: { json: string; ts: string };
+  written: { json: string; ts: string; client: string; server: string };
+  /** Artifacts whose bytes actually changed (empty on a no-op regenerate). */
+  changed: string[];
   hasErrors: boolean;
+}
+
+/**
+ * The hash of what a generate *would* produce, without writing anything.
+ * `mdmx check` uses it to detect a committed registry that has fallen behind
+ * its components (ADR-040).
+ */
+export async function computeRegistryHash(
+  cwd: string,
+  config: MDMXConfig,
+): Promise<{ specHash: string }> {
+  const patterns = Array.isArray(config.components) ? config.components : [config.components];
+  const files = await glob(patterns, { cwd, absolute: true });
+  const { components } = extractComponents(files, cwd);
+  const seen = new Set<string>();
+  const specs = components
+    .filter((c) => (seen.has(c.spec.name) ? false : (seen.add(c.spec.name), true)))
+    .sort((a, b) => a.spec.name.localeCompare(b.spec.name))
+    .map((c) => c.spec);
+  const collections = collectionsFromConfig(config.collections);
+  return { specHash: hashSpec(specs, collections) };
+}
+
+function hashSpec(
+  components: RegistrySpec["components"],
+  collections: NonNullable<RegistrySpec["collections"]>,
+): string {
+  const body = JSON.stringify({ components, collections });
+  return createHash("sha256").update(body).digest("hex").slice(0, 16);
 }
 
 export async function generate(cwd: string, config: MDMXConfig): Promise<GenerateResult> {
@@ -51,11 +89,11 @@ export async function generate(cwd: string, config: MDMXConfig): Promise<Generat
   const collections = collectionsFromConfig(config.collections);
 
   const componentSpecs = deduped.map((c) => c.spec);
-  const body = JSON.stringify({ components: componentSpecs, collections });
+  // No `generatedAt`: the artifacts are committed (ADR-040), so identical
+  // input must produce identical bytes or every dev session dirties the tree.
   const spec: RegistrySpec = {
     mdmxRegistryVersion: MDMX_SPEC_VERSION,
-    generatedAt: new Date().toISOString(),
-    hash: createHash("sha256").update(body).digest("hex").slice(0, 16),
+    hash: hashSpec(componentSpecs, collections),
     components: componentSpecs,
     ...(collections.length > 0 ? { collections } : {}),
   };
@@ -64,60 +102,41 @@ export async function generate(cwd: string, config: MDMXConfig): Promise<Generat
   mkdirSync(outDir, { recursive: true });
 
   const jsonPath = join(outDir, "registry.json");
-  writeFileSync(jsonPath, JSON.stringify(spec, null, 2) + "\n");
-
   const tsPath = join(outDir, "registry.ts");
-  writeFileSync(tsPath, emitRegistryModule(spec, deduped, outDir));
+  const clientPath = join(outDir, "components.ts");
+  const serverPath = join(outDir, "server.ts");
+  const cssPath = join(outDir, "studio.css");
+
+  // Studio components carry Tailwind-style classes the host's CSS build never
+  // sees, so compile exactly those utilities here (ADR-042).
+  const studioDefs = loadStudioDefs(cwd, config);
+  const studio = await compileStudioCss(studioDefs);
+  const hasStudioCss = studio.css.length > 0;
+
+  const changed = [
+    writeIfChanged(jsonPath, JSON.stringify(spec, null, 2) + "\n"),
+    writeIfChanged(tsPath, emitRegistryModule(spec, deduped, outDir)),
+    writeIfChanged(clientPath, emitClientComponents(deduped, outDir)),
+    writeIfChanged(serverPath, emitServerModule(config, hasStudioCss)),
+    hasStudioCss ? writeIfChanged(cssPath, studio.css) : null,
+  ].filter((p): p is string => p !== null);
 
   return {
     spec,
     issues,
-    written: { json: jsonPath, ts: tsPath },
+    written: { json: jsonPath, ts: tsPath, client: clientPath, server: serverPath },
+    changed,
     hasErrors: issues.some((i) => i.severity === "error"),
   };
 }
 
 /**
- * Emit the binding module. The spec is inlined (rather than imported from
- * registry.json) to avoid JSON-module interop differences across bundlers.
+ * Write only when the bytes differ. A no-op regenerate must not touch mtimes:
+ * committed artifacts would show as dirty in git, and every downstream file
+ * watcher would fire for nothing.
  */
-function emitRegistryModule(
-  spec: RegistrySpec,
-  components: ExtractedComponent[],
-  outDir: string,
-): string {
-  const lines: string[] = [
-    "// GENERATED by `mdmx generate` — do not edit.",
-    'import { Registry, type RegistrySpec } from "@mdmx/core";',
-  ];
-
-  const names: string[] = [];
-  for (const c of components) {
-    const importPath = toImportPath(relative(outDir, c.file));
-    if (c.exportName === "default") {
-      lines.push(`import ${c.spec.name} from "${importPath}";`);
-    } else if (c.exportName === c.spec.name) {
-      lines.push(`import { ${c.spec.name} } from "${importPath}";`);
-    } else {
-      lines.push(`import { ${c.exportName} as ${c.spec.name} } from "${importPath}";`);
-    }
-    names.push(c.spec.name);
-  }
-
-  lines.push(
-    "",
-    `export const spec: RegistrySpec = ${JSON.stringify(spec, null, 2)};`,
-    "",
-    "export const registry = new Registry(spec);",
-    "",
-    `export const components = { ${names.join(", ")} };`,
-    "",
-  );
-  return lines.join("\n");
-}
-
-function toImportPath(rel: string): string {
-  const posix = rel.split("\\").join("/");
-  const noExt = posix.replace(/\.(tsx|ts|jsx|js)$/, "");
-  return noExt.startsWith(".") ? noExt : `./${noExt}`;
+function writeIfChanged(path: string, content: string): string | null {
+  if (existsSync(path) && readFileSync(path, "utf8") === content) return null;
+  writeFileSync(path, content);
+  return path;
 }
