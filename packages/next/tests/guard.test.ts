@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { getSession, privateHref, seal, SESSION_COOKIE } from "../src/index.js";
+import { getSession, privateHref } from "../src/index.js";
+import { seal, SESSION_COOKIE } from "../src/session.js";
 
 const SECRET = "test-secret-at-least-16-chars";
 

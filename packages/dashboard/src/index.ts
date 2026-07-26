@@ -1,27 +1,10 @@
-// @mdmx/dashboard — client surface.
-// The Next.js server glue (page factory, handler re-exports) lives under
-// `@mdmx/dashboard/next`.
+// @mdmx/dashboard — the drop-in CMS surface.
+//
+// Deliberately small (ADR-048): the mount factory lives in
+// `@mdmx/dashboard/next`, and the shell/views/api-client are internal until a
+// real consumer needs them. Un-exporting after publish is breaking; adding an
+// export later is free.
 export { DashboardApp } from "./DashboardApp.js";
-export { AuthGate } from "./shell/AuthGate.js";
-export { DashboardShell } from "./shell/DashboardShell.js";
-export { HomeView } from "./views/HomeView.js";
-export { resolveRoute, routeHref, editorHref } from "./routes.js";
-export type { DashboardRoute } from "./routes.js";
-export { DashboardContext, useDashboard } from "./context.js";
-export type { DashboardContextValue } from "./context.js";
 export { resolveConfig } from "./config.js";
 export type { DashboardConfig, ResolvedDashboardConfig } from "./config.js";
-export {
-  createApiClient,
-  ApiError,
-  UnauthorizedError,
-} from "./api-client.js";
-export type {
-  ApiClient,
-  Me,
-  FileEntry,
-  FileContent,
-  EntryMeta,
-  SaveResult,
-} from "./api-client.js";
-export { slugify, scaffoldDocument } from "./scaffold.js";
+export type { DashboardRoute } from "./routes.js";

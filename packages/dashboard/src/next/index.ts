@@ -66,7 +66,8 @@ export function createDashboardPage(options: DashboardPageOptions = {}) {
   };
 }
 
-// Everything the API route file needs, re-exported so both mount files can
-// import from @mdmx/dashboard/next.
-export * from "@mdmx/next";
+// No `export * from "@mdmx/next"` (ADR-048): blanket-republishing a sibling's
+// entire surface couples release cadences for no benefit now that
+// `mdmx init nextjs` writes the mount files — each imports from its honest
+// home (`route.ts` from @mdmx/next, `page.tsx` from here).
 export type { DashboardConfig } from "../config.js";

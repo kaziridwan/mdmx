@@ -8,13 +8,13 @@ import {
   createMDMXHandlers,
   LocalAuthStrategy,
   LocalProvider,
-  parseCookies,
-  seal,
-  unseal,
   type AuthStrategy,
   type MDMXHandlers,
   type SessionData,
 } from "../src/index.js";
+// Session crypto is internal (not published from the barrel), so its tests
+// reach for it directly.
+import { parseCookies, seal, unseal } from "../src/session.js";
 
 const SECRET = "test-secret-test-secret";
 const BASE = "https://site.example/api/mdmx";
@@ -605,5 +605,29 @@ describe("AuthStrategy seam (ADR-046)", () => {
     expect(strategy.beginLogin()).toBeNull();
     expect(await strategy.completeLogin()).toEqual({ login: "dev", token: "" });
     expect(await strategy.verifyAccess()).toEqual({ login: "dev" });
+  });
+});
+
+describe("save response", () => {
+  it("returns the new blob sha so the client needn't re-read (review 3.2-2)", async () => {
+    const h = makeHandlers();
+    const content = '---\ntitle: Sha\n---\n\n<Callout variant="info">\n  Hi.\n</Callout>\n';
+    const res = await h.PUT(req("PUT", "/file", { path: "content/posts/sha.mdx", content }));
+    expect(res.status).toBe(200);
+    const { sha } = (await res.json()) as { sha: string };
+    expect(sha).toMatch(/^[0-9a-f]{40}$/);
+
+    // It is the sha the provider reports, so a follow-up save with it as
+    // expectedSha succeeds rather than 409-ing.
+    const listed = await new LocalProvider(root).list("content/posts");
+    expect(listed.find((f) => f.path === "content/posts/sha.mdx")!.sha).toBe(sha);
+    const second = await h.PUT(
+      req("PUT", "/file", {
+        path: "content/posts/sha.mdx",
+        content: content.replace("Hi.", "Hi again."),
+        expectedSha: sha,
+      }),
+    );
+    expect(second.status).toBe(200);
   });
 });

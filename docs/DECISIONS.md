@@ -1374,4 +1374,13 @@ from `@mdmx/next`, `page.tsx` from `@mdmx/dashboard/next`).
 demand; speculative API to maintain through the freeze). A curated re-export
 (still couples release cadences for no consumer benefit post-scaffolder).
 
-**Status.** Planned — 0.5 M2 (plan D14).
+**Status.** Shipped — 0.5 M2f. Dashboard root entry is now `DashboardApp` +
+config/types + `DashboardRoute`; `export * from "@mdmx/next"` is deleted from
+`@mdmx/dashboard/next`. Pruned alongside it (same reasoning, repo-wide):
+`@mdmx/editor/react` 44 → 9 symbols, `@mdmx/next` 24 → 10 (session crypto and
+cookie helpers are internal again — `serializeCookie` in userland was a small
+injection hazard), and `@mdmx/cli` no longer leaks its config loader. Every
+package now has `files: ["dist"]`, and `cli`/`provider-github` gained
+`exports` maps. `@mdmx/next` also gained a barrel-contract test — the
+published surface asserted as a list, closing the "entry points are never
+exercised" blind spot the prune made urgent.

@@ -32,6 +32,7 @@ import {
   type StudioComponentDef,
 } from "@mdmx/studio";
 import { parseProjectConfig, type ProjectConfigFile } from "@mdmx/project";
+import { gitBlobSha } from "./local-provider.js";
 import { AuthError, type AuthConfig } from "./auth.js";
 import {
   GitHubOAuthStrategy,
@@ -348,7 +349,10 @@ export function createMDMXHandlers(options: MDMXHandlerOptions): MDMXHandlers {
             ? { expectedShas: { [path]: body.expectedSha } }
             : undefined,
         );
-        return withSession(json(200, { commit: result, diagnostics }));
+        // The blob sha of what we just wrote, so the client can stay
+        // conflict-safe without a follow-up read (review §3.2-2).
+        const sha = gitBlobSha(Buffer.from(body.content, "utf8"));
+        return withSession(json(200, { commit: result, sha, diagnostics }));
       }
 
       if (route === "/file" && method === "DELETE") {
