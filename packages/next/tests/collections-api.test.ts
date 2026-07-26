@@ -173,6 +173,13 @@ describe("POST /collections", () => {
     expect(res.status).toBe(409);
   });
 
+  it('does not false-positive "already exists" on prototype names like "constructor"', async () => {
+    await seedConfig({ posts: { dir: "content/posts", fields: {} } });
+    const h = makeHandlers();
+    const res = await h.POST(req("POST", "/collections", { name: "constructor", fields: {} }));
+    expect(res.status).toBe(201);
+  });
+
   it("rejects invalid names, dirs, and controls with 400 + problems", async () => {
     const h = makeHandlers();
     const bad = [

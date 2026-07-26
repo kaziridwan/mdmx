@@ -101,4 +101,16 @@ describe("Registry.collectionForPath", () => {
   it("returns undefined outside any collection dir", () => {
     expect(registry.collectionForPath("other/x.mdx")).toBeUndefined();
   });
+
+  it('compares prefix lengths after normalization — a "./"-prefixed dir gets no head start', () => {
+    const r = new Registry({
+      mdmxRegistryVersion: 1,
+      components: [],
+      collections: [
+        { name: "pages", dir: "./content/x/", fields: [] },
+        { name: "posts", dir: "content/x/y", fields: [] },
+      ],
+    });
+    expect(r.collectionForPath("content/x/y/a.mdx")?.name).toBe("posts");
+  });
 });

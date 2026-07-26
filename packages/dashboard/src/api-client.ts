@@ -14,10 +14,13 @@ import type {
 
 export class ApiError extends Error {
   readonly status: number;
-  constructor(status: number, message: string) {
+  /** Server-side validation details (`problems` in the error response body). */
+  readonly problems?: string[];
+  constructor(status: number, message: string, problems?: string[]) {
     super(message);
     this.name = "ApiError";
     this.status = status;
+    if (problems) this.problems = problems;
   }
 }
 
@@ -78,8 +81,15 @@ async function request<T>(url: string, init?: RequestInit): Promise<T> {
     throw new UnauthorizedError(body.error);
   }
   if (!res.ok) {
-    const body = (await res.json().catch(() => ({}))) as { error?: string };
-    throw new ApiError(res.status, body.error ?? `request failed (${res.status})`);
+    const body = (await res.json().catch(() => ({}))) as {
+      error?: string;
+      problems?: string[];
+    };
+    throw new ApiError(
+      res.status,
+      body.error ?? `request failed (${res.status})`,
+      body.problems,
+    );
   }
   return (await res.json()) as T;
 }

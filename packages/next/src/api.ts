@@ -115,6 +115,18 @@ export function createMDMXHandlers(options: MDMXHandlerOptions): MDMXHandlers {
     ...options,
   };
   assertSafePath(o.configPath);
+  if (!o.localMode) {
+    const missing = [
+      !o.auth && "`auth` (GitHub OAuth client config)",
+      !o.sessionSecret && "`sessionSecret`",
+    ].filter(Boolean);
+    if (missing.length > 0) {
+      throw new Error(
+        `createMDMXHandlers: GitHub mode requires ${missing.join(" and ")}. ` +
+          "Pass `localMode: true` for local development without OAuth.",
+      );
+    }
+  }
   const authConfig: AuthConfig = o.auth
     ? { ...o.auth, repo: { owner: o.repo.owner, name: o.repo.name } }
     : (undefined as unknown as AuthConfig);
@@ -133,7 +145,7 @@ export function createMDMXHandlers(options: MDMXHandlerOptions): MDMXHandlers {
         return await callback(req, url);
       }
       if (route === "/auth/logout" && method === "POST") {
-        return json(200, { ok: true }, o.localMode ? {} : { "set-cookie": clearCookie(SESSION_COOKIE) });
+        return json(200, { ok: true }, o.localMode ? {} : { "set-cookie": clearCookie(SESSION_COOKIE, "/", secure) });
       }
 
       // ---- everything else requires a session -----------------------------
@@ -196,7 +208,7 @@ export function createMDMXHandlers(options: MDMXHandlerOptions): MDMXHandlers {
 
         const { config, sha } = await readProjectConfig(provider);
         const current = effectiveCollectionsConfig(config);
-        if (current[body.name]) {
+        if (Object.hasOwn(current, body.name)) {
           return withSession(json(409, { error: `collection "${body.name}" already exists` }));
         }
         const result = await writeProjectConfig(
@@ -223,7 +235,7 @@ export function createMDMXHandlers(options: MDMXHandlerOptions): MDMXHandlers {
 
         const { config, sha } = await readProjectConfig(provider);
         const current = effectiveCollectionsConfig(config);
-        const existing = current[name];
+        const existing = Object.hasOwn(current, name) ? current[name] : undefined;
         if (!existing) {
           return withSession(json(404, { error: `no collection "${name}"` }));
         }
@@ -634,7 +646,7 @@ export function createMDMXHandlers(options: MDMXHandlerOptions): MDMXHandlers {
       "set-cookie",
       serializeCookie(SESSION_COOKIE, sealed, { maxAge: SESSION_TTL_MS / 1000, secure }),
     );
-    headers.append("set-cookie", clearCookie(STATE_COOKIE));
+    headers.append("set-cookie", clearCookie(STATE_COOKIE, "/", secure));
     return new Response(null, { status: 302, headers });
   }
 
@@ -657,7 +669,7 @@ export function createMDMXHandlers(options: MDMXHandlerOptions): MDMXHandlers {
       return {
         session: null as never,
         response: json(401, { error: "authentication required" }, {
-          "set-cookie": clearCookie(SESSION_COOKIE),
+          "set-cookie": clearCookie(SESSION_COOKIE, "/", secure),
         }),
       };
     }
@@ -665,11 +677,21 @@ export function createMDMXHandlers(options: MDMXHandlerOptions): MDMXHandlers {
     if (o.now() - session.verifiedAt > REVERIFY_MS) {
       try {
         await verifyRepoAccess(authConfig, session.token);
-      } catch {
+      } catch (err) {
+        // Only a definitive AuthError revokes the session — a GitHub outage
+        // or network failure must not log every editor out.
+        if (!(err instanceof AuthError)) {
+          return {
+            session: null as never,
+            response: json(503, {
+              error: "could not re-verify repository access; try again shortly",
+            }),
+          };
+        }
         return {
           session: null as never,
           response: json(401, { error: "repository access revoked" }, {
-            "set-cookie": clearCookie(SESSION_COOKIE),
+            "set-cookie": clearCookie(SESSION_COOKIE, "/", secure),
           }),
         };
       }
@@ -718,6 +740,11 @@ function json(
 ): Response {
   return new Response(JSON.stringify(body), {
     status,
-    headers: { "content-type": "application/json", ...headers },
+    // no-store: responses carry authenticated file contents and session state.
+    headers: {
+      "content-type": "application/json",
+      "cache-control": "no-store",
+      ...headers,
+    },
   });
 }

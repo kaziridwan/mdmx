@@ -227,6 +227,52 @@ describe("auth guard", () => {
     const res = await h.GET(new Request(`${BASE}/me`, { headers: { cookie: stale } }));
     expect(res.status).toBe(401);
   });
+
+  it("503s (keeping the session) when re-verification fails on transport, not auth", async () => {
+    const failingFetch: typeof globalThis.fetch = async () => {
+      throw new TypeError("fetch failed");
+    };
+    const h = makeHandlers({
+      auth: { clientId: "id", clientSecret: "secret", fetch: failingFetch },
+    });
+    const stale = sessionCookie({ verifiedAt: now - 6 * 60 * 1000 });
+    const res = await h.GET(new Request(`${BASE}/me`, { headers: { cookie: stale } }));
+    expect(res.status).toBe(503);
+    // A GitHub outage must not log the editor out.
+    expect(res.headers.getSetCookie().find((c) => c.startsWith("mdmx_session="))).toBeUndefined();
+  });
+});
+
+describe("configuration and response hygiene", () => {
+  it("fails at factory time when GitHub mode is missing auth/sessionSecret", () => {
+    expect(() => makeHandlers({ auth: undefined, sessionSecret: undefined })).toThrow(
+      /GitHub mode requires .*auth.* and .*sessionSecret/,
+    );
+    expect(() => makeHandlers({ auth: undefined })).toThrow(/auth/);
+    expect(() => makeHandlers({ sessionSecret: undefined })).toThrow(/sessionSecret/);
+  });
+
+  it("clears cookies without Secure when insecureCookies is set (dev logout works over http)", async () => {
+    const h = makeHandlers({ insecureCookies: true });
+    const res = await h.POST(new Request(`${BASE}/auth/logout`, { method: "POST" }));
+    expect(res.status).toBe(200);
+    const cleared = res.headers.get("set-cookie")!;
+    expect(cleared).toContain("mdmx_session=;");
+    expect(cleared).not.toContain("Secure");
+  });
+
+  it("keeps Secure on cleared cookies by default", async () => {
+    const h = makeHandlers();
+    const res = await h.POST(new Request(`${BASE}/auth/logout`, { method: "POST" }));
+    expect(res.headers.get("set-cookie")).toContain("Secure");
+  });
+
+  it("marks API responses cache-control: no-store", async () => {
+    const h = makeHandlers();
+    const res = await h.GET(req("GET", "/me"));
+    expect(res.status).toBe(200);
+    expect(res.headers.get("cache-control")).toBe("no-store");
+  });
 });
 
 describe("content API", () => {

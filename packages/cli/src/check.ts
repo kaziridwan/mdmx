@@ -46,7 +46,8 @@ export async function check(cwd: string, config: MDMXConfig): Promise<CheckResul
 
   for (const file of contentFiles.sort()) {
     const source = readFileSync(file, "utf8");
-    const rel = relative(cwd, file);
+    // Forward slashes even on win32 — collectionForPath matches on "/".
+    const rel = relative(cwd, file).replaceAll("\\", "/");
     const diagnostics = validateSource(source, { registry });
 
     // Frontmatter validation against the file's collection, if any.

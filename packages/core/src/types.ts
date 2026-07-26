@@ -202,10 +202,16 @@ export function collectionForPath(
 ): CollectionSpec | undefined {
   const norm = path.replace(/^\.?\//, "");
   let best: CollectionSpec | undefined;
+  let bestLen = -1;
   for (const c of collections) {
     const dir = c.dir.replace(/^\.?\//, "").replace(/\/$/, "");
     if (norm === dir || norm.startsWith(dir + "/")) {
-      if (!best || dir.length > best.dir.length) best = c;
+      // Compare normalized lengths on both sides — a raw best.dir like
+      // "./content/" would otherwise get a 3-character head start.
+      if (dir.length > bestLen) {
+        best = c;
+        bestLen = dir.length;
+      }
     }
   }
   return best;

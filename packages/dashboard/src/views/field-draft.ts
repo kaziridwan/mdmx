@@ -72,14 +72,26 @@ export function fieldsToDrafts(fields: readonly FrontmatterField[]): FieldDraft[
         f.control.type === "select" || f.control.type === "multiselect"
           ? f.control.options.join(", ")
           : "",
-      defaultValue: f.default !== undefined ? defaultToText(f.default) : "",
+      defaultValue: f.default !== undefined ? defaultToText(f.default, f.control) : "",
       description: f.description ?? "",
       ...(flat ? {} : { advancedControl: f.control }),
     };
   });
 }
 
-function defaultToText(value: JsonValue): string {
+/**
+ * Inverse of `draftDefault` per control type — asymmetry here corrupts
+ * defaults on every edit round-trip: multiselect arrays must re-split from
+ * commas, and json/advanced drafts are re-read with JSON.parse, so string
+ * defaults must be JSON-encoded (a bare string would fail the parse and be
+ * silently dropped).
+ */
+function defaultToText(value: JsonValue, control: ControlSpec): string {
+  if (control.type === "multiselect" && Array.isArray(value)) {
+    return value.map((v) => String(v)).join(", ");
+  }
+  const flat = (BUILDER_CONTROL_TYPES as readonly string[]).includes(control.type);
+  if (!flat || control.type === "json") return JSON.stringify(value);
   return typeof value === "string" ? value : JSON.stringify(value);
 }
 
@@ -167,6 +179,19 @@ function draftDefault(draft: FieldDraft, problems: string[]): JsonValue | undefi
         return undefined;
       }
       return raw;
+    }
+    case "multiselect": {
+      const options = draft.options.split(",").map((o) => o.trim());
+      const values = raw
+        .split(",")
+        .map((s) => s.trim())
+        .filter((s) => s.length > 0);
+      const bad = values.find((v) => !options.includes(v));
+      if (bad !== undefined) {
+        problems.push(`field "${draft.name}": default "${bad}" is not one of the options`);
+        return undefined;
+      }
+      return values;
     }
     case "json":
     case "advanced":

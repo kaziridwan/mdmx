@@ -97,6 +97,20 @@ describe("mdmx generate", () => {
     expect(ts).toContain("export const registry = new Registry(spec);");
     expect(ts).toContain("export const components = { Callout, Chart };");
   });
+
+  it("warns on a non-exported component and excludes it from both artifacts", () => {
+    expect(result.spec.components.find((c) => c.name === "Hidden")).toBeUndefined();
+    expect(
+      result.issues.some(
+        (i) =>
+          i.severity === "warning" &&
+          i.message.includes('"Hidden"') &&
+          i.message.includes("not exported"),
+      ),
+    ).toBe(true);
+    const ts = readFileSync(join(APP, ".mdmx/registry.ts"), "utf8");
+    expect(ts).not.toContain("Hidden");
+  });
 });
 
 describe("mdmx check", () => {

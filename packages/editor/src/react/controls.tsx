@@ -17,10 +17,35 @@ export function Control({
   value: JsonValue | undefined;
   onChange: (raw: string) => void;
 }) {
-  const v = displayControlValue(value);
+  const v = displayControlValue(value, control);
   // Hook must run unconditionally (rules of hooks); only the image case uses it.
   const requestMedia = useMediaPicker();
   switch (control.type) {
+    case "multiselect": {
+      const selected = Array.isArray(value)
+        ? value.map((x) => String(x))
+        : v
+          ? v.split(",").map((s) => s.trim()).filter(Boolean)
+          : [];
+      return (
+        <select
+          multiple
+          className="mdmx-control mdmx-control-multiselect"
+          value={selected}
+          onChange={(e) =>
+            onChange(
+              Array.from(e.target.selectedOptions, (o) => o.value).join(", "),
+            )
+          }
+        >
+          {control.options.map((opt) => (
+            <option key={opt} value={opt}>
+              {opt}
+            </option>
+          ))}
+        </select>
+      );
+    }
     case "image":
       return (
         <div className="mdmx-control-image">

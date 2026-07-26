@@ -101,8 +101,9 @@ export function extractComponents(files: string[], cwd: string): ExtractionResul
     const exportName = resolveExportName(call);
     if (!exportName) {
       warn(
-        `The defineMDMX result for "${config.name}" is not exported; it cannot be imported into the registry.`,
+        `The defineMDMX result for "${config.name}" is not exported; the component was excluded from the registry. Export it (\`export default\` or \`export const ${config.name}\`) to register it.`,
       );
+      return;
     }
 
     // ---- Infer props from the component's TypeScript type ----------------
@@ -200,7 +201,7 @@ export function extractComponents(files: string[], cwd: string): ExtractionResul
       render: { mode: config.render?.mode ?? "live" },
     };
 
-    components.push({ spec, file: sf.fileName, exportName: exportName ?? "default" });
+    components.push({ spec, file: sf.fileName, exportName });
   }
 }
 
