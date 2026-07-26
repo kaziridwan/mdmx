@@ -5,6 +5,17 @@ CommonMark + a GFM slice, block-level JSX for registered components only,
 props-as-JSON, no imports/expressions/raw-HTML/inline-JSX. Defined normatively
 in `SPEC.md`.
 
+**Document** — any MDMX file: frontmatter plus a body in the MDMX subset.
+Documents are `@mdmx/core`'s concern — parsing, the grammar, diagnostics — and
+a document need not belong to a collection.
+
+**Entry** — a document that belongs to a collection, so it has a slug, a
+frontmatter schema, and (usually) a status. Everything above the collection
+line speaks in entries: `@mdmx/project`, `@mdmx/next`'s readers
+(`getEntries`/`getEntryBySlug`), the `GET /entries` route, the dashboard, and
+the guides. Every entry is a document; not every document is an entry
+(ADR-047).
+
 **Registry** — the generated catalog of editable components. Two artifacts:
 `registry.json` (pure data) and `registry.ts` (binds real components).
 Produced by `mdmx generate`. Drives validation, the editor palette, prop

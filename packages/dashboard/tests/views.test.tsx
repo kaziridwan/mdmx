@@ -66,7 +66,7 @@ async function mount(value: DashboardContextValue, children: ReactNode): Promise
 
 describe("CollectionView", () => {
   it("renders the entry table from /documents with status badges", async () => {
-    const listDocuments = vi.fn(async () => [
+    const listEntries = vi.fn(async () => [
       {
         path: "content/posts/a.mdx",
         sha: "sha-a",
@@ -75,10 +75,10 @@ describe("CollectionView", () => {
       { path: "content/posts/b.mdx", sha: "sha-b", frontmatter: { status: "draft" } },
     ]);
     const el = await mount(
-      makeContext({ listDocuments }),
+      makeContext({ listEntries }),
       createElement(CollectionView, { name: "posts" }),
     );
-    expect(listDocuments).toHaveBeenCalledWith("content/posts");
+    expect(listEntries).toHaveBeenCalledWith("content/posts");
     const rows = el.querySelectorAll("tbody tr");
     expect(rows).toHaveLength(2);
     expect(rows[0]!.textContent).toContain("Alpha");
@@ -90,13 +90,13 @@ describe("CollectionView", () => {
   });
 
   it("deletes an entry (confirmed) with the sha it listed", async () => {
-    const listDocuments = vi.fn(async () => [
+    const listEntries = vi.fn(async () => [
       { path: "content/posts/a.mdx", sha: "sha-a", frontmatter: { title: "Alpha" } },
     ]);
     const deleteFile = vi.fn(async () => ({ commit: {} }));
     vi.stubGlobal("confirm", vi.fn(() => true));
     const el = await mount(
-      makeContext({ listDocuments, deleteFile }),
+      makeContext({ listEntries, deleteFile }),
       createElement(CollectionView, { name: "posts" }),
     );
     (el.querySelector('button[aria-label^="Delete"]') as HTMLButtonElement).click();

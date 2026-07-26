@@ -9,7 +9,7 @@ import type { MdxJsxFlowElement, MdxJsxTextElement } from "mdast-util-mdx-jsx";
  * the mdast tree, resolve component tags through the supplied map. No hooks,
  * no client dependencies — usable directly in App Router server components:
  *
- *   const doc = await getDocumentBySlug("content/posts", slug, { status: "published" });
+ *   const entry = await getEntryBySlug("content/posts", slug, { status: "published" });
  *   return <article className="mdmx-page"><MDMXContent source={doc.source} components={map} /></article>;
  *
  * Lives in its own subpath so the core package entry (API handlers, readers)
@@ -20,7 +20,7 @@ import type { MdxJsxFlowElement, MdxJsxTextElement } from "mdast-util-mdx-jsx";
 export type RenderComponents = Record<string, ComponentType<any>>;
 
 export interface MDMXContentProps {
-  /** Raw MDMX source including frontmatter (e.g. `MDMXDocument.source`). */
+  /** Raw MDMX source including frontmatter (e.g. `MDMXEntry.source`). */
   source: string;
   /** Author components keyed by registry name. */
   components?: RenderComponents;

@@ -1,8 +1,8 @@
 // @mdmx/next — Next.js integration layer: content providers and readers,
 // sessions, the authentication seam, and web-standard API route handlers.
 export { LocalProvider, gitBlobSha } from "./local-provider.js";
-export { getDocuments, getDocumentBySlug, getStudioComponentDefs } from "./content.js";
-export type { MDMXDocument, GetDocumentsOptions } from "./content.js";
+export { getEntries, getEntryBySlug, getStudioComponentDefs } from "./content.js";
+export type { MDMXEntry, GetEntriesOptions } from "./content.js";
 export { createMDMXHandlers } from "./api.js";
 export type { MDMXHandlerOptions, MDMXHandlers } from "./api.js";
 

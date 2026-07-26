@@ -1,6 +1,6 @@
 "use client";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import type { DocumentMeta } from "../api-client.js";
+import type { EntryMeta } from "../api-client.js";
 import { useDashboard } from "../context.js";
 import { editorHref, routeHref } from "../routes.js";
 import { Link } from "../shell/link.js";
@@ -8,7 +8,7 @@ import { Link } from "../shell/link.js";
 type LoadState =
   | { phase: "loading" }
   | { phase: "error"; detail: string }
-  | { phase: "ready"; documents: DocumentMeta[] };
+  | { phase: "ready"; entries: EntryMeta[] };
 
 /** Entry list for one collection: table, status, filter, delete, new entry. */
 export function CollectionView({ name }: { name: string }) {
@@ -21,7 +21,7 @@ export function CollectionView({ name }: { name: string }) {
   const load = useCallback(async () => {
     if (!collection) return;
     try {
-      setState({ phase: "ready", documents: await api.listDocuments(collection.dir) });
+      setState({ phase: "ready", entries: await api.listEntries(collection.dir) });
     } catch (err) {
       setState({ phase: "error", detail: (err as Error).message });
     }
@@ -48,31 +48,31 @@ export function CollectionView({ name }: { name: string }) {
     );
   }
 
-  const onDelete = async (doc: DocumentMeta) => {
-    const title = displayTitle(doc);
-    if (!window.confirm(`Delete "${title}" (${doc.path})? This commits a deletion.`)) return;
+  const onDelete = async (entry: EntryMeta) => {
+    const title = displayTitle(entry);
+    if (!window.confirm(`Delete "${title}" (${entry.path})? This commits a deletion.`)) return;
     setError(null);
     try {
       await api.deleteFile({
-        path: doc.path,
-        expectedSha: doc.sha,
-        message: `mdmx: delete ${doc.path}`,
+        path: entry.path,
+        expectedSha: entry.sha,
+        message: `mdmx: delete ${entry.path}`,
       });
       await load();
     } catch (err) {
-      setError(`Could not delete ${doc.path}: ${(err as Error).message}`);
+      setError(`Could not delete ${entry.path}: ${(err as Error).message}`);
     }
   };
 
-  const documents = state.phase === "ready" ? state.documents : [];
+  const entries = state.phase === "ready" ? state.entries : [];
   const needle = filter.trim().toLowerCase();
   const visible = needle
-    ? documents.filter(
-        (d) =>
-          displayTitle(d).toLowerCase().includes(needle) ||
-          d.path.toLowerCase().includes(needle),
+    ? entries.filter(
+        (e) =>
+          displayTitle(e).toLowerCase().includes(needle) ||
+          e.path.toLowerCase().includes(needle),
       )
-    : documents;
+    : entries;
 
   return (
     <div className="mdmx-dash-view">
@@ -97,7 +97,7 @@ export function CollectionView({ name }: { name: string }) {
 
       {error ? <p className="mdmx-dash-error">{error}</p> : null}
 
-      {documents.length > 3 ? (
+      {entries.length > 3 ? (
         <input
           className="mdmx-dash-input mdmx-dash-filter"
           placeholder="Filter entries…"
@@ -130,30 +130,30 @@ export function CollectionView({ name }: { name: string }) {
             </tr>
           </thead>
           <tbody>
-            {visible.map((doc) => (
-              <tr key={doc.path}>
+            {visible.map((entry) => (
+              <tr key={entry.path}>
                 <td>
                   <Link
                     className="mdmx-dash-table-title"
-                    href={editorHref(config.mountPath, doc.path)}
+                    href={editorHref(config.mountPath, entry.path)}
                   >
-                    {displayTitle(doc)}
+                    {displayTitle(entry)}
                   </Link>
                 </td>
                 {hasStatus ? (
                   <td className="mdmx-dash-table-narrow">
-                    <StatusBadge value={doc.frontmatter.status} />
+                    <StatusBadge value={entry.frontmatter.status} />
                   </td>
                 ) : null}
                 <td>
-                  <code className="mdmx-dash-table-path">{doc.path}</code>
+                  <code className="mdmx-dash-table-path">{entry.path}</code>
                 </td>
                 <td className="mdmx-dash-table-narrow">
                   <button
                     type="button"
                     className="mdmx-dash-button mdmx-dash-button-ghost mdmx-dash-danger-hover"
-                    onClick={() => void onDelete(doc)}
-                    aria-label={`Delete ${displayTitle(doc)}`}
+                    onClick={() => void onDelete(entry)}
+                    aria-label={`Delete ${displayTitle(entry)}`}
                   >
                     Delete
                   </button>
@@ -167,10 +167,10 @@ export function CollectionView({ name }: { name: string }) {
   );
 }
 
-function displayTitle(doc: DocumentMeta): string {
-  const title = doc.frontmatter.title;
+function displayTitle(entry: EntryMeta): string {
+  const title = entry.frontmatter.title;
   if (typeof title === "string" && title.length > 0) return title;
-  return doc.path.split("/").pop() ?? doc.path;
+  return entry.path.split("/").pop() ?? entry.path;
 }
 
 function StatusBadge({ value }: { value: unknown }) {
