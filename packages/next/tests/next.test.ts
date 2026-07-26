@@ -2,7 +2,14 @@ import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { ConflictError, PathSafetyError, Registry, type RegistrySpec } from "@mdmx/core";
+import {
+  ConflictError,
+  PathSafetyError,
+  readBytes,
+  readText,
+  Registry,
+  type RegistrySpec,
+} from "@mdmx/core";
 import { getDocumentBySlug, getDocuments, LocalProvider } from "../src/index.js";
 
 let root: string;
@@ -74,11 +81,36 @@ describe("LocalProvider", () => {
     ).rejects.toThrow(ConflictError);
   });
 
-  it("deletes files", async () => {
+  it("deletes files through the change set", async () => {
     await provider.commit([{ path: "content/tmp.mdx", content: "x" }], "add");
-    await provider.delete("content/tmp.mdx", "remove");
+    await provider.commit([{ path: "content/tmp.mdx", delete: true }], "remove");
     const files = await provider.list("content");
     expect(files.some((f) => f.path === "content/tmp.mdx")).toBe(false);
+  });
+
+  it("renames atomically: write + delete in one commit", async () => {
+    await provider.commit([{ path: "content/before.mdx", content: "# Move me\n" }], "seed");
+    await provider.commit(
+      [
+        { path: "content/after.mdx", content: "# Move me\n" },
+        { path: "content/before.mdx", delete: true },
+      ],
+      "mdmx: rename before → after",
+    );
+    const paths = (await provider.list("content")).map((f) => f.path);
+    expect(paths).toContain("content/after.mdx");
+    expect(paths).not.toContain("content/before.mdx");
+  });
+
+  it("reads bytes and text from the same blob", async () => {
+    const bytes = new Uint8Array([137, 80, 78, 71]);
+    await provider.commit([{ path: "public/media/x.png", content: bytes }], "add png");
+    const raw = await readBytes(provider, "public/media/x.png");
+    expect(Array.from(raw.content)).toEqual([137, 80, 78, 71]);
+    // Same blob, either mode: the sha is the identity, the encoding is a view.
+    const asText = await readText(provider, "public/media/x.png");
+    expect(asText.sha).toBe(raw.sha);
+    expect(typeof asText.content).toBe("string");
   });
 
   it("rejects traversal and absolute paths", async () => {

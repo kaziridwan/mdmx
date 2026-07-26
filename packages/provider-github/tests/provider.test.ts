@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { ConflictError, PathSafetyError } from "@mdmx/core";
+import { ConflictError, PathSafetyError, readBytes, readText } from "@mdmx/core";
 import { GitHubProvider } from "../src/index.js";
 import { FakeGitHub } from "./fake-github.js";
 
@@ -107,9 +107,63 @@ describe("GitHubProvider", () => {
 
   it("deletes files via a tree entry with sha null", async () => {
     const { provider } = setup();
-    await provider.delete("content/posts/old.mdx", "mdmx: delete posts/old");
+    await provider.commit(
+      [{ path: "content/posts/old.mdx", delete: true }],
+      "mdmx: delete posts/old",
+    );
     const files = await provider.list("content/posts");
     expect(files.map((f) => f.path)).toEqual(["content/posts/hello.mdx"]);
+  });
+
+  it("renames atomically: one commit writes the new path and drops the old", async () => {
+    const { fake, provider } = setup();
+    const before = fake.headSha("main");
+    const result = await provider.commit(
+      [
+        { path: "content/posts/renamed.mdx", content: "# Old\n" },
+        { path: "content/posts/old.mdx", delete: true },
+      ],
+      "mdmx: rename old → renamed",
+    );
+    // Exactly one commit for both halves of the move.
+    expect(fake.commitChain("main")).toEqual([result.sha, before]);
+    const paths = (await provider.list("content/posts")).map((f) => f.path);
+    expect(paths).toContain("content/posts/renamed.mdx");
+    expect(paths).not.toContain("content/posts/old.mdx");
+  });
+
+  it("reads binary content as bytes", async () => {
+    const { provider } = setup();
+    const png = new Uint8Array([137, 80, 78, 71, 13, 10, 26, 10]);
+    await provider.commit([{ path: "public/media/logo.png", content: png }], "add logo");
+    const { content } = await readBytes(provider, "public/media/logo.png");
+    expect(Array.from(content)).toEqual(Array.from(png));
+  });
+
+  it("falls back to the Blob API when the Contents API declines to inline (1-100MB)", async () => {
+    const { fake } = setup();
+    // Simulate GitHub's over-1MB response: encoding "none", empty content.
+    const decliningFetch: typeof globalThis.fetch = async (input, init) => {
+      const res = await fake.fetch(input, init);
+      if (String(input).includes("/contents/") && init?.method === "GET") {
+        const body = (await res.json()) as Record<string, unknown>;
+        return new Response(JSON.stringify({ ...body, content: "", encoding: "none" }), {
+          status: 200,
+          headers: { "content-type": "application/json" },
+        });
+      }
+      return res;
+    };
+    const provider = new GitHubProvider({
+      owner: "jane",
+      repo: "blog",
+      branch: "main",
+      token: "test-token",
+      fetch: decliningFetch,
+    });
+    const { content } = await readText(provider, "content/posts/hello.mdx");
+    // Previously this silently returned "" — and a save would commit the truncation.
+    expect(content).toContain("# Hello");
   });
 
   it("rejects path traversal everywhere", async () => {
@@ -118,7 +172,9 @@ describe("GitHubProvider", () => {
     await expect(
       provider.commit([{ path: "content/../.github/workflows/evil.yml", content: "x" }], "evil"),
     ).rejects.toThrow(PathSafetyError);
-    await expect(provider.delete("/etc/passwd", "evil")).rejects.toThrow(PathSafetyError);
+    await expect(
+      provider.commit([{ path: "/etc/passwd", delete: true }], "evil"),
+    ).rejects.toThrow(PathSafetyError);
   });
 
   it("maps a lost ref-update race (non-fast-forward 422) to ConflictError", async () => {

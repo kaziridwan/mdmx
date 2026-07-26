@@ -10,6 +10,7 @@ import {
   parseDocument,
   parseStudioComponent,
   PathSafetyError,
+  readText,
   Registry,
   STUDIO_COMPONENTS_DIR,
   studioComponentPath,
@@ -269,7 +270,7 @@ export function createMDMXHandlers(options: MDMXHandlerOptions): MDMXHandlers {
         const documents = [];
         for (const f of files) {
           if (!/\.mdx?$/.test(f.path)) continue;
-          const { content, sha } = await provider.read(f.path);
+          const { content, sha } = await readText(provider, f.path);
           let frontmatter: Record<string, unknown> = {};
           try {
             ({ frontmatter } = parseDocument(content));
@@ -283,7 +284,8 @@ export function createMDMXHandlers(options: MDMXHandlerOptions): MDMXHandlers {
 
       if (route === "/file" && method === "GET") {
         const path = checkPrefix(url.searchParams.get("path") ?? "");
-        const file = await provider.read(path);
+        // Text route: media is served by the site, not through this JSON API.
+        const file = await readText(provider, path);
         return withSession(json(200, { path, ...file }));
       }
 
@@ -344,8 +346,8 @@ export function createMDMXHandlers(options: MDMXHandlerOptions): MDMXHandlers {
           expectedSha?: string | null;
         };
         const path = checkPrefix(body.path);
-        const result = await provider.delete(
-          path,
+        const result = await provider.commit(
+          [{ path, delete: true }],
           body.message ?? `mdmx: delete ${path}`,
           body.expectedSha !== undefined
             ? { expectedShas: { [path]: body.expectedSha } }
@@ -438,7 +440,10 @@ export function createMDMXHandlers(options: MDMXHandlerOptions): MDMXHandlers {
       if (studioRoute && method === "DELETE") {
         const name = decodeURIComponent(studioRoute[1]!);
         const path = studioComponentPath(o.contentDir, name);
-        const result = await provider.delete(path, `mdmx: delete studio component ${name}`);
+        const result = await provider.commit(
+          [{ path, delete: true }],
+          `mdmx: delete studio component ${name}`,
+        );
         return withSession(json(200, { commit: result }));
       }
 
@@ -503,7 +508,7 @@ export function createMDMXHandlers(options: MDMXHandlerOptions): MDMXHandlers {
     let content: string;
     let sha: string;
     try {
-      ({ content, sha } = await provider.read(o.configPath));
+      ({ content, sha } = await readText(provider, o.configPath));
     } catch (err) {
       if (isNotFound(err)) return { config: {}, sha: null };
       throw err;
@@ -576,7 +581,7 @@ export function createMDMXHandlers(options: MDMXHandlerOptions): MDMXHandlers {
     const out: StudioEntry[] = [];
     for (const f of files) {
       if (!f.path.endsWith(".json")) continue;
-      const { content, sha } = await provider.read(f.path);
+      const { content, sha } = await readText(provider, f.path);
       const { def, problems } = parseStudioComponent(content);
       out.push({ path: f.path, sha, def, problems });
     }
