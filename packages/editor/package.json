@@ -2,6 +2,15 @@
   "name": "@mdmx/editor",
   "version": "0.5.0",
   "description": "Block editor (ProseMirror) with registry-driven component nodes, React NodeViews, and prop panels",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/kaziridwan/mdmx.git",
+    "directory": "packages/editor"
+  },
+  "homepage": "https://github.com/kaziridwan/mdmx#readme",
+  "bugs": {
+    "url": "https://github.com/kaziridwan/mdmx/issues"
+  },
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
