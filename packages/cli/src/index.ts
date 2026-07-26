@@ -1,5 +1,4 @@
-export { loadConfig, DEFAULT_CONFIG } from "./config.js";
-export type { MDMXConfig } from "./config.js";
+// Config loading lives in @mdmx/project (ADR-043) — import it from there.
 export { generate } from "./generate.js";
 export type { GenerateResult } from "./generate.js";
 export { check, formatDiagnostics } from "./check.js";

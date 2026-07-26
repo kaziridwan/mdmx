@@ -3,7 +3,7 @@ import { join } from "node:path";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { Registry, type RegistrySpec } from "@mdmx/core";
 import { check } from "../src/check.js";
-import { loadConfig, type MDMXConfig } from "../src/config.js";
+import { loadConfig, type MDMXConfig } from "@mdmx/project";
 import { generate, type GenerateResult } from "../src/generate.js";
 
 const APP = join(__dirname, "fixture-app");
@@ -12,7 +12,7 @@ let config: MDMXConfig;
 let result: GenerateResult;
 
 beforeAll(async () => {
-  config = await loadConfig(APP);
+  ({ config } = await loadConfig(APP));
   result = await generate(APP, config);
 });
 

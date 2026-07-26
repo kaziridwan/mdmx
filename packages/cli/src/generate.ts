@@ -7,7 +7,7 @@ import {
   collectionsFromConfig,
   type RegistrySpec,
 } from "@mdmx/core";
-import type { MDMXConfig } from "./config.js";
+import type { MDMXConfig } from "@mdmx/project";
 import {
   extractComponents,
   type ExtractionIssue,

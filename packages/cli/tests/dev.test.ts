@@ -2,7 +2,7 @@ import { cpSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { loadConfig, type MDMXConfig } from "../src/config.js";
+import { loadConfig, type MDMXConfig } from "@mdmx/project";
 import {
   dev,
   runGenerate,
@@ -19,7 +19,7 @@ let config: MDMXConfig;
 beforeEach(async () => {
   app = mkdtempSync(join(tmpdir(), "mdmx-dev-"));
   cpSync(FIXTURE, app, { recursive: true });
-  config = await loadConfig(app);
+  ({ config } = await loadConfig(app));
 });
 
 afterEach(() => {

@@ -21,7 +21,8 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@mdmx/core": "workspace:*"
+    "@mdmx/core": "workspace:*",
+    "@mdmx/project": "workspace:*"
   },
   "devDependencies": {
     "@types/mdast": "~4.0.4",

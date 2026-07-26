@@ -5,7 +5,7 @@
   "type": "module",
   "packageManager": "pnpm@11.7.0",
   "scripts": {
-    "build": "pnpm --filter @mdmx/core build && pnpm --filter @mdmx/provider-github --filter @mdmx/cli --filter @mdmx/editor --filter @mdmx/next --filter @mdmx/dashboard build",
+    "build": "pnpm --filter @mdmx/core build && pnpm --filter @mdmx/project build && pnpm --filter @mdmx/provider-github --filter @mdmx/cli --filter @mdmx/editor --filter @mdmx/next --filter @mdmx/dashboard build",
     "test": "pnpm build && pnpm -r test",
     "check": "pnpm build && pnpm -r typecheck",
     "verify": "sh scripts/check.sh",
