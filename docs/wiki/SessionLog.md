@@ -11,6 +11,44 @@ initial design-and-build conversation (12 commits).
 
 <!-- APPEND NEW ENTRIES ABOVE THIS LINE -->
 
+### S28 — M2: the breaking wave (release/0.5.0)
+Milestone M2 of `.dev-context/plans/2026-07-26-0.5-plan.md` — everything whose
+cost explodes after the first publish. Six commits:
+- **M2a — provider contract v2** (ADR-044): `FileChange` = `FileWrite |
+  FileDelete`, standalone `delete()` removed (atomic rename/move for free),
+  `read(path, {as})` + typed `readText`/`readBytes`. Carried the M1-deferred
+  fix: `GitHubProvider.read` falls back to the Blob API for 1–100MB files
+  instead of returning silently-truncated content.
+- **M2b — `@mdmx/project`** (ADR-043): config schema + `loadConfig` (json
+  **and** mjs), `validateConfig`, `parseProjectConfig`, `resolveMode`
+  (fail-closed in production, ADR-039), registry-from-disk. The CLI's
+  `config.ts` and the runtime's private `ProjectConfigFile` are gone with the
+  json-vs-mjs drift that silently dropped `.mjs` projects' collections.
+- **M2c — `@mdmx/studio`** (ADR-045): core's 462-line `studio.ts` becomes
+  model / validate / spec / merge / eject / interpolate + `@mdmx/studio/react`.
+  Kills the 3× `{props.x}` interpolation and the 2× code-beats-studio merge
+  rule. Graph stays acyclic (`core ← studio ← cli, next, dashboard`).
+- **M2d — `AuthStrategy` seam** (ADR-046): beginLogin / completeLogin /
+  verifyAccess, `GitHubOAuthStrategy` + `LocalAuthStrategy`, injectable beside
+  `createProvider`; proven by a fake non-GitHub host in tests.
+- **M2e — entry/document vocabulary** (ADR-047): `GET /entries`,
+  `getEntries`/`getEntryBySlug`, `MDMXEntry`, dashboard `listEntries`; core
+  keeps document vocabulary. Glossary + guide 03 updated.
+- **M2f — surface freeze** (ADR-048): dashboard root entry shrunk and its
+  `export *` deleted; editor/react 44→9, next 24→10; `files: ["dist"]`
+  everywhere + `exports` maps for cli/provider-github; `PUT /file` returns the
+  new blob sha (kills the dashboard's post-save re-read); barrel-contract test
+  for `@mdmx/next`.
+- Files/packages changed: all packages; two new (`@mdmx/project`,
+  `@mdmx/studio`) — eight in total.
+- ADRs: 043–048 moved from Planned to Shipped (044/045 note what deferred).
+- Tests: **334** (was 303 after M1), `pnpm verify` green.
+- Wiki pages touched: SessionLog, Glossary, DECISIONS; guide 03 endpoint table.
+- Follow-ups: M3 (convention layer), M4 (internal structure — includes the
+  deferred `handle()` route split and the `@mdmx/studio/ui` move), M5 (docs +
+  publish). Architecture/Packages/Home wiki pages need the two new packages
+  when M5's docs wave runs.
+
 ### S27 — M1: 0.5 correctness blockers (release/0.5.0)
 Executed milestone M1 of `.dev-context/plans/2026-07-26-0.5-plan.md` — the
 S25 review's §5 blockers plus the W1 additions, each with a regression test:
