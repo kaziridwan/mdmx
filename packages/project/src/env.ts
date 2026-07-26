@@ -30,6 +30,11 @@ export interface ResolveModeOptions {
   mode?: MDMXMode;
   /** Required to run local mode (unauthenticated writes) in production. */
   allowLocalModeInProduction?: boolean;
+  /**
+   * Credentials the caller already has (passed as options rather than set in
+   * the environment). Present values are not required from `env`.
+   */
+  credentials?: Partial<GitHubCredentials>;
 }
 
 export class ModeResolutionError extends Error {
@@ -41,10 +46,11 @@ export class ModeResolutionError extends Error {
 
 function credentialsFrom(
   env: Record<string, string | undefined>,
+  supplied: Partial<GitHubCredentials> = {},
 ): { credentials?: GitHubCredentials; missing: string[] } {
-  const clientId = env[ENV_CLIENT_ID];
-  const clientSecret = env[ENV_CLIENT_SECRET];
-  const sessionSecret = env[ENV_SESSION_SECRET];
+  const clientId = supplied.clientId ?? env[ENV_CLIENT_ID];
+  const clientSecret = supplied.clientSecret ?? env[ENV_CLIENT_SECRET];
+  const sessionSecret = supplied.sessionSecret ?? env[ENV_SESSION_SECRET];
   const missing = [
     !clientId && ENV_CLIENT_ID,
     !clientSecret && ENV_CLIENT_SECRET,
@@ -64,7 +70,7 @@ function credentialsFrom(
 export function resolveMode(options: ResolveModeOptions = {}): ResolvedMode {
   const env = options.env ?? process.env;
   const isProduction = env.NODE_ENV === "production";
-  const { credentials, missing } = credentialsFrom(env);
+  const { credentials, missing } = credentialsFrom(env, options.credentials);
 
   if (options.mode === "local") {
     if (isProduction && !options.allowLocalModeInProduction) {

@@ -31,14 +31,11 @@ import {
   validateStudioComponent,
   type StudioComponentDef,
 } from "@mdmx/studio";
-import { parseProjectConfig, type ProjectConfigFile } from "@mdmx/project";
+import { parseProjectConfig, type MDMXMode, type ProjectConfigFile } from "@mdmx/project";
+import { defaultAuthStrategy, resolveSettings, type ResolvedSettings } from "./settings.js";
 import { gitBlobSha } from "./local-provider.js";
 import { AuthError, type AuthConfig } from "./auth.js";
-import {
-  GitHubOAuthStrategy,
-  LocalAuthStrategy,
-  type AuthStrategy,
-} from "./auth-strategy.js";
+import type { AuthStrategy } from "./auth-strategy.js";
 import {
   clearCookie,
   parseCookies,
@@ -50,34 +47,43 @@ import {
 } from "./session.js";
 
 export interface MDMXHandlerOptions {
-  repo: { owner: string; name: string; branch: string };
-  contentDir: string;
-  mediaDir: string;
-  /** OAuth config — required unless `localMode` is set. */
+  /** Repository content is committed to. Defaults to `repo` in the config file. */
+  repo?: { owner: string; name: string; branch: string };
+  /** Defaults to `contentDir` in the config file ("content"). */
+  contentDir?: string;
+  /** Defaults to `mediaDir` in the config file ("public/media"). */
+  mediaDir?: string;
+  /** OAuth config. Convention: read from the environment (ADR-039). */
   auth?: Omit<AuthConfig, "repo">;
-  /** Session-seal secret — required unless `localMode` is set. */
+  /** Session-seal secret. Convention: `MDMX_SESSION_SECRET`. */
   sessionSecret?: string;
   /**
-   * Local development mode: skip GitHub OAuth entirely and run every request as
-   * a synthetic "local" session. Pair with a `LocalProvider` so saves write to
-   * the working tree. Validation, path-safety, CSRF, and conflict checks still
-   * apply. Never enable in production.
+   * Force a mode instead of detecting it from the environment. `"local"`
+   * skips authentication entirely — in production it additionally requires
+   * `allowLocalModeInProduction`, because it means unauthenticated writes.
+   */
+  mode?: MDMXMode;
+  /** Opt in to unauthenticated local mode in production. Almost never right. */
+  allowLocalModeInProduction?: boolean;
+  /**
+   * Deprecated alias for `mode: "local"`, kept so existing mounts keep
+   * working.
    */
   localMode?: boolean;
-  /** Build a provider for a session (tests inject LocalProvider). */
-  createProvider: (session: SessionData) => ContentProvider;
   /**
-   * How users authenticate (ADR-046). Defaults to `GitHubOAuthStrategy` from
-   * `auth`, or `LocalAuthStrategy` under `localMode` — pass one explicitly to
-   * plug in a different git host.
+   * Build a provider for a session. Defaults to `LocalProvider` in local mode
+   * and `GitHubProvider` (from `@mdmx/provider-github`) in GitHub mode.
    */
+  createProvider?: (session: SessionData) => ContentProvider;
+  /** How users authenticate (ADR-046); defaults from the resolved mode. */
   authStrategy?: AuthStrategy;
-  /** Validate .mdx saves against this registry when present. */
+  /** Defaults to the generated registry under the config's `outDir`. */
   registry?: Registry;
+  /** Project root config and content are resolved against. Defaults to cwd. */
+  root?: string;
   /**
    * Project config file (JSON) collections are resolved from at request time
-   * and written back to by the collection routes (ADR-035). Collections in
-   * this file take precedence over the ones baked into `registry`.
+   * and written back to by the collection routes (ADR-035).
    */
   configPath?: string;
   /** "strict": reject saves with error diagnostics (422). "report": save and return them. */
@@ -88,10 +94,12 @@ export interface MDMXHandlerOptions {
   basePath?: string;
   /** Where to send the user after login. */
   editorPath?: string;
-  /** Allow non-HTTPS cookies (development). */
+  /** Allow non-HTTPS cookies. Defaults to `NODE_ENV !== "production"`. */
   insecureCookies?: boolean;
   maxMediaBytes?: number;
   now?: () => number;
+  /** Environment to resolve secrets from (tests inject one). */
+  env?: Record<string, string | undefined>;
 }
 
 const STATE_COOKIE = "mdmx_oauth_state";
@@ -114,36 +122,31 @@ export interface MDMXHandlers {
  *   // app/api/mdmx/[...route]/route.ts
  *   export const { GET, POST, PUT, DELETE } = createMDMXHandlers({ ... })
  */
-export function createMDMXHandlers(options: MDMXHandlerOptions): MDMXHandlers {
-  const o = {
-    basePath: "/api/mdmx",
-    editorPath: "/mdmx",
-    configPath: "mdmx.config.json",
-    componentsDir: "components/mdmx",
-    validation: "report" as const,
-    maxMediaBytes: 10 * 1024 * 1024,
-    now: () => Date.now(),
-    ...options,
-  };
-  assertSafePath(o.configPath);
-  if (!o.localMode) {
-    const missing = [
-      !o.auth && "`auth` (GitHub OAuth client config)",
-      !o.sessionSecret && "`sessionSecret`",
-    ].filter(Boolean);
-    if (missing.length > 0) {
-      throw new Error(
-        `createMDMXHandlers: GitHub mode requires ${missing.join(" and ")}. ` +
-          "Pass `localMode: true` for local development without OAuth.",
-      );
+export function createMDMXHandlers(options: MDMXHandlerOptions = {}): MDMXHandlers {
+  // Settings resolve on the first request, not at module load: the mount file
+  // stays three synchronous lines, and a misconfiguration answers with a
+  // readable error instead of crashing the build (ADR-039).
+  let handlers: Promise<MDMXHandlers> | null = null;
+  const build = (): Promise<MDMXHandlers> =>
+    (handlers ??= resolveSettings(options).then(buildHandlers));
+
+  const lazy: Handler = async (req) => {
+    let built: MDMXHandlers;
+    try {
+      built = await build();
+    } catch (err) {
+      // Retry on the next request — a fixed .env should not need a restart.
+      handlers = null;
+      return json(500, { error: (err as Error).message });
     }
-  }
-  const authConfig: AuthConfig = o.auth
-    ? { ...o.auth, repo: { owner: o.repo.owner, name: o.repo.name } }
-    : (undefined as unknown as AuthConfig);
-  const auth: AuthStrategy =
-    o.authStrategy ??
-    (o.localMode ? new LocalAuthStrategy() : new GitHubOAuthStrategy(authConfig));
+    return built.GET(req); // all four methods share one handler
+  };
+
+  return { GET: lazy, POST: lazy, PUT: lazy, DELETE: lazy };
+}
+
+function buildHandlers(o: ResolvedSettings): MDMXHandlers {
+  const auth = defaultAuthStrategy(o);
   const secure = !o.insecureCookies;
 
   const handle: Handler = async (req) => {
