@@ -28,6 +28,7 @@ import {
   type Diagnostic,
   type StudioComponentDef,
 } from "@mdmx/core";
+import { parseProjectConfig, type ProjectConfigFile } from "@mdmx/project";
 import {
   AuthError,
   authorizeUrl,
@@ -496,11 +497,6 @@ export function createMDMXHandlers(options: MDMXHandlerOptions): MDMXHandlers {
 
   // -- collections: config-as-code, resolved per request (ADR-035) -----------
 
-  interface ProjectConfigFile {
-    collections?: CollectionsConfig;
-    [key: string]: unknown;
-  }
-
   /** Read the project config through the provider; missing file → empty. */
   async function readProjectConfig(
     provider: ContentProvider,
@@ -513,15 +509,9 @@ export function createMDMXHandlers(options: MDMXHandlerOptions): MDMXHandlers {
       if (isNotFound(err)) return { config: {}, sha: null };
       throw err;
     }
-    try {
-      return { config: JSON.parse(content) as ProjectConfigFile, sha };
-    } catch {
-      const parseError = new Error(
-        `${o.configPath} is not valid JSON; fix it before managing collections`,
-      ) as Error & { status: number };
-      parseError.status = 500;
-      throw parseError;
-    }
+    // Shape, defaults, and the parse error all come from @mdmx/project, so the
+    // runtime and the CLI can no longer disagree about what a config file is.
+    return { config: parseProjectConfig(content, o.configPath), sha };
   }
 
   /**

@@ -1204,7 +1204,13 @@ identity as the pure spec kernel). Living in `@mdmx/next` (the CLI would
 depend on the framework runtime — inverted layering). Status quo (the drift
 is the proof it needs an owner).
 
-**Status.** Planned — 0.5 M2 (plan D8).
+**Status.** Shipped — 0.5 M2b. `packages/project` (13 tests): `MDMXConfig`
+schema + `loadConfig` (json **and** mjs), `mergeConfig`/`validateConfig`,
+`parseProjectConfig` + `ProjectConfigFile` (the provider-read shape the
+runtime uses, ADR-035), `resolveMode`/`insecureCookiesDefault` (ADR-039), and
+`loadRegistry`/`loadRegistrySpec`. `@mdmx/cli` deleted its own `config.ts` and
+`@mdmx/next` its private `ProjectConfigFile` — the json-vs-mjs drift that made
+`.mjs` projects silently lose their collections at runtime is gone.
 
 ## ADR-044 — Provider contract v2: deletions in the change set, binary reads
 

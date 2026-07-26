@@ -1,7 +1,7 @@
 import { existsSync, watch } from "node:fs";
 import { join, relative } from "node:path";
 import { generate, type GenerateResult } from "./generate.js";
-import type { MDMXConfig } from "./config.js";
+import type { MDMXConfig } from "@mdmx/project";
 
 export interface DevSummary {
   result: GenerateResult;

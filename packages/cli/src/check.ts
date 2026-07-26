@@ -12,7 +12,7 @@ import {
   type Diagnostic,
   type RegistrySpec,
 } from "@mdmx/core";
-import type { MDMXConfig } from "./config.js";
+import type { MDMXConfig } from "@mdmx/project";
 
 export interface FileDiagnostics {
   file: string;

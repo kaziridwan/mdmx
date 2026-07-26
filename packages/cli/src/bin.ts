@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 import { parseArgs } from "node:util";
-import { loadConfig } from "./config.js";
+import { loadConfig } from "@mdmx/project";
 import { generate } from "./generate.js";
 import { check, formatDiagnostics } from "./check.js";
 import { dev } from "./dev.js";
@@ -23,7 +23,7 @@ async function main(): Promise<number> {
   });
   const cwd = values.cwd ?? process.cwd();
   const command = positionals[0];
-  const config = await loadConfig(cwd);
+  const { config } = await loadConfig(cwd);
 
   if (command === "generate") {
     const result = await generate(cwd, config);

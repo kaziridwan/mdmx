@@ -104,6 +104,9 @@ importers:
       '@mdmx/core':
         specifier: workspace:*
         version: link:../core
+      '@mdmx/project':
+        specifier: workspace:*
+        version: link:../project
       tinyglobby:
         specifier: ~0.2.15
         version: 0.2.17
@@ -264,6 +267,9 @@ importers:
       '@mdmx/core':
         specifier: workspace:*
         version: link:../core
+      '@mdmx/project':
+        specifier: workspace:*
+        version: link:../project
     devDependencies:
       '@types/mdast':
         specifier: ~4.0.4
@@ -280,6 +286,16 @@ importers:
       react:
         specifier: ^19.0.0
         version: 19.2.7
+
+  packages/project:
+    dependencies:
+      '@mdmx/core':
+        specifier: workspace:*
+        version: link:../core
+    devDependencies:
+      '@types/node':
+        specifier: ~22.10.10
+        version: 22.10.10
 
   packages/provider-github:
     dependencies:
