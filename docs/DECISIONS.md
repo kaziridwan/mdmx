@@ -1314,7 +1314,15 @@ explicitly out of scope.
 publish; a provider seam without an auth seam is half a plug for Phase 3's
 GitLab goal).
 
-**Status.** Planned — 0.5 M2 (plan D12).
+**Status.** Shipped (seam) — 0.5 M2d. `next/src/auth-strategy.ts`:
+`AuthStrategy` (beginLogin / completeLogin / verifyAccess) with
+`GitHubOAuthStrategy` and `LocalAuthStrategy`; `createMDMXHandlers` takes an
+optional `authStrategy` beside `createProvider` and defaults it from
+`auth`/`localMode`, so existing mounts are unchanged. Login, callback, and the
+5-minute re-verification now go through the strategy — `api.ts` no longer
+calls the OAuth functions directly. Proven by a fake non-GitHub host in the
+tests. **Deferred to M4:** the mechanical `handle()` route split, which is
+internal structure and carries no post-publish cost.
 
 ## ADR-047 — Vocabulary: a *document* is any MDMX file; an *entry* is a document in a collection
 

@@ -32,13 +32,12 @@ import {
   type StudioComponentDef,
 } from "@mdmx/studio";
 import { parseProjectConfig, type ProjectConfigFile } from "@mdmx/project";
+import { AuthError, type AuthConfig } from "./auth.js";
 import {
-  AuthError,
-  authorizeUrl,
-  exchangeCode,
-  verifyRepoAccess,
-  type AuthConfig,
-} from "./auth.js";
+  GitHubOAuthStrategy,
+  LocalAuthStrategy,
+  type AuthStrategy,
+} from "./auth-strategy.js";
 import {
   clearCookie,
   parseCookies,
@@ -66,6 +65,12 @@ export interface MDMXHandlerOptions {
   localMode?: boolean;
   /** Build a provider for a session (tests inject LocalProvider). */
   createProvider: (session: SessionData) => ContentProvider;
+  /**
+   * How users authenticate (ADR-046). Defaults to `GitHubOAuthStrategy` from
+   * `auth`, or `LocalAuthStrategy` under `localMode` — pass one explicitly to
+   * plug in a different git host.
+   */
+  authStrategy?: AuthStrategy;
   /** Validate .mdx saves against this registry when present. */
   registry?: Registry;
   /**
@@ -135,6 +140,9 @@ export function createMDMXHandlers(options: MDMXHandlerOptions): MDMXHandlers {
   const authConfig: AuthConfig = o.auth
     ? { ...o.auth, repo: { owner: o.repo.owner, name: o.repo.name } }
     : (undefined as unknown as AuthConfig);
+  const auth: AuthStrategy =
+    o.authStrategy ??
+    (o.localMode ? new LocalAuthStrategy() : new GitHubOAuthStrategy(authConfig));
   const secure = !o.insecureCookies;
 
   const handle: Handler = async (req) => {
@@ -606,15 +614,17 @@ export function createMDMXHandlers(options: MDMXHandlerOptions): MDMXHandlers {
   // -- auth flow ---------------------------------------------------------------
 
   async function login(url: URL): Promise<Response> {
-    if (o.localMode) {
-      return new Response(null, { status: 302, headers: { location: o.editorPath } });
-    }
     const state = randomBytes(16).toString("base64url");
     const redirectUri = `${url.origin}${o.basePath}/auth/callback`;
+    const location = auth.beginLogin({ redirectUri, state });
+    // A strategy with no redirect (local mode) drops straight into the editor.
+    if (location === null) {
+      return new Response(null, { status: 302, headers: { location: o.editorPath } });
+    }
     return new Response(null, {
       status: 302,
       headers: {
-        location: authorizeUrl(authConfig, redirectUri, state),
+        location,
         "set-cookie": serializeCookie(STATE_COOKIE, state, { maxAge: 600, secure }),
       },
     });
@@ -628,8 +638,8 @@ export function createMDMXHandlers(options: MDMXHandlerOptions): MDMXHandlers {
       return json(400, { error: "invalid OAuth state" });
     }
     const redirectUri = `${url.origin}${o.basePath}/auth/callback`;
-    const token = await exchangeCode(authConfig, code, redirectUri);
-    const { login } = await verifyRepoAccess(authConfig, token); // throws 403 without push
+    // Throws AuthError(403) when the identity may not push.
+    const { login, token } = await auth.completeLogin({ code, redirectUri });
     const now = o.now();
     const sealed = seal(
       { login, token, expiresAt: now + SESSION_TTL_MS, verifiedAt: now },
@@ -670,7 +680,7 @@ export function createMDMXHandlers(options: MDMXHandlerOptions): MDMXHandlers {
     // Collaborators get removed: re-verify permission on a 5-minute cadence.
     if (o.now() - session.verifiedAt > REVERIFY_MS) {
       try {
-        await verifyRepoAccess(authConfig, session.token);
+        await auth.verifyAccess(session.token);
       } catch (err) {
         // Only a definitive AuthError revokes the session — a GitHub outage
         // or network failure must not log every editor out.
