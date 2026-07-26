@@ -1,13 +1,14 @@
 "use client";
 import { createElement, useEffect, useMemo, useState, type MouseEvent } from "react";
+import { type JsonValue } from "@mdmx/core";
 import {
+  interpolate,
   validateStudioComponent,
-  type JsonValue,
   type StudioComponentDef,
   type StudioPropDef,
   type StudioPropType,
   type TemplateElement,
-} from "@mdmx/core";
+} from "@mdmx/studio";
 import { useDashboard } from "../context.js";
 import { Link } from "../shell/link.js";
 import { routeHref } from "../routes.js";
@@ -349,15 +350,7 @@ export function StudioEditorView({ name }: { name?: string }) {
   );
 }
 
-const INTERPOLATION_RE = /\{props\.([A-Za-z0-9]+)\}/g;
 const VOID_TAGS = new Set(["br", "hr", "img"]);
-
-function interpolate(value: string, props: Record<string, JsonValue>): string {
-  return value.replace(INTERPOLATION_RE, (_, name: string) => {
-    const v = props[name];
-    return v == null ? "" : String(v);
-  });
-}
 
 function samePath(a: NodePath, b: NodePath | null): boolean {
   return b !== null && a.length === b.length && a.every((v, i) => v === b[i]);

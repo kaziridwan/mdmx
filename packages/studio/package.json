@@ -1,7 +1,7 @@
 {
-  "name": "@mdmx/next",
+  "name": "@mdmx/studio",
   "version": "0.4.1",
-  "description": "Next.js integration: editor mount, API route handlers, auth, and filesystem content readers",
+  "description": "Component Studio: the runtime template-component model, validation, registry integration, TSX eject, and the single template→React renderer",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -10,27 +10,28 @@
       "types": "./dist/index.d.ts",
       "default": "./dist/index.js"
     },
-    "./render": {
-      "types": "./dist/render.d.ts",
-      "default": "./dist/render.js"
+    "./react": {
+      "types": "./dist/react.d.ts",
+      "default": "./dist/react.js"
     }
   },
+  "files": [
+    "dist"
+  ],
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "vitest run"
   },
   "dependencies": {
-    "@mdmx/core": "workspace:*",
-    "@mdmx/project": "workspace:*",
-    "@mdmx/studio": "workspace:*"
+    "@mdmx/core": "workspace:*"
   },
   "devDependencies": {
-    "@types/mdast": "~4.0.4",
     "@types/node": "~22.10.10",
     "@types/react": "^19.0.0",
-    "mdast-util-mdx-jsx": "~3.2.0",
-    "react": "^19.0.0"
+    "@types/react-dom": "^19.0.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
   },
   "peerDependencies": {
     "react": ">=18"

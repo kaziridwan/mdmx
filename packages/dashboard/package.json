@@ -24,7 +24,8 @@
   "dependencies": {
     "@mdmx/core": "workspace:*",
     "@mdmx/editor": "workspace:*",
-    "@mdmx/next": "workspace:*"
+    "@mdmx/next": "workspace:*",
+    "@mdmx/studio": "workspace:*"
   },
   "devDependencies": {
     "@types/node": "~22.10.10",

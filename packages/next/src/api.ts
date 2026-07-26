@@ -8,26 +8,29 @@ import {
   collectionToConfig,
   ConflictError,
   parseDocument,
-  parseStudioComponent,
   PathSafetyError,
   readText,
   Registry,
-  STUDIO_COMPONENTS_DIR,
-  studioComponentPath,
-  studioComponentToSpec,
-  studioComponentToTSX,
   validateCollectionConfig,
   validateFrontmatter,
   validateSource,
-  validateStudioComponent,
   type CollectionConfig,
   type CollectionFieldConfig,
   type CollectionSpec,
   type CollectionsConfig,
   type ContentProvider,
   type Diagnostic,
-  type StudioComponentDef,
 } from "@mdmx/core";
+import {
+  mergeStudioSpecs,
+  parseStudioComponent,
+  STUDIO_COMPONENTS_DIR,
+  studioComponentPath,
+  studioComponentToSpec,
+  studioComponentToTSX,
+  validateStudioComponent,
+  type StudioComponentDef,
+} from "@mdmx/studio";
 import { parseProjectConfig, type ProjectConfigFile } from "@mdmx/project";
 import {
   AuthError,
@@ -581,14 +584,10 @@ export function createMDMXHandlers(options: MDMXHandlerOptions): MDMXHandlers {
   /** Baked registry + valid stored studio defs, for save-time validation. */
   async function effectiveRegistry(provider: ContentProvider, base: Registry): Promise<Registry> {
     const entries = await listStudioDefs(provider);
-    const defs = entries.filter((e) => e.def != null);
+    const defs = entries.map((e) => e.def).filter((d): d is StudioComponentDef => d != null);
     if (defs.length === 0) return base;
-    const existing = new Set(base.components.map((c) => c.name));
-    const merged = [
-      ...base.spec.components,
-      ...defs.filter((e) => !existing.has(e.def!.name)).map((e) => studioComponentToSpec(e.def!)),
-    ];
-    return new Registry({ ...base.spec, components: merged });
+    // Same code-beats-studio rule the CLI applies (@mdmx/studio).
+    return new Registry(mergeStudioSpecs(base.spec, defs));
   }
 
   /** Collection dirs must sit under the content dir or the file API can't reach them. */

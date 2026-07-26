@@ -1,14 +1,7 @@
 import { readdir, readFile } from "node:fs/promises";
 import { join } from "node:path";
-import {
-  parseDocument,
-  parseStudioComponent,
-  STUDIO_COMPONENTS_DIR,
-  validateTree,
-  type Diagnostic,
-  type Registry,
-  type StudioComponentDef,
-} from "@mdmx/core";
+import { parseDocument, validateTree, type Diagnostic, type Registry } from "@mdmx/core";
+import { parseStudioComponent, STUDIO_COMPONENTS_DIR, type StudioComponentDef } from "@mdmx/studio";
 
 /**
  * Read-side helpers. Because content lives in the same repo as the site,

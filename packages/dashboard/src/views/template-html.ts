@@ -1,9 +1,4 @@
-import {
-  STUDIO_ALLOWED_ATTRS,
-  STUDIO_ALLOWED_TAGS,
-  type TemplateChild,
-  type TemplateElement,
-} from "@mdmx/core";
+import { STUDIO_ALLOWED_ATTRS, STUDIO_ALLOWED_TAGS, type TemplateChild, type TemplateElement } from "@mdmx/studio";
 
 /**
  * HTML ⇄ studio template tree. HTML is only the studio's *input format*: the

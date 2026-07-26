@@ -77,24 +77,4 @@ export type {
   ReadOptions,
 } from "./provider.js";
 
-export {
-  STUDIO_COMPONENTS_DIR,
-  STUDIO_CATEGORY,
-  STUDIO_ALLOWED_TAGS,
-  STUDIO_ALLOWED_ATTRS,
-  studioComponentPath,
-  studioComponentToSpec,
-  validateStudioComponent,
-  parseStudioComponent,
-  interpolatedProps,
-} from "./studio.js";
-export type {
-  StudioComponentDef,
-  StudioPropDef,
-  StudioPropType,
-  TemplateChild,
-  TemplateElement,
-  TemplateSlot,
-  TemplateText,
-} from "./studio.js";
-export { studioComponentToTSX } from "./studio.js";
+// Component Studio moved to @mdmx/studio (ADR-045).

@@ -1,17 +1,8 @@
 import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { join, relative } from "node:path";
 import { glob } from "tinyglobby";
-import {
-  parseDocument,
-  parseStudioComponent,
-  Registry,
-  STUDIO_COMPONENTS_DIR,
-  studioComponentToSpec,
-  validateFrontmatter,
-  validateSource,
-  type Diagnostic,
-  type RegistrySpec,
-} from "@mdmx/core";
+import { parseDocument, Registry, validateFrontmatter, validateSource, type Diagnostic, type RegistrySpec } from "@mdmx/core";
+import { mergeStudioSpecs, parseStudioComponent, STUDIO_COMPONENTS_DIR } from "@mdmx/studio";
 import type { MDMXConfig } from "@mdmx/project";
 
 export interface FileDiagnostics {
@@ -71,19 +62,18 @@ export async function check(cwd: string, config: MDMXConfig): Promise<CheckResul
 /**
  * Content may use studio components (runtime template components stored under
  * `<contentDir>/_components/`); merge their specs so documents using them
- * don't flag MDMX001. Code components take precedence on name clashes.
+ * don't flag MDMX001. The code-beats-studio rule itself lives in
+ * `@mdmx/studio` — the CLI and the Next.js runtime share one implementation.
  */
 function mergeStudioComponents(cwd: string, config: MDMXConfig, spec: RegistrySpec): RegistrySpec {
   const dir = join(cwd, config.contentDir, STUDIO_COMPONENTS_DIR);
   const files = existsSync(dir) ? readdirSync(dir).filter((f) => f.endsWith(".json")) : [];
-  if (files.length === 0) return spec;
-  const taken = new Set(spec.components.map((c) => c.name));
-  const merged = [...spec.components];
+  const defs = [];
   for (const file of files.sort()) {
     const { def } = parseStudioComponent(readFileSync(join(dir, file), "utf8"));
-    if (def && !taken.has(def.name)) merged.push(studioComponentToSpec(def));
+    if (def) defs.push(def);
   }
-  return { ...spec, components: merged };
+  return mergeStudioSpecs(spec, defs);
 }
 
 export function formatDiagnostics(result: CheckResult): string {
