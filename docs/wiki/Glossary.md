@@ -46,7 +46,7 @@ it is semver-major.
 **Raw node (`mdmx_raw`)** — the escape hatch. Out-of-subset content becomes an
 opaque read-only block storing the exact source slice, re-emitted verbatim.
 
-**Diagnostic** — `{code, severity, message, span}`. Codes MDMX001–009 (see
+**Diagnostic** — `{code, severity, message, span}`. Codes MDMX001–010 (see
 SPEC.md §4) are stable API.
 
 **mdast** — the markdown AST (from remark). The interchange hub: text and

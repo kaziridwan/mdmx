@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 import {
+  parseDocument,
   parseFrontmatter,
+  validateDocument,
   stringifyFrontmatter,
   validateFrontmatter,
   Registry,
@@ -112,5 +114,57 @@ describe("Registry.collectionForPath", () => {
       ],
     });
     expect(r.collectionForPath("content/x/y/a.mdx")?.name).toBe("posts");
+  });
+});
+
+describe("validateDocument (the one validation seam)", () => {
+  const registry = new Registry({
+    mdmxRegistryVersion: 1,
+    components: [{ name: "Callout", children: { policy: "rich-text" }, props: [] }],
+    collections: [posts],
+  });
+
+  it("checks subset rules and frontmatter in one pass", () => {
+    const codes = validateDocument(
+      "---\nstatus: draft\n---\n\n<Mystery />\n",
+      { registry, path: "content/posts/x.mdx" },
+    ).map((d) => d.code);
+    expect(codes).toContain("MDMX001"); // unknown component
+    expect(codes).toContain("MDMX008"); // required frontmatter field missing
+  });
+
+  it("skips frontmatter checks for a document outside any collection", () => {
+    const codes = validateDocument("---\nanything: 1\n---\n\n# Hi\n", {
+      registry,
+      path: "other/loose.mdx",
+    }).map((d) => d.code);
+    expect(codes).toEqual([]);
+  });
+
+  it("reports malformed YAML as MDMX010 instead of throwing", () => {
+    // This used to abort an entire `mdmx check` run on one bad file.
+    const diagnostics = validateDocument(
+      "---\ntitle: [unclosed\n---\n\n# Hi\n",
+      { registry, path: "content/posts/broken.mdx" },
+    );
+    const codes = diagnostics.map((d) => d.code);
+    expect(codes).toContain("MDMX010");
+    // No schema noise on top: the frontmatter couldn't be read at all.
+    expect(codes).not.toContain("MDMX008");
+    expect(diagnostics.find((d) => d.code === "MDMX010")!.span).toBeDefined();
+  });
+
+  it("reports non-mapping frontmatter", () => {
+    const codes = validateDocument("---\n- just\n- a list\n---\n\n# Hi\n", {
+      registry,
+      path: "content/posts/list.mdx",
+    }).map((d) => d.code);
+    expect(codes).toContain("MDMX010");
+  });
+
+  it("parses the document once — parseDocument surfaces the same diagnostic", () => {
+    const { frontmatter, frontmatterDiagnostic } = parseDocument("---\na: [\n---\n\n# Hi\n");
+    expect(frontmatter).toEqual({});
+    expect(frontmatterDiagnostic?.code).toBe("MDMX010");
   });
 });

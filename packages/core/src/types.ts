@@ -44,7 +44,9 @@ export type DiagnosticCode =
   /** Required frontmatter field (per the collection schema) is missing. */
   | "MDMX008"
   /** Frontmatter field value does not match its declared control/type. */
-  | "MDMX009";
+  | "MDMX009"
+  /** Frontmatter is not valid YAML (or is not a mapping). */
+  | "MDMX010";
 
 export interface SourcePosition {
   line: number; // 1-indexed

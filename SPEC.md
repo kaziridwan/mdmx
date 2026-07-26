@@ -114,6 +114,7 @@ line/column spans. Codes are stable API:
 | MDMX007 | warning | Prop not declared by the component spec |
 | MDMX008 | error | Required frontmatter field missing (per the collection schema) |
 | MDMX009 | error | Frontmatter field value does not match its declared control/type |
+| MDMX010 | error | Frontmatter is not valid YAML, or is not a mapping |
 
 ## 5. Registry
 

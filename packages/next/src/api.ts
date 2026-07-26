@@ -12,8 +12,7 @@ import {
   readText,
   Registry,
   validateCollectionConfig,
-  validateFrontmatter,
-  validateSource,
+  validateDocument,
   type CollectionConfig,
   type CollectionFieldConfig,
   type CollectionSpec,
@@ -324,18 +323,15 @@ function buildHandlers(o: ResolvedSettings): MDMXHandlers {
           // Frontmatter schemas come from the request-time collection set, so
           // entries in dashboard-created collections validate immediately.
           // (Resolved outside the try: a config failure is not a parse error.)
-          const collection = collectionForPath(await resolveCollections(provider), path);
+          const collections = await resolveCollections(provider);
           // Studio components merge in at request time so documents using
           // them don't trip MDMX001 on save.
           const registry = await effectiveRegistry(provider, o.registry);
-          // Never trust the editor client: re-validate on the server. A parse
+          // Never trust the editor client: re-validate on the server. Same
+          // seam `mdmx check` uses, so lint and save can't disagree. A parse
           // failure (malformed MDX) is a client error, not a 500.
           try {
-            diagnostics = validateSource(body.content, { registry });
-            if (collection) {
-              const { frontmatter } = parseDocument(body.content);
-              diagnostics = diagnostics.concat(validateFrontmatter(frontmatter, collection));
-            }
+            diagnostics = validateDocument(body.content, { registry, path, collections });
           } catch (parseErr) {
             return withSession(
               json(400, { error: "could not parse MDMX", detail: (parseErr as Error).message }),

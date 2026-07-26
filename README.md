@@ -59,7 +59,7 @@ overridable when you need something non-standard — see the
 
 | Package | Purpose |
 | --- | --- |
-| `@mdmx/core` | The MDMX spec: parser, validator (`MDMX001`–`MDMX009`), canonical serializer, registry types, provider contract, `defineMDMX()` |
+| `@mdmx/core` | The MDMX spec: parser, validator (`MDMX001`–`MDMX010`), canonical serializer, registry types, provider contract, `defineMDMX()` |
 | `@mdmx/project` | What a project on disk looks like: `mdmx.config.*` schema and loading, environment/mode resolution, registry loading |
 | `@mdmx/studio` | Component Studio: the template-component model, validation, registry integration, TSX eject, and (`/react`) the template→React renderer |
 | `@mdmx/cli` | `mdmx init` (scaffold), `mdmx generate` (registry + bindings + studio CSS), `mdmx check` (content lint, CI-ready), `mdmx dev` (watch) |
@@ -115,7 +115,7 @@ the HTTP API, the dashboard) speaks in entries.
 
 ```sh
 pnpm install
-pnpm test          # builds all packages, then runs all 364 tests
+pnpm test          # builds all packages, then runs all 388 tests
 pnpm build         # build all packages
 pnpm check         # typecheck all packages
 pnpm verify        # typecheck + test (pre-push gate)

@@ -22,7 +22,7 @@ side-channel that types it all.
    MDX text  ⇄  mdast  ⇄  ProseMirror doc
    (storage)    (hub)       (editing)
       │           │
-      │           └── validate.ts → diagnostics (MDMX001–009)
+      │           └── validate.ts → diagnostics (MDMX001–010)
       │
       ▼
    ContentProvider (GitHub Git Data API | local FS)  →  git repo
