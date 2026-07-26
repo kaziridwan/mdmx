@@ -5,6 +5,7 @@ import { studioComponent, studioRenderComponents } from "../src/react.js";
 import { interpolate, type StudioComponentDef } from "../src/index.js";
 
 const def: StudioComponentDef = {
+  mdmxStudioVersion: 1,
   name: "PromoCard",
   props: [
     { name: "title", type: "string", default: "Default title" },

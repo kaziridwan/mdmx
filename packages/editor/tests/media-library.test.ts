@@ -132,7 +132,7 @@ describe("MediaLibrary (jsdom)", () => {
 
     expect(media.items.map((i) => i.path)).toEqual(["public/media/new-pic.png"]);
     expect(onPick).toHaveBeenCalledTimes(1);
-    expect(onPick.mock.calls[0][0].path).toBe("public/media/new-pic.png");
+    expect(onPick.mock.calls[0]![0].path).toBe("public/media/new-pic.png");
   });
 });
 

@@ -79,6 +79,7 @@ function makeContext(api: Partial<ApiClient>): DashboardContextValue {
     registry: new Registry({ mdmxRegistryVersion: 1, components: [] }),
     collections: [{ name: "posts", dir: "content/posts", fields: [] }],
     refreshCollections: async () => {},
+    studio: { entries: [], refresh: async () => {} },
   };
 }
 

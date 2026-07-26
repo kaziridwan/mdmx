@@ -151,7 +151,8 @@ export function activeClassIn(classes: string | undefined, group: ClassGroup): s
 export function setClassIn(
   classes: string | undefined,
   group: ClassGroup,
-  next: string,
+  /** The class to apply from this group, or null/"" to clear the group. */
+  next: string | null,
 ): string {
   const kept = (classes ?? "")
     .split(/\s+/)

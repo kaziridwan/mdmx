@@ -52,6 +52,7 @@ function makeContext(api: Partial<ApiClient>): DashboardContextValue {
     registry: new Registry({ mdmxRegistryVersion: 1, components: [] }),
     collections: [posts],
     refreshCollections: async () => {},
+    studio: { entries: [], refresh: async () => {} },
   };
 }
 
@@ -110,7 +111,11 @@ describe("CollectionView", () => {
 
 describe("EntryNewView", () => {
   it("scaffolds a create-only save from title", async () => {
-    const saveFile = vi.fn(async () => ({ commit: {}, diagnostics: [] }));
+    const saveFile = vi.fn(async (_args: Parameters<ApiClient["saveFile"]>[0]) => ({
+      commit: {},
+      sha: "0".repeat(40),
+      diagnostics: [],
+    }));
     const assign = vi.fn();
     vi.stubGlobal("location", { assign } as unknown as Location);
 

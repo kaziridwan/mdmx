@@ -464,13 +464,13 @@ describe("localMode (no GitHub OAuth)", () => {
     );
     const res = await h.GET(localReq("GET", "/file?path=content/posts/seed-local.mdx"));
     expect(res.status).toBe(200);
-    expect((await res.json()).content).toContain("<Callout");
+    expect(((await res.json()) as { content: string }).content).toContain("<Callout");
   });
 
   it("reports the synthetic local identity at /me", async () => {
     const res = await localHandlers().GET(localReq("GET", "/me"));
     expect(res.status).toBe(200);
-    expect((await res.json()).login).toBe("local");
+    expect(((await res.json()) as Record<string, unknown>).login).toBe("local");
   });
 
   it("writes a file to the working tree without auth", async () => {
@@ -480,7 +480,7 @@ describe("localMode (no GitHub OAuth)", () => {
     );
     expect(put.status).toBe(200);
     const read = await h.GET(localReq("GET", "/file?path=content/posts/local.mdx"));
-    expect((await read.json()).content).toBe("# Local\n");
+    expect(((await read.json()) as Record<string, unknown>).content).toBe("# Local\n");
   });
 
   it("still rejects cross-origin mutations", async () => {
@@ -502,7 +502,7 @@ describe("localMode (no GitHub OAuth)", () => {
       localReq("PUT", "/file", { path: "content/posts/bad.mdx", content: "<Bad foo=1 />" }),
     );
     expect(res.status).toBe(400);
-    expect((await res.json()).error).toMatch(/parse/i);
+    expect(((await res.json()) as Record<string, unknown>).error).toMatch(/parse/i);
   });
 });
 
@@ -553,8 +553,8 @@ describe("frontmatter validation on save", () => {
   it("report mode: saves but returns frontmatter diagnostics", async () => {
     const res = await handlers("report").PUT(put("content/posts/r.mdx", missingTitle));
     expect(res.status).toBe(200);
-    const body = await res.json();
-    expect(body.diagnostics.map((d: { code: string }) => d.code)).toContain("MDMX008");
+    const body = (await res.json()) as { diagnostics: { code: string }[] };
+    expect(body.diagnostics.map((d) => d.code)).toContain("MDMX008");
   });
 
   it("strict mode: rejects invalid frontmatter with 422", async () => {
