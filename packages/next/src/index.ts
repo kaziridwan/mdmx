@@ -1,14 +1,23 @@
-// @mdmx/next — Next.js integration layer.
-// Implemented: LocalProvider, content readers, sessions, GitHub OAuth,
-// API route handlers (web-standard Request/Response).
-// Pending: the editor mount page (catch-all UI route).
+// @mdmx/next — Next.js integration layer: content providers and readers,
+// sessions, the authentication seam, and web-standard API route handlers.
 export { LocalProvider, gitBlobSha } from "./local-provider.js";
 export { getDocuments, getDocumentBySlug, getStudioComponentDefs } from "./content.js";
 export type { MDMXDocument, GetDocumentsOptions } from "./content.js";
 export { createMDMXHandlers } from "./api.js";
 export type { MDMXHandlerOptions, MDMXHandlers } from "./api.js";
+
+// The auth seam (ADR-046). `auth.ts`'s OAuth functions stay exported for
+// consumers driving the flow themselves; most only need a strategy.
+export { GitHubOAuthStrategy, LocalAuthStrategy } from "./auth-strategy.js";
+export type {
+  AuthIdentity,
+  AuthStrategy,
+  BeginLoginContext,
+  CompleteLoginContext,
+} from "./auth-strategy.js";
 export { authorizeUrl, exchangeCode, verifyRepoAccess, AuthError } from "./auth.js";
 export type { AuthConfig } from "./auth.js";
+
 export {
   seal,
   unseal,

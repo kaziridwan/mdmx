@@ -4,11 +4,14 @@ import { join } from "node:path";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { Registry, type RegistrySpec } from "@mdmx/core";
 import {
+  AuthError,
   createMDMXHandlers,
+  LocalAuthStrategy,
   LocalProvider,
   parseCookies,
   seal,
   unseal,
+  type AuthStrategy,
   type MDMXHandlers,
   type SessionData,
 } from "../src/index.js";
@@ -545,5 +548,62 @@ describe("frontmatter validation on save", () => {
   it("ignores frontmatter rules outside the collection dir", async () => {
     const res = await handlers("strict").PUT(put("content/top.mdx", missingTitle));
     expect(res.status).toBe(200);
+  });
+});
+
+describe("AuthStrategy seam (ADR-046)", () => {
+  /** A minimal non-GitHub host: the seam is only proven by a second one. */
+  function fakeStrategy(overrides: Partial<AuthStrategy> = {}): AuthStrategy {
+    return {
+      name: "fake-host",
+      beginLogin: ({ redirectUri, state }) =>
+        `https://git.example/oauth?redirect=${encodeURIComponent(redirectUri)}&state=${state}`,
+      completeLogin: async () => ({ login: "ada", token: "fake-token" }),
+      verifyAccess: async () => ({ login: "ada" }),
+      ...overrides,
+    };
+  }
+
+  it("drives login through the injected strategy", async () => {
+    const h = makeHandlers({ authStrategy: fakeStrategy() });
+    const res = await h.GET(new Request(`${BASE}/auth/login`));
+    expect(res.status).toBe(302);
+    expect(res.headers.get("location")).toContain("git.example/oauth");
+  });
+
+  it("seals a session from the strategy's identity on callback", async () => {
+    const h = makeHandlers({ authStrategy: fakeStrategy() });
+    const res = await h.GET(
+      new Request(`${BASE}/auth/callback?code=whatever&state=s1`, {
+        headers: { cookie: "mdmx_oauth_state=s1" },
+      }),
+    );
+    expect(res.status).toBe(302);
+    const sessionSet = res.headers.getSetCookie().find((c) => c.startsWith("mdmx_session="))!;
+    const sealed = parseCookies(sessionSet.split(";")[0]!)["mdmx_session"]!;
+    expect(unseal(sealed, SECRET)!.login).toBe("ada");
+  });
+
+  it("re-verification asks the strategy, and its AuthError revokes the session", async () => {
+    let calls = 0;
+    const h = makeHandlers({
+      authStrategy: fakeStrategy({
+        verifyAccess: async () => {
+          calls += 1;
+          throw new AuthError(403, "no push access on this host");
+        },
+      }),
+    });
+    const stale = sessionCookie({ verifiedAt: now - 6 * 60 * 1000 });
+    const res = await h.GET(new Request(`${BASE}/me`, { headers: { cookie: stale } }));
+    expect(calls).toBe(1);
+    expect(res.status).toBe(401);
+  });
+
+  it("local mode is the trivial second implementation, not a special case", async () => {
+    const strategy = new LocalAuthStrategy("dev");
+    expect(strategy.beginLogin()).toBeNull();
+    expect(await strategy.completeLogin()).toEqual({ login: "dev", token: "" });
+    expect(await strategy.verifyAccess()).toEqual({ login: "dev" });
   });
 });
