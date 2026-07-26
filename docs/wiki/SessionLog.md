@@ -11,6 +11,46 @@ initial design-and-build conversation (12 commits).
 
 <!-- APPEND NEW ENTRIES ABOVE THIS LINE -->
 
+### S27 — M1: 0.5 correctness blockers (release/0.5.0)
+Executed milestone M1 of `.dev-context/plans/2026-07-26-0.5-plan.md` — the
+S25 review's §5 blockers plus the W1 additions, each with a regression test:
+- **core**: `collectionForPath` longest-prefix compared normalized vs raw
+  lengths (a `"./"`-prefixed dir got a head start); props built on
+  null-prototype objects (`__proto__` attr/key can no longer rebind);
+  MDMX006 uses `Object.hasOwn` (required prop named `toString` now
+  reported); cli `check` normalizes win32 separators before collection
+  matching.
+- **cli**: a non-exported `defineMDMX` component is now excluded from both
+  registry artifacts with an actionable warning (previously emitted a
+  non-compiling registry.ts).
+- **editor**: multiselect display/coerce made symmetric
+  (`displayControlValue` takes the control; arrays display comma-joined);
+  `Control` gained a real multiselect input.
+- **dashboard**: `ApiError` carries the server's `problems[]` (collection
+  form validation visible again); field-draft default round-trip fixed for
+  multiselect (array, not JSON string) and advanced/json string defaults
+  (JSON-encoded both ways); CollectionView delete failures surface as an
+  error line instead of an unhandled rejection.
+- **next**: `clearCookie` honors `insecureCookies` (dev logout works over
+  http); GitHub mode without `auth`/`sessionSecret` fails at factory time
+  with a named-option error; 5-minute re-verify distinguishes AuthError
+  (401 + clear) from transport failure (503, session kept); API responses
+  send `cache-control: no-store`; collection existence checks use
+  `Object.hasOwn` (a collection named `constructor` works).
+- **provider-github**: lost ref-update race (non-fast-forward 422) maps to
+  `ConflictError` (409 conflict UX); truncated tree listing throws a
+  deliberate 500 instead of an accidental unhandled crash. (Blob-read
+  truncation fix deferred to M2, landing with the D9 binary `read()`.)
+- **demo-next**: passes its own `mdmx check` again (empty `<Stat />` given
+  real props, `losslessly.asd` typo, roadmap.mdx trailing newline).
+- Files/packages changed: all six packages + demo content (see commit).
+- ADRs: none (implements S25 findings; decisions were ADR-039…048 in S26).
+- Tests: **303** (was 285; +18 regression tests), `pnpm verify` green.
+- Wiki pages touched: SessionLog. (Version/test-count sync in README /
+  wiki/Home stays in M2 per the plan.)
+- Follow-ups: M2 — the breaking wave (package splits, provider contract v2,
+  auth seam, entry rename, export prune).
+
 ### S26 — 0.5 decisions locked: grilling session over the S25 review (no code changes)
 Question-by-question architecture grilling against the session objectives
 (quick recipe / extensible / layered API). Fifteen decisions made, resolving

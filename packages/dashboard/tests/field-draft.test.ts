@@ -86,4 +86,54 @@ describe("fieldsToDrafts", () => {
     // The nested control survives verbatim through the advanced escape hatch.
     expect(back.tags).toEqual({ control: { type: "list", item: { type: "text" } } });
   });
+
+  it("round-trips a multiselect array default as an array, not a JSON string", () => {
+    const fields: FrontmatterField[] = [
+      {
+        name: "tags",
+        required: false,
+        control: { type: "multiselect", options: ["a", "b", "c"] },
+        default: ["a", "b"],
+      },
+    ];
+    const drafts = fieldsToDrafts(fields);
+    expect(drafts[0]!.defaultValue).toBe("a, b");
+
+    const { fields: back, problems } = draftsToFields(drafts);
+    expect(problems).toEqual([]);
+    expect(back.tags!.default).toEqual(["a", "b"]);
+  });
+
+  it("rejects a multiselect default outside the options", () => {
+    const { problems } = draftsToFields([
+      draft({
+        name: "tags",
+        type: "multiselect",
+        options: "a, b",
+        defaultValue: "a, z",
+      }),
+    ]);
+    expect(problems.join("\n")).toContain("not one of the options");
+  });
+
+  it("round-trips advanced and json string defaults without spurious parse errors", () => {
+    const fields: FrontmatterField[] = [
+      {
+        name: "layout",
+        required: false,
+        control: { type: "list", item: { type: "text" } },
+        default: "wide",
+      },
+      { name: "meta", required: false, control: { type: "json" }, default: "hello" },
+    ];
+    const drafts = fieldsToDrafts(fields);
+    // JSON-encoded so the advanced/json JSON.parse read-back succeeds.
+    expect(drafts[0]!.defaultValue).toBe('"wide"');
+    expect(drafts[1]!.defaultValue).toBe('"hello"');
+
+    const { fields: back, problems } = draftsToFields(drafts);
+    expect(problems).toEqual([]);
+    expect(back.layout!.default).toBe("wide");
+    expect(back.meta!.default).toBe("hello");
+  });
 });

@@ -83,7 +83,9 @@ export function evaluateExpression(
 function evaluateObject(
   expr: ObjectExpression,
 ): { ok: true; value: JsonValue } | { ok: false; reason: string } {
-  const out: Record<string, JsonValue> = {};
+  // Null prototype: a "__proto__" key must become an own property, not a
+  // prototype rebind.
+  const out: Record<string, JsonValue> = Object.create(null);
   for (const prop of expr.properties) {
     if (prop.type !== "Property") {
       return { ok: false, reason: "object spread is not allowed" };
@@ -129,7 +131,9 @@ function programExpression(program: Program | undefined): Expression | undefined
 export function evaluateAttributes(
   element: MdxJsxFlowElement | MdxJsxTextElement,
 ): EvaluatedProps {
-  const props: PropsObject = {};
+  // Null prototype: an attribute named "__proto__" must become an own
+  // property, not a prototype rebind.
+  const props: PropsObject = Object.create(null);
   const diagnostics: Diagnostic[] = [];
   const componentName = element.name ?? "<fragment>";
 

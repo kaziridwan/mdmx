@@ -207,7 +207,7 @@ function validateComponent(
     }
   }
   for (const p of spec.props) {
-    if (p.required && !(p.name in props) && p.default === undefined) {
+    if (p.required && !Object.hasOwn(props, p.name) && p.default === undefined) {
       diagnostics.push({
         code: "MDMX006",
         severity: "error",

@@ -93,8 +93,10 @@ export function serializeCookie(
   return parts.join("; ");
 }
 
-export function clearCookie(name: string, path = "/"): string {
-  return `${name}=; Path=${path}; Max-Age=0; HttpOnly; SameSite=Lax; Secure`;
+export function clearCookie(name: string, path = "/", secure = true): string {
+  // `secure` must match how the cookie was set: browsers ignore a Secure
+  // deletion over plain http, silently no-opping logout in dev GitHub mode.
+  return `${name}=; Path=${path}; Max-Age=0; HttpOnly; SameSite=Lax${secure ? "; Secure" : ""}`;
 }
 
 export function parseCookies(header: string | null): Record<string, string> {

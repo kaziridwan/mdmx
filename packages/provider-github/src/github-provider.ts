@@ -162,10 +162,23 @@ export class GitHubProvider implements ContentProvider {
       ...(this.o.committer ? { committer: this.o.committer } : {}),
     })) as { sha: string };
 
-    await this.api("PATCH", `${repo}/git/refs/heads/${this.o.branch}`, {
-      sha: newCommit.sha,
-      force: false,
-    });
+    try {
+      await this.api("PATCH", `${repo}/git/refs/heads/${this.o.branch}`, {
+        sha: newCommit.sha,
+        force: false,
+      });
+    } catch (err) {
+      // The branch advanced between the head read and the ref update: GitHub
+      // rejects the non-fast-forward with a 422. Surface it as the same
+      // conflict the expectedShas check raises, not a generic API error.
+      if (err instanceof GitHubApiError && err.status === 422) {
+        throw new ConflictError(
+          entries[0]?.path ?? this.o.branch,
+          "the branch advanced during the commit (non-fast-forward ref update)",
+        );
+      }
+      throw err;
+    }
 
     return { sha: newCommit.sha, message };
   }
@@ -187,7 +200,12 @@ export class GitHubProvider implements ContentProvider {
       truncated: boolean;
     };
     if (tree.truncated) {
-      throw new GitHubApiError(200, "tree listing truncated; repository too large for recursive listing");
+      // Status 500 so the route layer maps it to a JSON error deliberately —
+      // a 2xx status here would fall through as an unhandled exception.
+      throw new GitHubApiError(
+        500,
+        "tree listing truncated; repository too large for recursive listing",
+      );
     }
     return tree.tree;
   }

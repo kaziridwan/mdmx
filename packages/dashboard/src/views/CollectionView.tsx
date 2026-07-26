@@ -16,6 +16,7 @@ export function CollectionView({ name }: { name: string }) {
   const collection = collections.find((c) => c.name === name);
   const [state, setState] = useState<LoadState>({ phase: "loading" });
   const [filter, setFilter] = useState("");
+  const [error, setError] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     if (!collection) return;
@@ -50,12 +51,17 @@ export function CollectionView({ name }: { name: string }) {
   const onDelete = async (doc: DocumentMeta) => {
     const title = displayTitle(doc);
     if (!window.confirm(`Delete "${title}" (${doc.path})? This commits a deletion.`)) return;
-    await api.deleteFile({
-      path: doc.path,
-      expectedSha: doc.sha,
-      message: `mdmx: delete ${doc.path}`,
-    });
-    await load();
+    setError(null);
+    try {
+      await api.deleteFile({
+        path: doc.path,
+        expectedSha: doc.sha,
+        message: `mdmx: delete ${doc.path}`,
+      });
+      await load();
+    } catch (err) {
+      setError(`Could not delete ${doc.path}: ${(err as Error).message}`);
+    }
   };
 
   const documents = state.phase === "ready" ? state.documents : [];
@@ -88,6 +94,8 @@ export function CollectionView({ name }: { name: string }) {
           New entry
         </Link>
       </header>
+
+      {error ? <p className="mdmx-dash-error">{error}</p> : null}
 
       {documents.length > 3 ? (
         <input

@@ -120,4 +120,63 @@ describe("GitHubProvider", () => {
     ).rejects.toThrow(PathSafetyError);
     await expect(provider.delete("/etc/passwd", "evil")).rejects.toThrow(PathSafetyError);
   });
+
+  it("maps a lost ref-update race (non-fast-forward 422) to ConflictError", async () => {
+    const { fake } = setup();
+    const competitor = new GitHubProvider({
+      owner: "jane",
+      repo: "blog",
+      branch: "main",
+      token: "test-token",
+      fetch: fake.fetch,
+    });
+    // Advance the branch behind the writer's back, right before its ref update.
+    let raced = false;
+    const racingFetch: typeof globalThis.fetch = async (input, init) => {
+      if (!raced && init?.method === "PATCH" && String(input).includes("/git/refs/heads/")) {
+        raced = true;
+        await competitor.commit(
+          [{ path: "content/posts/racer.mdx", content: "# Racer\n" }],
+          "competing commit",
+        );
+      }
+      return fake.fetch(input, init);
+    };
+    const writer = new GitHubProvider({
+      owner: "jane",
+      repo: "blog",
+      branch: "main",
+      token: "test-token",
+      fetch: racingFetch,
+    });
+    await expect(
+      writer.commit([{ path: "content/posts/mine.mdx", content: "# Mine\n" }], "my commit"),
+    ).rejects.toThrow(ConflictError);
+  });
+
+  it("surfaces a truncated tree listing as a deliberate 500, not an accidental crash", async () => {
+    const { fake } = setup();
+    const truncatingFetch: typeof globalThis.fetch = async (input, init) => {
+      const res = await fake.fetch(input, init);
+      if (String(input).includes("/git/trees/") && init?.method === "GET") {
+        const body = (await res.json()) as Record<string, unknown>;
+        return new Response(JSON.stringify({ ...body, truncated: true }), {
+          status: 200,
+          headers: { "content-type": "application/json" },
+        });
+      }
+      return res;
+    };
+    const provider = new GitHubProvider({
+      owner: "jane",
+      repo: "blog",
+      branch: "main",
+      token: "test-token",
+      fetch: truncatingFetch,
+    });
+    await expect(provider.list("content/posts")).rejects.toMatchObject({
+      name: "GitHubApiError",
+      status: 500,
+    });
+  });
 });
