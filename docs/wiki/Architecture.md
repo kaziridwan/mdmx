@@ -8,7 +8,10 @@ side-channel that types it all.
 ```
                  mdmx generate (CLI)
    components/*.tsx ─────────────────────►  .mdmx/registry.json  (data)
-        │  defineMDMX()                      .mdmx/registry.ts    (bindings)
+        │  defineMDMX()                      .mdmx/registry.ts    (server map)
+        │                                    .mdmx/components.ts  (client map)
+        │                                    .mdmx/server.ts      (bound helpers)
+        │                                    .mdmx/studio.css     (studio styles)
         │                                          │
         │                                          ▼  drives
         ▼                              ┌───────────────────────────┐
@@ -19,25 +22,27 @@ side-channel that types it all.
    MDX text  ⇄  mdast  ⇄  ProseMirror doc
    (storage)    (hub)       (editing)
       │           │
-      │           └── validate.ts → diagnostics (MDMX001–007)
+      │           └── validate.ts → diagnostics (MDMX001–009)
       │
       ▼
    ContentProvider (GitHub Git Data API | local FS)  →  git repo
       │
       ▼
-   build-time readers (getDocuments) → site render with registry components
+   build-time readers (listEntries/getEntry) → site render with registry components
 ```
 
 Key property: **mdast is the hub** (ADR-009). Text never converts directly to
 ProseMirror; both directions go through mdast, so one parse path serves the
 validator, CLI, and editor, and round-trip tests run headlessly.
 
-## The six packages
+## The eight packages
 
 | Package | Depends on | Role |
 | --- | --- | --- |
 | `@mdmx/core` | (nothing heavy) | The format: parse, validate, serialize; Registry; defineMDMX; collections config derivation; ContentProvider contract + path safety. Zero React/Next. |
-| `@mdmx/cli` | core | `mdmx generate` (type extraction → registry), `mdmx check` (lint), `mdmx dev` (watch). |
+| `@mdmx/project` | core | What a project on disk looks like: `mdmx.config.*` schema + loading (json and mjs), environment/mode resolution (fail-closed in production), registry loading. Node-only, framework-free (ADR-043). |
+| `@mdmx/studio` | core | Component Studio: template model, validation, registry merge (code beats studio), TSX eject, one `{props.x}` implementation; `/react` holds the single template→React renderer (ADR-045). |
+| `@mdmx/cli` | core, project, studio | `mdmx init` (scaffold), `mdmx generate` (registry + both component maps + bound server helpers + studio CSS), `mdmx check` (lint + stale-registry detection), `mdmx dev` (watch). |
 | `@mdmx/editor` | core | Registry→ProseMirror schema; mdast⇄PM converters; command/palette layer; the React editor UI under `/react`. Headless — ships no CSS. |
 | `@mdmx/next` | core | LocalProvider, build-time readers, sealed sessions, GitHub OAuth, content/media/collections API handlers (request-time collection resolution, ADR-035). |
 | `@mdmx/provider-github` | core | GitHubProvider over the Git Data API: atomic multi-file commits, conflict detection. |

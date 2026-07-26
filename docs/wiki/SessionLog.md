@@ -11,6 +11,33 @@ initial design-and-build conversation (12 commits).
 
 <!-- APPEND NEW ENTRIES ABOVE THIS LINE -->
 
+### S30 — M4a + M5: studio routes extracted and tested, docs wave (release/0.5.0)
+- **M4a** (deferred from M2d): `routes/context.ts` defines the `RouteContext`
+  a handler needs plus the shared `listStudioDefs`; `routes/studio.ts` holds
+  list/save/delete/eject and `api.ts` dispatches to it. The point is the 12
+  new studio route tests — the family the review found completely untested,
+  including the two riskiest writes (a save must reject an invalid template
+  and write nothing; eject must never overwrite existing source).
+- **M5 docs wave**: README rewritten around the 0.5 recipe (quick start,
+  8-package table, vocabulary); guides 01/03/04/05/06/07 updated — the
+  deleted `lib/mdmx-config.ts`, `lib/components.ts`, `next-mdx-remote`
+  recipe, `localMode: true`, and `GET /documents` are all gone; guide 05 now
+  teaches `<MDMXEntry>` and the generated `.mdmx/server.ts` with a Layer-2
+  section. `llms.txt` rewritten (8 packages, convention-first setup).
+  SPEC.md gained **§7 Studio components** (the normative gap: allowlists,
+  interpolation, limits, code-beats-studio, build-time CSS) and a rewritten
+  §6 provider contract (v2 + the `AuthStrategy` seam), plus the
+  registry-vs-spec version-counter note. Wiki Home/Architecture/Packages/
+  Roadmap/Glossary/Testing updated for eight packages, MDMX001–009, and the
+  new artifact set. All packages bumped to **0.5.0**.
+- Files/packages changed: next (routes/), all docs, every package.json.
+- ADRs: none new (039–048 already recorded).
+- Tests: **364**, `pnpm verify` green.
+- Wiki pages touched: SessionLog, Home, Architecture, Packages, Roadmap,
+  Glossary, Testing; SPEC.md; README; llms.txt; guides 01–07.
+- Follow-ups: M4b (`@mdmx/studio/ui` move behind `StudioClient`), Editor.tsx
+  split and dashboard `useLoad`/`LoadBoundary` primitives, then publish.
+
 ### S29 — M3: the convention layer (release/0.5.0)
 Milestone M3 — everything additive that makes the most-used recipe short
 (ADR-039…042). Three commits:

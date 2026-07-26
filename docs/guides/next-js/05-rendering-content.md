@@ -4,22 +4,119 @@ Content lives **in the same repo as the site**, so the published site never
 calls GitHub (or any API) at runtime: pages read the local filesystem at build
 time. That makes MDMX naturally SSG/ISR-friendly.
 
-## Reading documents
+## The short version
 
-`@mdmx/next` ships two read-side helpers:
+`mdmx generate` writes `.mdmx/server.ts` — helpers already bound to your
+config and your components. A public page is a component call:
 
-```ts
-import { join } from "node:path";
-import { getDocuments, getDocumentBySlug } from "@mdmx/next";
+```tsx
+// app/posts/[slug]/page.tsx
+import { MDMXEntry } from "../../../.mdmx/server";
 
-const dir = join(process.cwd(), "content/posts");
-
-const published = await getDocuments(dir, { status: "published" });
-const doc = await getDocumentBySlug(dir, "welcome");
+export default async function PostPage({
+  params,
+}: {
+  params: Promise<{ slug: string }>;
+}) {
+  const { slug } = await params;
+  return (
+    <article className="prose">
+      <MDMXEntry collection="posts" slug={slug} />
+    </article>
+  );
+}
 ```
 
-Both scan a collection directory recursively for `.mdx`/`.md` files (dotfiles
-skipped) and return `MDMXDocument`s sorted by slug:
+`MDMXEntry` resolves the collection by **name** (from `mdmx.config.json`),
+defaults to `status: "published"`, calls `notFound()` when there's no matching
+entry, and renders with your components — including any built in the Component
+Studio. Studio CSS is imported for you.
+
+An index page uses the same module:
+
+```tsx
+import Link from "next/link";
+import { listEntries } from "../.mdmx/server";
+
+export default async function PostsPage() {
+  const posts = await listEntries("posts"); // published only
+  return (
+    <ul>
+      {posts.map((post) => (
+        <li key={post.slug}>
+          <Link href={`/posts/${post.slug}`}>{String(post.frontmatter.title)}</Link>
+        </li>
+      ))}
+    </ul>
+  );
+}
+```
+
+`listEntries("posts", { status: null })` returns every entry regardless of
+status; pass a string or array to filter differently.
+
+## What the generated module exports
+
+| Export | Use |
+| --- | --- |
+| `MDMXEntry` | Render one entry (`collection`, `slug`, optional `status`, optional extra `components`) |
+| `getEntry(collection, slug, query?)` | The entry, or `null` — when you need the frontmatter before rendering |
+| `listEntries(collection, query?)` | Entries of a collection, sorted by slug |
+| `renderComponents()` | Author components + studio components, for your own `<MDMXContent>` calls |
+| `collections` | The name → directory map, typed |
+
+Reading frontmatter before rendering (metadata, say) looks like this:
+
+```tsx
+import type { Metadata } from "next";
+import { getEntry, MDMXEntry } from "../../../.mdmx/server";
+
+export async function generateMetadata({ params }): Promise<Metadata> {
+  const { slug } = await params;
+  const entry = await getEntry("posts", slug);
+  return { title: entry ? String(entry.frontmatter.title) : "Not found" };
+}
+```
+
+## Layer 2: doing it yourself
+
+The bound helpers are a convenience over a plain API, and you can drop to it
+whenever your page doesn't fit the shape — a collection chosen at runtime, a
+session guard, a custom component map:
+
+```tsx
+import { getEntryBySlug } from "@mdmx/next";
+import { MDMXContent } from "@mdmx/next/render";
+import { renderComponents } from "../../.mdmx/server";
+
+const entry = await getEntryBySlug(someDirComputedAtRuntime, slug, {
+  status: "private",
+});
+if (!entry) notFound();
+
+<MDMXContent source={entry.source} components={await renderComponents()} />;
+```
+
+`MDMXContent` is a pure function of the source text: it parses with core's
+canonical parser, walks the mdast tree, and resolves component tags through
+the map. No hooks, no client JavaScript — it works directly in a server
+component. An unknown component renders its children inside a
+`<div data-mdmx-missing="Name">` rather than throwing, so a half-deployed
+rename degrades instead of white-screening.
+
+### Reader options
+
+`getEntries(dir, options)` / `getEntryBySlug(dir, slug, options)` take:
+
+- **`status`** — filter by frontmatter `status` (string or array). This is the
+  draft/publish mechanism: model `status` as a collection field
+  ([guide 2](02-components-and-registry.md)), edit it in the frontmatter panel,
+  filter here. Drafts stay committed but never render.
+- **`registry`** — validate each entry and attach `diagnostics`. Useful for an
+  authoring view; for CI-gating prefer `mdmx check`, which already exits
+  non-zero on errors.
+
+Both return `MDMXEntry` objects:
 
 | Field | Meaning |
 | --- | --- |
@@ -27,93 +124,27 @@ skipped) and return `MDMXDocument`s sorted by slug:
 | `path` | Path relative to the collection directory |
 | `frontmatter` | Parsed YAML frontmatter |
 | `source` | The raw MDMX source, frontmatter included |
-| `diagnostics` | Present only when you pass `registry` in the options |
+| `diagnostics` | Present only when you pass `registry` |
 
-Options:
+## Why not `next-mdx-remote`?
 
-- **`status`** — filter by frontmatter `status` (a string or an array, e.g.
-  `["draft", "published"]`). This is the draft/publish mechanism: model
-  `status` as a collection field ([guide 2](02-components-and-registry.md)),
-  edit it in the frontmatter panel, filter here. Drafts stay committed but
-  never render.
-- **`registry`** — validate each document and attach `diagnostics`. Useful for
-  an authoring dashboard; for CI-gating, prefer `mdmx check`, which already
-  exits non-zero on errors.
+You can use it — MDMX is a strict subset of MDX, so any MDX renderer works
+(enable `remark-gfm`, and strip the frontmatter first). But `@mdmx/next/render`
+is smaller and matches what the editor showed the author: same registry, same
+components, no MDX compiler in your bundle, and no client JavaScript for
+content that has none.
 
-## Rendering MDMX
+## Styling
 
-MDMX is a **strict subset of MDX**, so any standard MDX renderer renders it —
-there's no bespoke runtime to adopt. The subset actually makes rendering
-simpler than general MDX:
+Your components carry their own styles — MDMX renders *your* React, so nothing
+is imposed. Two things worth knowing:
 
-- No `import`/`export` and no expressions in content — documents are inert
-  data, safe to compile from a string.
-- Every JSX tag is a registered component — the component map you already
-  built for the editor ([guide 4](04-editor.md)) is exactly the map the
-  renderer needs. Same registry, same components: what authors saw in the
-  editor is what ships.
+- Components built in the **Component Studio** use Tailwind-style classes that
+  your CSS build never sees, so `mdmx generate` compiles exactly those
+  utilities into `.mdmx/studio.css`, which the generated `server.ts` imports.
+  Preflight is excluded on purpose: studio components are guests on your page,
+  not a design system.
+- The prose around them (headings, lists, tables from the Markdown side) is
+  unstyled HTML. Wrap it in whatever your site uses.
 
-The recipe below uses `next-mdx-remote` (install it yourself — it's not an
-MDMX dependency). Two requirements: enable **`remark-gfm`** (MDMX includes
-GFM tables and task lists) and **parse the frontmatter off** (`source`
-includes it).
-
-```tsx
-// app/blog/[slug]/page.tsx
-import { join } from "node:path";
-import { notFound } from "next/navigation";
-import { MDXRemote } from "next-mdx-remote/rsc";
-import remarkGfm from "remark-gfm";
-import { getDocuments, getDocumentBySlug } from "@mdmx/next";
-import { components } from "../../../lib/components";
-
-const POSTS_DIR = join(process.cwd(), "content/posts");
-
-export async function generateStaticParams() {
-  const docs = await getDocuments(POSTS_DIR, { status: "published" });
-  return docs.map((d) => ({ slug: d.slug }));
-}
-
-export default async function PostPage({ params }: { params: { slug: string } }) {
-  const doc = await getDocumentBySlug(POSTS_DIR, params.slug, { status: "published" });
-  if (!doc) notFound();
-
-  return (
-    <article>
-      <h1>{String(doc.frontmatter.title ?? doc.slug)}</h1>
-      <MDXRemote
-        source={doc.source}
-        components={components}
-        options={{
-          parseFrontmatter: true,
-          mdxOptions: { remarkPlugins: [remarkGfm] },
-        }}
-      />
-    </article>
-  );
-}
-```
-
-Any other MDX pipeline (`@mdx-js/mdx` `compile`/`run`, contentlayer-style
-prebuild, …) works the same way: feed it `doc.source`, the component map, and
-remark-gfm.
-
-### Lower-level access
-
-For custom pipelines (search indexing, feeds, excerpt extraction), skip the
-MDX compiler entirely: `@mdmx/core`'s `parseDocument(source)` returns
-`{ tree, frontmatter }` where `tree` is a standard **mdast** AST you can walk
-with the unified ecosystem.
-
-## Keeping the site fresh after edits
-
-- **Local mode**: saves write to the working tree; `next dev` picks them up on
-  the next request. For CMS-owned listing pages, use
-  `export const dynamic = "force-dynamic"` so lists reflect saves immediately.
-- **GitHub mode**: saves are commits on your branch. Let your host's git
-  integration (e.g. Vercel/Netlify auto-deploy) rebuild on push — content
-  changes flow through the exact same pipeline as code changes, previews and
-  rollbacks included. With ISR, pair a webhook with `revalidatePath` if you
-  want updates without a full rebuild.
-
-Next: [go to production with GitHub mode →](06-production-github.md)
+Next: [production with GitHub →](06-production-github.md)

@@ -50,39 +50,28 @@ Install `@mdmx/provider-github`, then replace the local-mode route from
 [guide 3](03-content-api.md):
 
 ```ts
-// app/api/mdmx/[...route]/route.ts
+// app/api/mdmx/[...route]/route.ts — unchanged from local development
 import { createMDMXHandlers } from "@mdmx/next";
-import { GitHubProvider } from "@mdmx/provider-github";
-import { CONTENT_DIR, MEDIA_DIR, REPO, registry } from "../../../../lib/mdmx-config";
 
-export const { GET, POST, PUT, DELETE } = createMDMXHandlers({
-  repo: REPO, // { owner: "your-org", name: "your-repo", branch: "main" }
-  contentDir: CONTENT_DIR,
-  mediaDir: MEDIA_DIR,
-  auth: {
-    clientId: process.env.GITHUB_CLIENT_ID!,
-    clientSecret: process.env.GITHUB_CLIENT_SECRET!,
-  },
-  sessionSecret: process.env.MDMX_SESSION_SECRET!,
-  createProvider: (session) =>
-    new GitHubProvider({
-      owner: REPO.owner,
-      repo: REPO.name,
-      branch: REPO.branch,
-      token: session.token, // the logged-in editor's OAuth token
-    }),
-  registry: registry(),
-  validation: "strict", // recommended in production: reject invalid saves
-  editorPath: "/", // where /auth/login lands after success
-});
-
+export const { GET, POST, PUT, DELETE } = createMDMXHandlers();
 export const dynamic = "force-dynamic";
 ```
 
-The diff from local mode: `localMode` and `insecureCookies` are **gone**,
-`auth` + `sessionSecret` + a `GitHubProvider`-backed `createProvider` are in.
-Commits are authored with the *editor's own token*, so git history shows who
-changed what — no bot identity in the blame.
+The mount file does not change between local and production. Setting the three
+environment variables is what flips the mode: MDMX detects the OAuth
+credentials, switches to `GitHubOAuthStrategy`, and builds a `GitHubProvider`
+from the `repo` in `mdmx.config.json`. Install the provider package for
+production (`pnpm add @mdmx/provider-github`) — it is an optional peer, so
+local-only deployments don't carry it.
+
+If you deploy with none of them set, MDMX refuses to serve and names the
+missing variables. That is deliberate: the alternative is a public site
+silently accepting unauthenticated writes.
+
+Cookies also stop allowing plain HTTP automatically, because `insecureCookies`
+defaults to `NODE_ENV !== "production"`. Commits are authored with the
+*editor's own token*, so git history shows who changed what — no bot identity
+in the blame.
 
 Login entry point: send users to `/api/mdmx/auth/login` (e.g. from a "Log in"
 button, or whenever an API call returns 401).
@@ -131,8 +120,10 @@ only inside the CMS routes.
 
 ## Production checklist
 
-- [ ] `localMode` removed; `insecureCookies` removed (cookies require HTTPS)
-- [ ] `validation: "strict"` so invalid content can't be committed
+- [ ] The three `MDMX_*` environment variables are set (that is what selects GitHub mode)
+- [ ] `repo` in `mdmx.config.json` points at the content repository
+- [ ] `@mdmx/provider-github` installed
+- [ ] `"validation": "strict"` in `mdmx.config.json` so invalid content can't be committed
 - [ ] OAuth callback URL matches `<origin><basePath>/auth/callback` exactly
 - [ ] `MDMX_SESSION_SECRET` is long, random, and stored as a secret
 - [ ] `mdmx generate && mdmx check` runs in CI (protects against hand-edited content)

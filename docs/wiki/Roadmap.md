@@ -42,7 +42,7 @@ content; GitHub-mode deploy is wired but undocumented as a guide.
 | `@mdmx/dashboard` app-layer package | ✅ | Two-file mount (`createDashboardPage` + handlers re-export); ADR-034 |
 | Auth gate + shell (navbar / left nav / contextual right) | ✅ | Client gate over `/me`; localMode auto-enter with badge |
 | Collections managed from the dashboard | ✅ | Config-as-code resolved per request; `GET/POST /collections`, `PUT /collections/:name`; seed-on-first-write migration (ADR-035) |
-| Entry tables + new-entry scaffold + delete | ✅ | `GET /documents` (listing + frontmatter); conflict-safe deletes; `expectedSha: null` creates |
+| Entry tables + new-entry scaffold + delete | ✅ | `GET /entries` (listing + frontmatter); conflict-safe deletes; `expectedSha: null` creates |
 | Embedded editor view | ✅ | `next/dynamic` `ssr:false`; sha-refreshing saves; media adapter; back-links |
 | Collection field editor | ✅ | Draft⇄config builder; nested controls via "advanced" escape hatch |
 | Media library + settings pages | ✅ | Upload/copy/delete; session/repo/validation info; theme pin |

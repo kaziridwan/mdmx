@@ -1,6 +1,6 @@
 # MDMX Specification — v1
 
-**Status:** draft, implemented by `@mdmx/core` 0.1.x.
+**Status:** implemented by `@mdmx/core` 0.5.x.
 **Spec version:** `MDMX_SPEC_VERSION = 1`.
 
 MDMX ("interactive MDX") is a strict subset of MDX designed to be losslessly
@@ -195,14 +195,28 @@ error — the component could never appear in content.
 
 ## 6. Provider contract
 
-Content storage implements `ContentProvider` (`@mdmx/core`):
+Content storage implements `ContentProvider` (`@mdmx/core`). The contract is
+three methods (v2, ADR-044):
 
 - `list(dir)` → recursive blob listing `{path, sha, size}`
-- `read(path)` → `{content, sha}` where `sha` is the **git blob sha**
-- `commit(changes[], message, {expectedShas?})` — atomic multi-file write;
-  `expectedShas` maps path→sha the caller loaded (`null` = must not exist);
-  mismatch throws `ConflictError`
-- `delete(path, message, {expectedShas?})`
+- `read(path, {as})` → `{content, sha}` where `sha` is the **git blob sha**;
+  `as: "text"` (default) decodes UTF-8, `as: "bytes"` returns the raw blob, so
+  media round-trips through any provider. `readText`/`readBytes` are typed
+  helpers over it.
+- `commit(changes[], message, {expectedShas?})` — atomic multi-file write.
+  A change is either `{path, content}` or `{path, delete: true}`, so a
+  rename/move is **one commit**, not two. `expectedShas` maps path→sha the
+  caller loaded (`null` = must not exist); a mismatch throws `ConflictError`.
+
+There is deliberately no standalone `delete()`: deletion is a change like any
+other, which is what makes atomic moves expressible.
+
+Authentication is a separate seam, `AuthStrategy` (`@mdmx/next`, ADR-046):
+`beginLogin` → `completeLogin` → `verifyAccess`. A host that provides both a
+provider and a strategy is fully supported without touching the route layer.
+`verifyAccess` must throw `AuthError` only when access is genuinely revoked —
+any other failure means "couldn't tell", and callers keep the session rather
+than logging every editor out during an outage.
 
 All paths pass `assertSafePath` (no `..`, no absolute paths, no backslashes,
 no drive letters, no control characters) **and** implementations re-verify
@@ -210,13 +224,55 @@ resolved-root containment. Implementations: `GitHubProvider` (Git Data API,
 fast-forward-only ref updates), `LocalProvider` (development; identical
 semantics, doubles as the reference implementation).
 
-## 7. Versioning
+## 7. Studio components (runtime template components)
+
+A **studio component** is a component authored in the browser and stored as
+JSON in the content repo at `<contentDir>/_components/<Name>.json`, rather
+than written as TSX. It is data, not code: no scripts, no event handlers, no
+raw HTML strings — so it can be validated server-side without an HTML parser
+and rendered without `dangerouslySetInnerHTML`.
+
+A definition carries `mdmxStudioVersion: 1`, a PascalCase `name`, a `props`
+array (`{name, type: "string" | "number" | "boolean", required?, default?,
+description?}`), and a `template`: a tree of elements
+`{tag, classes?, attrs?, children?}` whose leaves are `{text}` or `{slot}`
+nodes.
+
+Normative constraints:
+
+- **Tags and attributes are allowlisted.** Only the tags in
+  `STUDIO_ALLOWED_TAGS` and attributes in `STUDIO_ALLOWED_ATTRS` may appear;
+  `href`/`src` values must not carry `javascript:`, `data:`, or `vbscript:`
+  schemes.
+- **Interpolation is `{props.<name>}`** inside text and attribute values, or
+  an explicit `{"slot": "<name>"}` child. Every referenced prop must be
+  declared. A missing value renders as the empty string.
+- **Size limits**: at most 500 nodes and 24 props per definition.
+- **Names must be free.** A definition may not take a name already used by a
+  code component or by another stored definition.
+
+Studio definitions merge into the registry at validation and render time, and
+**code beats studio**: if a `defineMDMX` component has the same name, the code
+component wins everywhere. `mdmx eject` (the dashboard's Eject action) writes
+the definition out as a real `defineMDMX` TSX file; the JSON stays valid until
+the next `mdmx generate` promotes the code version, at which point the merge
+rule shadows it.
+
+Styling: class names in a definition are extracted at build time and compiled
+into `<outDir>/studio.css` (ADR-042). Public pages must not depend on a
+browser-side CSS runtime.
+
+## 8. Versioning
 
 - Documents may declare the spec they target (`mdmx: 1` in frontmatter or a
   repo-level config); absent means "current".
+- `mdmxRegistryVersion` (registry schema) and `MDMX_SPEC_VERSION` (grammar)
+  are distinct counters and must not be conflated.
 - The registry carries `mdmxRegistryVersion` and a content `hash`; editors
   must detect hash drift between a loaded document's session and the current
-  registry. Per-component `version` fields reserve room for `mdmx migrate`
+  registry. Generated artifacts carry no timestamp, so identical inputs
+  produce identical bytes — they are committed, and `mdmx check` fails when a
+  committed registry's hash no longer matches its components. Per-component `version` fields reserve room for `mdmx migrate`
   codemods.
 
 ## Appendix: deliberate exclusions in v1

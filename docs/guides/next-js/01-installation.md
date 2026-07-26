@@ -1,132 +1,150 @@
 # 1 · Installation & project setup
 
-## Install the packages
+## The short version
 
-Inside this monorepo, apps consume the packages via the workspace protocol:
+```sh
+pnpm add @mdmx/core @mdmx/project @mdmx/studio @mdmx/next @mdmx/editor @mdmx/dashboard
+pnpm add -D @mdmx/cli
 
-```jsonc
-// package.json (dependencies)
-{
-  "dependencies": {
-    "@mdmx/core": "workspace:*",
-    "@mdmx/dashboard": "workspace:*",
-    "@mdmx/editor": "workspace:*",
-    "@mdmx/next": "workspace:*"
-  },
-  "devDependencies": {
-    "@mdmx/cli": "workspace:*"
-  }
-}
+pnpm mdmx init nextjs
+# paste the printed transpilePackages snippet into next.config.mjs
+pnpm dev
 ```
 
-Outside the monorepo, install the same set from your registry once published
-(`@mdmx/core`, `@mdmx/dashboard`, `@mdmx/editor`, `@mdmx/next`, and
-`@mdmx/cli` as a dev dependency). `@mdmx/provider-github` is only needed for
-[GitHub mode](06-production-github.md).
+Open `http://localhost:3000/mdmx`. The rest of this page explains what those
+three commands did, so you can change any of it.
 
-The editor declares `react >= 18` / `react-dom >= 18` as peer dependencies;
-your Next.js app already satisfies them.
+Inside this monorepo, apps consume the packages via the workspace protocol
+(`"@mdmx/core": "workspace:*"`, and so on). `@mdmx/provider-github` is only
+needed for [GitHub mode](06-production-github.md) — and even then it's an
+optional peer that the runtime imports for you.
 
-## `next.config.mjs`
+## What `mdmx init nextjs` writes
 
-The packages ship built ESM. Add them to `transpilePackages` so Next's bundler
-handles them (required for symlinked monorepo deps, harmless otherwise):
+The command creates files and never overwrites them, so it is safe to re-run:
+
+```
+your-app/
+├── mdmx.config.json                  # components glob, dirs, collections, repo
+├── components/mdmx/Callout.tsx       # a starter block component
+├── content/posts/hello.mdx           # a starter entry
+└── app/
+    ├── api/mdmx/[...route]/route.ts  # the content/media API
+    └── mdmx/[[...slug]]/page.tsx     # the dashboard
+```
+
+It also adds `generate`, `predev`, and `prebuild` scripts to `package.json`
+(all `mdmx generate`), then runs `generate` once so `next dev` works
+immediately.
+
+It does **not** touch `next.config.*`. Rewriting config-as-code loses comments
+and formatting, so the snippet is printed for you to paste:
 
 ```js
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  transpilePackages: ["@mdmx/core", "@mdmx/editor", "@mdmx/next", "@mdmx/dashboard"],
+  transpilePackages: [
+    "@mdmx/core",
+    "@mdmx/project",
+    "@mdmx/studio",
+    "@mdmx/editor",
+    "@mdmx/next",
+    "@mdmx/dashboard",
+  ],
 };
 
 export default nextConfig;
 ```
 
-## Directory layout
+If you forget, `mdmx check` warns about it — the failure it prevents (Next's
+bundler choking on symlinked workspace deps) is otherwise cryptic.
 
-A typical integrated app looks like this (the demo app follows it exactly):
+## The two mount files
 
-```
-your-app/
-├── mdmx.config.json           # components glob, content dir, collections
-├── .mdmx/                     # GENERATED registry — commit it
-│   ├── registry.json          #   data: component specs, collections
-│   └── registry.ts            #   bindings: imports your real components
-├── components/mdmx/           # your MDMX block components (defineMDMX)
-│   ├── Callout.tsx
-│   └── …
-├── content/                   # MDMX documents, committed to git
-│   └── posts/
-│       └── welcome.mdx
-├── public/media/              # uploaded images (served by Next as /media/*)
-├── lib/
-│   ├── mdmx-config.ts         # shared server-side config (dirs, registry)
-│   └── components.ts          # client component map for live rendering
-└── app/
-    ├── api/mdmx/[...route]/route.ts   # the content/media API (guide 3)
-    ├── mdmx/[[...slug]]/page.tsx      # the dashboard mount (guide 4)
-    └── …                              # your public site (guide 5)
+```ts
+// app/api/mdmx/[...route]/route.ts
+import { createMDMXHandlers } from "@mdmx/next";
+export const { GET, POST, PUT, DELETE } = createMDMXHandlers();
+export const dynamic = "force-dynamic";
 ```
 
-None of the paths are hardcoded — `mdmx.config.json` and the handler options
-let you move any of them — but the guides assume this layout.
+```tsx
+// app/mdmx/[[...slug]]/page.tsx
+import { createDashboardPage } from "@mdmx/dashboard/next";
+import { components } from "../../../.mdmx/components";
 
-## Wire `mdmx generate` into your scripts
+export default createDashboardPage({ components });
+export const dynamic = "force-dynamic";
+```
 
-The registry must exist before `next dev` or `next build` runs, because both
-the API route and the editor load `.mdmx/registry.json` at startup. Use `pre`
-scripts:
+`createMDMXHandlers()` takes no arguments because everything it needs is
+already written down: structural values in `mdmx.config.json`, secrets in the
+environment, the registry in `.mdmx/`. Every one of them is still an explicit
+option when your layout differs — see [guide 3](03-content-api.md).
+
+The dashboard's three generated import lines are the floor: package code can't
+import your components, so *something* in your app has to. That something is
+generated, not maintained by hand.
+
+## `mdmx.config.json`
 
 ```jsonc
-// package.json (scripts)
 {
-  "scripts": {
-    "generate": "mdmx generate",
-    "predev": "mdmx generate",
-    "dev": "next dev",
-    "prebuild": "mdmx generate",
-    "build": "next build",
-    "start": "next start"
+  "components": "components/mdmx/**/*.{ts,tsx}",
+  "contentDir": "content",
+  "mediaDir": "public/media",
+  "outDir": ".mdmx",
+  "repo": { "owner": "your-org", "name": "your-repo", "branch": "main" },
+  "collections": {
+    "posts": {
+      "dir": "content/posts",
+      "fields": {
+        "title": { "control": { "type": "text" }, "required": true },
+        "status": {
+          "control": { "type": "select", "options": ["draft", "private", "published"] },
+          "required": true,
+          "default": "draft"
+        }
+      }
+    }
   }
 }
 ```
 
-Add or change a component and it appears in the editor palette on the next
-start. During active component development, `mdmx dev` watches
-`components/` + `mdmx.config.json` and regenerates on change (debounced,
-hash-diffed — no-op edits don't rewrite the registry).
+This file is the single source of truth for the CLI, the API handlers, and the
+dashboard. `repo` lives here rather than in the environment because it isn't a
+secret — it's a fact about where content lives, identical in every deployment.
 
-## Shared server-side config
+Secrets are the environment's job, and only three exist:
 
-Both the API route and the editor mount page need the same handful of values.
-Centralize them once:
+| Variable | Needed for |
+| --- | --- |
+| `MDMX_GITHUB_CLIENT_ID` | GitHub mode |
+| `MDMX_GITHUB_CLIENT_SECRET` | GitHub mode |
+| `MDMX_SESSION_SECRET` | GitHub mode (seals the session cookie) |
 
-```ts
-// lib/mdmx-config.ts
-import { readFileSync } from "node:fs";
-import { join } from "node:path";
-import { Registry, type RegistrySpec } from "@mdmx/core";
+**Mode is detected, not configured.** All three set → GitHub mode. None set →
+local mode, where saves write to your working tree and there's no login. In
+production with none set, MDMX refuses to start and names the missing
+variables rather than quietly serving unauthenticated writes.
 
-export const CONTENT_DIR = "content";
-export const MEDIA_DIR = "public/media";
-export const REPO = { owner: "your-org", name: "your-repo", branch: "main" } as const;
+## `.mdmx/` — generated, and committed
 
-/** The app runs from the project directory; content lives under it. */
-export function projectRoot(): string {
-  return process.cwd();
-}
+`mdmx generate` writes:
 
-export function registrySpec(): RegistrySpec {
-  const path = join(projectRoot(), ".mdmx", "registry.json");
-  return JSON.parse(readFileSync(path, "utf8")) as RegistrySpec;
-}
+| File | What it is |
+| --- | --- |
+| `registry.json` | The component/collection data. Read by the CLI and the API |
+| `registry.ts` | The spec plus `serverComponents` — server-safe, for public pages |
+| `components.ts` | The same map behind `"use client"`, for the dashboard |
+| `server.ts` | Bound helpers: `MDMXEntry`, `getEntry`, `listEntries`, `renderComponents` |
+| `studio.css` | Utilities for components built in the Studio (only when you have some) |
 
-export function registry(): Registry {
-  return new Registry(registrySpec());
-}
-```
-
-This module uses `node:fs`, so import it only from server code (route
-handlers, server components). The client gets the registry as a serialized
-`RegistrySpec` prop instead — see [guide 4](04-editor.md).
+**Commit this directory.** The registry is the contract your editor palette and
+your validation rules are built from, so a reviewer should see it change in the
+same PR as the component that changed it. The artifacts are byte-stable (no
+timestamps) and a no-op regenerate rewrites nothing, so committing them doesn't
+churn your diffs — and `mdmx check` fails if a committed registry has fallen
+behind its components.
 
 Next: [define components and generate the registry →](02-components-and-registry.md)
