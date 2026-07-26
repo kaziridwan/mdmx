@@ -1,14 +1,18 @@
 /**
- * The content storage contract. Implementations: GitHubProvider
+ * The content storage contract (v2, ADR-044). Implementations: GitHubProvider
  * (@mdmx/provider-github), LocalProvider (@mdmx/next, development mode),
  * and in the future GitLab / generic git.
  *
  * Design notes:
  * - `commit` takes an ARRAY of changes: a post plus its pasted images must
- *   land as one atomic commit.
+ *   land as one atomic commit. Deletions are changes too, so a rename/move
+ *   (write new + delete old) is a single commit rather than two.
  * - Optimistic concurrency via `expectedShas`: callers pass the blob sha
  *   they loaded; a mismatch raises ConflictError instead of silently
  *   overwriting a concurrent edit.
+ * - `read` is binary-capable so media round-trips through any provider; the
+ *   `as` mode keeps it deterministic. Use `readText`/`readBytes` for
+ *   precisely typed call sites.
  */
 
 export interface FileMeta {
@@ -17,9 +21,26 @@ export interface FileMeta {
   size: number;
 }
 
-export interface FileChange {
+export interface FileWrite {
   path: string;
   content: string | Uint8Array;
+}
+
+export interface FileDelete {
+  path: string;
+  delete: true;
+}
+
+export type FileChange = FileWrite | FileDelete;
+
+/** Narrow a change to a deletion (implementations branch on this). */
+export function isFileDelete(change: FileChange): change is FileDelete {
+  return (change as FileDelete).delete === true;
+}
+
+export interface ReadOptions {
+  /** "text" (default) decodes UTF-8; "bytes" returns the raw blob. */
+  as?: "text" | "bytes";
 }
 
 export interface CommitResult {
@@ -40,13 +61,39 @@ export interface CommitOptions {
 export interface ContentProvider {
   /** List blob files under a directory (recursive). `""` lists the root. */
   list(dir: string): Promise<FileMeta[]>;
-  read(path: string): Promise<{ content: string; sha: string }>;
+  read(
+    path: string,
+    options?: ReadOptions,
+  ): Promise<{ content: string | Uint8Array; sha: string }>;
   commit(
     changes: FileChange[],
     message: string,
     options?: CommitOptions,
   ): Promise<CommitResult>;
-  delete(path: string, message: string, options?: CommitOptions): Promise<CommitResult>;
+}
+
+/** Read a file as UTF-8 text. */
+export async function readText(
+  provider: ContentProvider,
+  path: string,
+): Promise<{ content: string; sha: string }> {
+  const { content, sha } = await provider.read(path, { as: "text" });
+  if (typeof content !== "string") {
+    throw new TypeError(`provider returned bytes for a text read of "${path}"`);
+  }
+  return { content, sha };
+}
+
+/** Read a file as raw bytes (media, binary assets). */
+export async function readBytes(
+  provider: ContentProvider,
+  path: string,
+): Promise<{ content: Uint8Array; sha: string }> {
+  const { content, sha } = await provider.read(path, { as: "bytes" });
+  if (typeof content === "string") {
+    throw new TypeError(`provider returned text for a byte read of "${path}"`);
+  }
+  return { content, sha };
 }
 
 export class ConflictError extends Error {

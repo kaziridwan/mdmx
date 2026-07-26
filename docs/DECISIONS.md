@@ -1232,7 +1232,13 @@ third-party providers may exist; every change becomes an ecosystem break).
 union is allowed). Adding capabilities speculatively (the contract's
 smallness is its strength).
 
-**Status.** Planned — 0.5 M2 (plan D9).
+**Status.** Shipped — 0.5 M2a. `core/src/provider.ts`: `FileWrite | FileDelete`
+union, `isFileDelete`, `read(path, {as})` plus typed `readText`/`readBytes`
+helpers; standalone `delete()` removed. LocalProvider and GitHubProvider
+updated in lockstep (+ the deferred §5-4 fix: GitHubProvider now falls back to
+the Blob API when the Contents API answers `encoding: "none"` for 1–100MB
+files, instead of silently returning empty content). Atomic rename is covered
+by a test in both providers.
 
 ## ADR-045 — Component Studio becomes `@mdmx/studio` — model, renderer, and UI (supersedes ADR-038's placement and the S25 §7-1 lean)
 

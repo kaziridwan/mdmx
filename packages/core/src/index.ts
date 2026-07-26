@@ -62,13 +62,19 @@ export {
   ConflictError,
   PathSafetyError,
   assertSafePath,
+  isFileDelete,
+  readBytes,
+  readText,
 } from "./provider.js";
 export type {
   CommitOptions,
   CommitResult,
   ContentProvider,
   FileChange,
+  FileDelete,
   FileMeta,
+  FileWrite,
+  ReadOptions,
 } from "./provider.js";
 
 export {

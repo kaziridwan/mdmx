@@ -12,12 +12,14 @@ import { dirname, join, resolve, sep } from "node:path";
 import {
   assertSafePath,
   ConflictError,
+  isFileDelete,
   PathSafetyError,
   type CommitOptions,
   type CommitResult,
   type ContentProvider,
   type FileChange,
   type FileMeta,
+  type ReadOptions,
 } from "@mdmx/core";
 
 /**
@@ -45,10 +47,16 @@ export class LocalProvider implements ContentProvider {
     return out.sort((a, b) => a.path.localeCompare(b.path));
   }
 
-  async read(path: string): Promise<{ content: string; sha: string }> {
+  async read(
+    path: string,
+    options?: ReadOptions,
+  ): Promise<{ content: string | Uint8Array; sha: string }> {
     const safe = assertSafePath(path);
     const buf = await readFile(this.resolveWithinRoot(safe));
-    return { content: buf.toString("utf8"), sha: gitBlobSha(buf) };
+    const sha = gitBlobSha(buf);
+    return options?.as === "bytes"
+      ? { content: new Uint8Array(buf), sha }
+      : { content: buf.toString("utf8"), sha };
   }
 
   async commit(
@@ -61,24 +69,16 @@ export class LocalProvider implements ContentProvider {
     await this.verifyExpected(options);
     for (const change of safeChanges) {
       const abs = this.resolveWithinRoot(change.path);
+      if (isFileDelete(change)) {
+        await rm(abs);
+        continue;
+      }
       await mkdir(dirname(abs), { recursive: true });
       await writeFile(
         abs,
         typeof change.content === "string" ? change.content : Buffer.from(change.content),
       );
     }
-    this.commitCounter += 1;
-    return { sha: `local-${this.commitCounter}`, message };
-  }
-
-  async delete(
-    path: string,
-    message: string,
-    options?: CommitOptions,
-  ): Promise<CommitResult> {
-    const safe = assertSafePath(path);
-    await this.verifyExpected(options);
-    await rm(this.resolveWithinRoot(safe));
     this.commitCounter += 1;
     return { sha: `local-${this.commitCounter}`, message };
   }
