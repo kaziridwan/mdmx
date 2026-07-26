@@ -25,7 +25,7 @@ export function QuickOpen() {
     setQuery("");
     setSelected(0);
     api
-      .listDocuments(me.contentDir)
+      .listEntries(me.contentDir)
       .then((docs) => setEntries(entryItems(config.mountPath, docs)))
       .catch(() => setEntries([]));
   }, [api, me.contentDir, config.mountPath]);

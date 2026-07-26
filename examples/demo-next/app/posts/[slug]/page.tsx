@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import { getDocumentBySlug, getStudioComponentDefs } from "@mdmx/next";
+import { getEntryBySlug, getStudioComponentDefs } from "@mdmx/next";
 import { MDMXContent, studioRenderComponents } from "@mdmx/next/render";
 import { serverComponents } from "../../../lib/components-server";
 import { SiteHeader } from "../../site-header";
@@ -11,7 +11,7 @@ export const dynamic = "force-dynamic";
 
 export default async function PostPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
-  const doc = await getDocumentBySlug("content/posts", decodeURIComponent(slug), {
+  const doc = await getEntryBySlug("content/posts", decodeURIComponent(slug), {
     status: "published",
   });
   if (!doc) notFound();

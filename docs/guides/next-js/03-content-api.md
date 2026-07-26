@@ -81,7 +81,7 @@ requires a session (401 otherwise); in local mode the session is implicit.
 | `POST /auth/logout` | — | Clears the session cookie |
 | `GET /me` | — | `{ login, repo }` |
 | `GET /files` | `?dir=` (default `contentDir`) | `{ files: FileMeta[] }` |
-| `GET /documents` | `?dir=` (default `contentDir`) | `{ documents: [{ path, sha, frontmatter }] }` — listing + parsed frontmatter in one round trip; bodies excluded |
+| `GET /entries` | `?dir=` (default `contentDir`) | `{ entries: [{ path, sha, frontmatter }] }` — listing + parsed frontmatter in one round trip; bodies excluded |
 | `GET /collections` | — | `{ collections: CollectionSpec[] }` — resolved from `configPath` per request (baked registry as fallback) |
 | `POST /collections` | `{ name, dir?, fields }` | 201 `{ collection, commit }` — writes the config file via the provider; 409 duplicate, 400 + `problems` invalid |
 | `PUT /collections/:name` | `{ fields }` | `{ collection, commit }` — replaces the field schema (`dir` is immutable) |

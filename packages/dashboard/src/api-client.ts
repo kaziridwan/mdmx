@@ -48,7 +48,7 @@ export interface FileContent {
   sha: string;
 }
 
-export interface DocumentMeta {
+export interface EntryMeta {
   path: string;
   sha: string;
   frontmatter: Record<string, unknown>;
@@ -116,12 +116,12 @@ export function createApiClient(basePath: string) {
     readFile: (path: string) =>
       request<FileContent>(`${basePath}/file?path=${encodeURIComponent(path)}`),
 
-    listDocuments: async (dir: string): Promise<DocumentMeta[]> => {
+    listEntries: async (dir: string): Promise<EntryMeta[]> => {
       try {
-        const { documents } = await request<{ documents: DocumentMeta[] }>(
-          `${basePath}/documents?dir=${encodeURIComponent(dir)}`,
+        const { entries } = await request<{ entries: EntryMeta[] }>(
+          `${basePath}/entries?dir=${encodeURIComponent(dir)}`,
         );
-        return documents;
+        return entries;
       } catch (err) {
         if (err instanceof ApiError && err.status === 404) return [];
         throw err;

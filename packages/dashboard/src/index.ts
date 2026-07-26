@@ -21,7 +21,7 @@ export type {
   Me,
   FileEntry,
   FileContent,
-  DocumentMeta,
+  EntryMeta,
   SaveResult,
 } from "./api-client.js";
 export { slugify, scaffoldDocument } from "./scaffold.js";

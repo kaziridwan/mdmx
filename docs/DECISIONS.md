@@ -1344,7 +1344,14 @@ Glossary gains both terms with the relationship stated.
 into the less accurate word). "Entry" everywhere (erases a real distinction
 core legitimately needs).
 
-**Status.** Planned — 0.5 M2 (plan D13).
+**Status.** Shipped — 0.5 M2e. `GET /documents` → `GET /entries` (payload key
+`documents` → `entries`); `getDocuments`/`getDocumentBySlug` →
+`getEntries`/`getEntryBySlug`; `MDMXDocument`/`GetDocumentsOptions` →
+`MDMXEntry`/`GetEntriesOptions`; the dashboard client's `listDocuments`/
+`DocumentMeta` → `listEntries`/`EntryMeta`. Core keeps document vocabulary
+(`parseDocument`, `validateSource`) untouched. Glossary gained both terms;
+guide 03's endpoint table updated. Nothing is published yet, so the rename
+broke no consumers.
 
 ## ADR-048 — Dashboard surface shrinks; the `export *` re-export is removed (amends ADR-034)
 

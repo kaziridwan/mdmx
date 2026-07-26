@@ -1,5 +1,5 @@
 import type { CollectionSpec } from "@mdmx/core";
-import type { DocumentMeta } from "../api-client.js";
+import type { EntryMeta } from "../api-client.js";
 import { editorHref, routeHref } from "../routes.js";
 
 /** One row in the quick-open palette. */
@@ -44,18 +44,18 @@ export function navigationItems(
 
 export function entryItems(
   mountPath: string,
-  documents: readonly DocumentMeta[],
+  entries: readonly EntryMeta[],
 ): QuickOpenItem[] {
-  return documents.map((doc) => {
-    const title = doc.frontmatter.title;
+  return entries.map((entry) => {
+    const title = entry.frontmatter.title;
     return {
       kind: "entry",
       label:
         typeof title === "string" && title.length > 0
           ? title
-          : (doc.path.split("/").pop() ?? doc.path),
-      detail: doc.path,
-      href: editorHref(mountPath, doc.path),
+          : (entry.path.split("/").pop() ?? entry.path),
+      detail: entry.path,
+      href: editorHref(mountPath, entry.path),
     };
   });
 }

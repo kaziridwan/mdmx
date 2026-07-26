@@ -292,7 +292,7 @@ describe("runtime collections drive frontmatter validation on save", () => {
   });
 });
 
-describe("GET /documents", () => {
+describe("GET /entries", () => {
   it("returns listing + parsed frontmatter, skipping bodies and surviving bad files", async () => {
     const provider = new LocalProvider(root);
     await provider.commit(
@@ -308,26 +308,26 @@ describe("GET /documents", () => {
       "seed docs",
     );
     const h = makeHandlers();
-    const res = await h.GET(req("GET", "/documents?dir=content/posts"));
+    const res = await h.GET(req("GET", "/entries?dir=content/posts"));
     expect(res.status).toBe(200);
-    const { documents } = (await res.json()) as {
-      documents: { path: string; sha: string; frontmatter: Record<string, unknown> }[];
+    const { entries } = (await res.json()) as {
+      entries: { path: string; sha: string; frontmatter: Record<string, unknown> }[];
     };
-    expect(documents.map((d) => d.path)).toEqual([
+    expect(entries.map((e) => e.path)).toEqual([
       "content/posts/a.mdx",
       "content/posts/b.mdx",
       "content/posts/broken.mdx",
     ]);
-    expect(documents[0]!.frontmatter).toEqual({ title: "Alpha", status: "published" });
-    expect(documents[0]!.sha).toMatch(/^[0-9a-f]{40}$/);
-    expect(documents[2]!.frontmatter).toEqual({}); // malformed → empty, not a 500
-    const asJson = JSON.stringify(documents);
+    expect(entries[0]!.frontmatter).toEqual({ title: "Alpha", status: "published" });
+    expect(entries[0]!.sha).toMatch(/^[0-9a-f]{40}$/);
+    expect(entries[2]!.frontmatter).toEqual({}); // malformed → empty, not a 500
+    const asJson = JSON.stringify(entries);
     expect(asJson).not.toContain("# A"); // bodies stay out of the payload
   });
 
   it("confines dir like the other read routes", async () => {
     const h = makeHandlers();
-    const res = await h.GET(req("GET", "/documents?dir=secrets"));
+    const res = await h.GET(req("GET", "/entries?dir=secrets"));
     expect(res.status).toBe(400);
   });
 });

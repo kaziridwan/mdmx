@@ -1,6 +1,6 @@
 import { cookies } from "next/headers";
 import { notFound, redirect } from "next/navigation";
-import { getDocumentBySlug, getSession, getStudioComponentDefs } from "@mdmx/next";
+import { getEntryBySlug, getSession, getStudioComponentDefs } from "@mdmx/next";
 import { MDMXContent, studioRenderComponents } from "@mdmx/next/render";
 import { serverComponents } from "../../../lib/components-server";
 import { SiteHeader } from "../../site-header";
@@ -26,7 +26,7 @@ export default async function PrivatePostPage({
   const slug = segments[segments.length - 1]!;
   const collectionDir = ["content", ...segments.slice(0, -1)].join("/");
 
-  const doc = await getDocumentBySlug(collectionDir, slug, { status: "private" });
+  const doc = await getEntryBySlug(collectionDir, slug, { status: "private" });
   if (!doc) notFound();
 
   const studioDefs = await getStudioComponentDefs("content");

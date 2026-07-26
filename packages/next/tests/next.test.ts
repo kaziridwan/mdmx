@@ -10,7 +10,7 @@ import {
   Registry,
   type RegistrySpec,
 } from "@mdmx/core";
-import { getDocumentBySlug, getDocuments, LocalProvider } from "../src/index.js";
+import { getEntries, getEntryBySlug, LocalProvider } from "../src/index.js";
 
 let root: string;
 let provider: LocalProvider;
@@ -122,8 +122,8 @@ describe("LocalProvider", () => {
 });
 
 describe("content readers", () => {
-  it("getDocuments parses frontmatter and derives slugs", async () => {
-    const docs = await getDocuments(join(root, "content/posts"));
+  it("getEntries parses frontmatter and derives slugs", async () => {
+    const docs = await getEntries(join(root, "content/posts"));
     expect(docs.map((d) => d.slug)).toEqual(["custom-slug", "hello", "nested/deep"]);
     const hello = docs.find((d) => d.slug === "hello")!;
     expect(hello.frontmatter.title).toBe("Hello");
@@ -131,14 +131,14 @@ describe("content readers", () => {
   });
 
   it("filters by frontmatter status", async () => {
-    const published = await getDocuments(join(root, "content/posts"), {
+    const published = await getEntries(join(root, "content/posts"), {
       status: "published",
     });
     expect(published.map((d) => d.slug)).toEqual(["hello", "nested/deep"]);
   });
 
-  it("getDocumentBySlug honors frontmatter slug overrides", async () => {
-    const doc = await getDocumentBySlug(join(root, "content/posts"), "custom-slug");
+  it("getEntryBySlug honors frontmatter slug overrides", async () => {
+    const doc = await getEntryBySlug(join(root, "content/posts"), "custom-slug");
     expect(doc).not.toBeNull();
     expect(doc!.path).toBe("draft.mdx");
   });
@@ -148,7 +148,7 @@ describe("content readers", () => {
       mdmxRegistryVersion: 1,
       components: [],
     } satisfies RegistrySpec);
-    const doc = await getDocumentBySlug(join(root, "content/posts"), "nested/deep", {
+    const doc = await getEntryBySlug(join(root, "content/posts"), "nested/deep", {
       registry,
     });
     expect(doc!.diagnostics!.map((d) => d.code)).toContain("MDMX001"); // <Mystery />

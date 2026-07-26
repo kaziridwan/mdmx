@@ -102,7 +102,7 @@ describe("QuickOpen", () => {
   it("opens on Cmd+K, searches entries, Enter navigates", async () => {
     const assign = vi.fn();
     vi.stubGlobal("location", { assign } as unknown as Location);
-    const listDocuments = vi.fn(async () => [
+    const listEntries = vi.fn(async () => [
       {
         path: "content/posts/welcome.mdx",
         sha: "s",
@@ -110,13 +110,13 @@ describe("QuickOpen", () => {
       },
       { path: "content/posts/roadmap.mdx", sha: "s", frontmatter: { title: "Roadmap" } },
     ]);
-    const el = await mountPalette({ listDocuments });
+    const el = await mountPalette({ listEntries });
 
     expect(el.querySelector(".mdmx-dash-palette")).toBeNull();
     press("k", { metaKey: true });
     for (let i = 0; i < 6; i++) await flush();
     expect(el.querySelector(".mdmx-dash-palette")).not.toBeNull();
-    expect(listDocuments).toHaveBeenCalledWith("content");
+    expect(listEntries).toHaveBeenCalledWith("content");
 
     const input = el.querySelector(".mdmx-dash-palette-input") as HTMLInputElement;
     const set = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")!.set!;
@@ -137,8 +137,8 @@ describe("QuickOpen", () => {
   });
 
   it("closes on Escape and includes navigation targets", async () => {
-    const listDocuments = vi.fn(async () => []);
-    const el = await mountPalette({ listDocuments });
+    const listEntries = vi.fn(async () => []);
+    const el = await mountPalette({ listEntries });
     press("k", { ctrlKey: true });
     for (let i = 0; i < 6; i++) await flush();
     expect(el.textContent).toContain("Settings");
