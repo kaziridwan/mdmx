@@ -87,7 +87,7 @@ import { notFound } from "next/navigation";
 import { getEntries, getEntryBySlug, getStudioComponentDefs, type MDMXEntry } from "@mdmx/next";
 import { MDMXContent } from "@mdmx/next/render";
 import { studioRenderComponents } from "@mdmx/studio/react";
-import { serverComponents } from "./registry.js";${hasStudioCss ? '\nimport "./studio.css";' : ""}
+import { serverComponents } from "./registry";${hasStudioCss ? '\nimport "./studio.css";' : ""}
 
 /** Collection name → directory, from mdmx.config.json. */
 export const collections = ${JSON.stringify(dirs, null, 2)} as const;

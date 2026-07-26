@@ -115,9 +115,13 @@ describe("mdmx generate", () => {
     await generate(APP, withCollections);
     const ts = readFileSync(join(APP, ".mdmx/server.ts"), "utf8");
     expect(ts).toContain('"posts": "content/posts"');
+    // Extensionless: these modules are compiled by the app's bundler (Next's
+    // webpack/turbopack), which does not map "./registry.js" onto registry.ts.
+    expect(ts).toContain('from "./registry"');
+    expect(ts).not.toContain('from "./registry.js"');
     expect(ts).toContain("export async function MDMXEntry(");
     expect(ts).toContain("export async function listEntries(");
-    expect(ts).toContain('import { serverComponents } from "./registry.js";');
+    expect(ts).toContain('import { serverComponents } from "./registry";');
     await generate(APP, config); // restore
   });
 

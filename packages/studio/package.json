@@ -2,6 +2,15 @@
   "name": "@mdmx/studio",
   "version": "0.5.0",
   "description": "Component Studio: the runtime template-component model, validation, registry integration, TSX eject, and the single template→React renderer",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/kaziridwan/mdmx.git",
+    "directory": "packages/studio"
+  },
+  "homepage": "https://github.com/kaziridwan/mdmx#readme",
+  "bugs": {
+    "url": "https://github.com/kaziridwan/mdmx/issues"
+  },
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",

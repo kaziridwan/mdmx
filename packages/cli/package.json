@@ -2,6 +2,15 @@
   "name": "@mdmx/cli",
   "version": "0.5.0",
   "description": "MDMX tooling: registry codegen (generate), content linting (check), and watch mode (dev)",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/kaziridwan/mdmx.git",
+    "directory": "packages/cli"
+  },
+  "homepage": "https://github.com/kaziridwan/mdmx#readme",
+  "bugs": {
+    "url": "https://github.com/kaziridwan/mdmx/issues"
+  },
   "type": "module",
   "bin": {
     "mdmx": "./dist/bin.js"
