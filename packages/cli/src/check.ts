@@ -17,6 +17,8 @@ export interface CheckResult {
   warningCount: number;
   /** Non-null when the committed registry no longer matches the components. */
   staleRegistry: string | null;
+  /** Non-null when next.config is missing `transpilePackages` (ADR-041). */
+  setupWarning: string | null;
 }
 
 export async function check(cwd: string, config: MDMXConfig): Promise<CheckResult> {
@@ -33,6 +35,9 @@ export async function check(cwd: string, config: MDMXConfig): Promise<CheckResul
   // someone edits a component and forgets to regenerate — otherwise the
   // editor palette and the validation rules quietly disagree with the code.
   const staleRegistry = await detectStaleRegistry(cwd, config, spec);
+  // `mdmx init` prints the next.config snippet rather than editing the file,
+  // so check is what makes forgetting it visible instead of mysterious.
+  const setupWarning = detectMissingTranspile(cwd);
 
   const contentFiles = await glob([`${config.contentDir}/**/*.{md,mdx}`], {
     cwd,
@@ -64,7 +69,7 @@ export async function check(cwd: string, config: MDMXConfig): Promise<CheckResul
     files.push({ file: rel, diagnostics });
   }
 
-  return { files, errorCount, warningCount, staleRegistry };
+  return { files, errorCount, warningCount, staleRegistry, setupWarning };
 }
 
 /**
@@ -99,6 +104,22 @@ async function detectStaleRegistry(
   return (
     `${join(config.outDir, "registry.json")} is stale (committed ${committed.hash}, ` +
     `components hash ${specHash}). Run \`mdmx generate\` and commit the result.`
+  );
+}
+
+/**
+ * Next.js needs the workspace packages in `transpilePackages`. Missing it
+ * fails at runtime with an opaque bundler error, so name it here.
+ */
+function detectMissingTranspile(cwd: string): string | null {
+  const candidates = ["next.config.mjs", "next.config.js", "next.config.ts"];
+  const found = candidates.map((f) => join(cwd, f)).find((p) => existsSync(p));
+  if (!found) return null; // not a Next.js app, or config-less
+  const source = readFileSync(found, "utf8");
+  if (source.includes("transpilePackages")) return null;
+  return (
+    `${relative(cwd, found)} has no \`transpilePackages\`. Add the @mdmx/* packages ` +
+    "to it, or Next's bundler will fail on the symlinked workspace deps."
   );
 }
 
