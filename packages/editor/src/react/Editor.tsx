@@ -19,7 +19,12 @@ import { dropCursor } from "prosemirror-dropcursor";
 import { gapCursor } from "prosemirror-gapcursor";
 import { parseMDX, type CollectionSpec, type Registry } from "@mdmx/core";
 import { buildSchema, componentNodeName, componentNameFromNode } from "../schema.js";
-import { mdmxInputRules, initialProps, resolveComponentDrop } from "../commands.js";
+import {
+  markKeymap,
+  mdmxInputRules,
+  initialProps,
+  resolveComponentDrop,
+} from "../commands.js";
 import { fromMdast } from "../from-mdast.js";
 import { createReactNodeView } from "./react-node-view.js";
 import { makeComponentBlock } from "./ComponentBlock.js";
@@ -205,6 +210,10 @@ export function MDMXEditor({
       plugins: [
         history(),
         keymap({ "Mod-z": undo, "Mod-y": redo, "Shift-Mod-z": redo }),
+        // Mark shortcuts. `markCommands` existed since the command layer
+        // landed but was never wired to a keymap, so the editor shipped
+        // without Mod-B/Mod-I — the shortcuts every writer reaches for first.
+        keymap(markKeymap(schema)),
         mdmxInputRules(schema),
         keymap(baseKeymap),
         dropCursor({ class: "mdmx-dropcursor", width: 2 }),

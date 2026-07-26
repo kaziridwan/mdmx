@@ -14,6 +14,7 @@ export type { ToMdastOptions } from "./to-mdast.js";
 export {
   mdmxInputRules,
   markCommands,
+  markKeymap,
   setHeading,
   setParagraph,
   wrapBlockquote,
