@@ -27,7 +27,7 @@ import { SettingsView } from "./views/SettingsView.js";
 import { StudioView } from "./views/StudioView.js";
 import { StudioEditorView } from "./views/StudioEditorView.js";
 import { applyThemePreference, readThemePreference } from "./theme.js";
-import { ensureTailwindRuntime } from "./tailwind-runtime.js";
+import { ensureTailwindRuntime } from "@mdmx/studio/ui";
 
 /**
  * Client root of the dashboard. The server page hands us the slug segments,

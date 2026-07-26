@@ -1,8 +1,8 @@
-import { STUDIO_ALLOWED_ATTRS, STUDIO_ALLOWED_TAGS, type TemplateChild, type TemplateElement } from "@mdmx/studio";
+import { STUDIO_ALLOWED_ATTRS, STUDIO_ALLOWED_TAGS, type TemplateChild, type TemplateElement } from "../index.js";
 
 /**
  * HTML ⇄ studio template tree. HTML is only the studio's *input format*: the
- * stored definition is the restricted tree (see core/studio.ts), so parsing
+ * stored definition is the restricted tree (see ../model.ts), so parsing
  * filters to the allowlists and reports what it dropped instead of trusting
  * markup. `{props.x}` placeholders ride along inside text and attribute
  * values untouched.
