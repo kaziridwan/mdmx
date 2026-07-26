@@ -74,6 +74,7 @@ and printed by `mdmx check`:
 | MDMX007 | warning | Prop not declared by the component spec |
 | MDMX008 | error | Required frontmatter field missing (collection schema) |
 | MDMX009 | error | Frontmatter field value doesn't match its declared control/type |
+| MDMX010 | error | Frontmatter isn't valid YAML, or isn't a mapping |
 
 Common sources: hand-edited `.mdx` files (run `mdmx check` in CI to catch
 them), components renamed without regenerating the registry, and content

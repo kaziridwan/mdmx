@@ -44,7 +44,7 @@ wiki-upkeep checklist in AGENTS.md (append SessionLog, record ADRs, sync wiki).
 
 ## Packages
 
-- [packages/core](packages/core): parser, validator (MDMX001–009), canonical serializer, Registry, defineMDMX, ContentProvider contract (v2: deletions in the change set, binary reads)
+- [packages/core](packages/core): parser, validator (MDMX001–010), canonical serializer, Registry, defineMDMX, ContentProvider contract (v2: deletions in the change set, binary reads)
 - [packages/project](packages/project): `mdmx.config.*` schema and loading (json + mjs), environment/mode resolution, registry loading
 - [packages/studio](packages/studio): Component Studio — template model, validation, registry merge, TSX eject, `/react` template renderer
 - [packages/cli](packages/cli): `mdmx init` (scaffold), `mdmx generate` (registry + component maps + bound server helpers + studio CSS), `mdmx check` (content lint + stale-registry detection), `mdmx dev` (watch)

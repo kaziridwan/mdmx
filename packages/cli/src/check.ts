@@ -1,7 +1,12 @@
 import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { join, relative } from "node:path";
 import { glob } from "tinyglobby";
-import { parseDocument, Registry, validateFrontmatter, validateSource, type Diagnostic, type RegistrySpec } from "@mdmx/core";
+import {
+  Registry,
+  validateDocument,
+  type Diagnostic,
+  type RegistrySpec,
+} from "@mdmx/core";
 import { mergeStudioSpecs, parseStudioComponent, STUDIO_COMPONENTS_DIR } from "@mdmx/studio";
 import type { MDMXConfig } from "@mdmx/project";
 import { computeRegistryHash } from "./generate.js";
@@ -52,14 +57,9 @@ export async function check(cwd: string, config: MDMXConfig): Promise<CheckResul
     const source = readFileSync(file, "utf8");
     // Forward slashes even on win32 — collectionForPath matches on "/".
     const rel = relative(cwd, file).replaceAll("\\", "/");
-    const diagnostics = validateSource(source, { registry });
-
-    // Frontmatter validation against the file's collection, if any.
-    const collection = registry.collectionForPath(rel);
-    if (collection) {
-      const { frontmatter } = parseDocument(source);
-      diagnostics.push(...validateFrontmatter(frontmatter, collection));
-    }
+    // One seam: subset rules + frontmatter against the file's collection,
+    // parsed once, with malformed YAML reported rather than thrown.
+    const diagnostics = validateDocument(source, { registry, path: rel });
 
     if (diagnostics.length === 0) continue;
     for (const d of diagnostics) {

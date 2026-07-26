@@ -49,7 +49,8 @@ export {
 export { evaluateAttributes, evaluateExpression } from "./props.js";
 export type { EvaluatedProps } from "./props.js";
 
-export { validateTree, validateSource } from "./validate.js";
+export { validateTree, validateSource, validateDocument } from "./validate.js";
+export type { ValidateDocumentOptions } from "./validate.js";
 export type { ValidateOptions } from "./validate.js";
 
 export {
