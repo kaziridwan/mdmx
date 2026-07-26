@@ -5,7 +5,7 @@ Per-package reference. Test counts are current as of the last session (see
 
 ---
 
-## @mdmx/core — 55 tests
+## @mdmx/core — 54 tests
 
 The format. Zero React/Next dependencies (Invariant #9).
 
@@ -28,10 +28,42 @@ Key exports: `parseMDX`, `parseDocument`, `validateTree`, `validateSource`,
 
 ---
 
-## @mdmx/cli — 19 tests
+## @mdmx/project — 13 tests
 
-Tooling. Binary: `mdmx`. Reads `collections` from `mdmx.config.json`, emits them
-into the registry, and validates frontmatter in `check`.
+What a project on disk looks like: the layer between the spec and the runtimes
+(ADR-043). Node-only, framework-free.
+
+| File | Responsibility |
+| --- | --- |
+| `config.ts` | `MDMXConfig` schema + `DEFAULT_CONFIG`; `loadConfig` reads `mdmx.config.json` **or** `.mjs` (the CLI and the runtime used to disagree about this); `mergeConfig`, `validateConfig`, and `parseProjectConfig`/`ProjectConfigFile` for the provider-read path (ADR-035). |
+| `env.ts` | `resolveMode` — GitHub when the OAuth vars are set, local when they aren't, and a `ModeResolutionError` naming the missing variables in production (ADR-039). `insecureCookiesDefault`. |
+| `registry.ts` | `loadRegistrySpec`/`loadRegistry`/`tryLoadRegistrySpec` + `MissingRegistryError` that points at `mdmx generate`. |
+
+---
+
+## @mdmx/studio — 32 tests
+
+The Component Studio, whole (ADR-045): model, semantics, renderer, and UI in
+one package. Depends only on core; core never imports it.
+
+| Entry | Responsibility |
+| --- | --- |
+| `.` | `model.ts` (types, `parseStudioComponent`, paths), `validate.ts` (tag/attr allowlists, `validateStudioComponent`), `spec.ts` (`studioComponentToSpec`), `merge.ts` (`mergeStudioSpecs` — the code-beats-studio rule the CLI and the runtime share), `eject.ts` (TSX codegen), `interpolate.ts` (the one `{props.x}` implementation). |
+| `./react` | `studioComponent`/`studioRenderComponents` — the single template→React renderer, used by public pages, the dashboard preview, and the editor canvas. |
+| `./ui` | The builder screens (`StudioView`, `StudioEditorView`, `template-html`, `template-edit`, canvas Tailwind runtime) behind an injected `StudioClient` + `StudioHost`, which the dashboard implements in `studio-bridge.ts`. |
+
+---
+
+## @mdmx/cli — 34 tests
+
+Tooling. Binary: `mdmx`. Config loading now lives in `@mdmx/project`; the CLI
+owns codegen, linting, scaffolding, and watch mode.
+
+Commands: `init <target>` (scaffold — ADR-041), `generate` (registry +
+`registry.ts` server map + `components.ts` client map + bound `server.ts` +
+`studio.css`, all byte-stable and hash-gated for committing — ADR-040/042),
+`check` (content lint + stale-registry detection + a `transpilePackages`
+warning), `dev` (watch components, config, and studio definitions).
 
 | File | Responsibility |
 | --- | --- |
@@ -50,7 +82,7 @@ registry on change; reports `unchanged` when the content hash is identical).
 
 ---
 
-## @mdmx/editor — 109 tests
+## @mdmx/editor — 113 tests
 
 Registry→ProseMirror, converters, commands (main entry, React-free), plus the
 flat React editor UI behind the `@mdmx/editor/react` subpath.
@@ -79,7 +111,7 @@ have landed; remaining polish is nested drop indicators + per-region slash.
 
 ---
 
-## @mdmx/next — 57 tests
+## @mdmx/next — 90 tests
 
 Next.js integration. The dashboard mount lives in `@mdmx/dashboard`;
 `examples/demo-next` is the runnable reference. Saves are validated against
@@ -102,7 +134,7 @@ re-verification, conflict 409s, media type/size limits + no-clobber.
 
 ---
 
-## @mdmx/dashboard — 38 tests
+## @mdmx/dashboard — 41 tests
 
 The app layer (ADR-034): the drop-in CMS mounted with two ~3-line files
 (`app/mdmx/[[...slug]]/page.tsx` + `app/api/mdmx/[...route]/route.ts`).
@@ -123,7 +155,7 @@ under `.mdmx-dash-editor` so standalone editor mounts stay headless.
 
 ---
 
-## @mdmx/provider-github — 7 tests
+## @mdmx/provider-github — 12 tests
 
 | File | Responsibility |
 | --- | --- |
