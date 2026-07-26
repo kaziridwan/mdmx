@@ -80,15 +80,15 @@ export function EditorView({ path: segments }: { path: string[] }) {
 
   const onSave = useCallback(
     async (content: string) => {
-      await api.saveFile({
+      // The save response carries the new blob sha, so the next save stays
+      // conflict-safe without a follow-up read (and without its race window).
+      const { sha } = await api.saveFile({
         path,
         content,
         expectedSha: shaRef.current,
         message: `mdmx: edit ${path}`,
       });
-      // Refresh the blob sha so the next save stays conflict-safe.
-      const fresh = await api.readFile(path);
-      shaRef.current = fresh.sha;
+      shaRef.current = sha;
     },
     [api, path],
   );

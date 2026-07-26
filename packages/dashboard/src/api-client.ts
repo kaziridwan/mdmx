@@ -61,6 +61,8 @@ export interface CommitInfo {
 
 export interface SaveResult {
   commit: CommitInfo;
+  /** Blob sha of the saved content — feed straight back as `expectedSha`. */
+  sha: string;
   diagnostics: Diagnostic[];
 }
 

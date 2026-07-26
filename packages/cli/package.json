@@ -23,5 +23,14 @@
   "devDependencies": {
     "@types/node": "~22.10.10",
     "@types/react": "^19.0.0"
+  },
+  "files": [
+    "dist"
+  ],
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
   }
 }
