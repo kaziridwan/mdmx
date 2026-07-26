@@ -17,7 +17,7 @@ project to a deployed CMS backed by GitHub OAuth.
 | 2 | [Components & the registry](02-components-and-registry.md) | `defineMDMX()`, `mdmx.config.json`, collections, `mdmx generate` / `check` / `dev` |
 | 3 | [The content API](03-content-api.md) | `createMDMXHandlers()` mounted as an App Router route, `localMode` + `LocalProvider` |
 | 4 | [Mounting the dashboard](04-editor.md) | The two-file `/mdmx` mount: shell, entry tables, embedded editor, media, ⌘K — plus the manual editor mount as an advanced path |
-| 5 | [Rendering content](05-rendering-content.md) | `getDocuments()` / `getDocumentBySlug()`, draft/publish, rendering MDMX on the public site |
+| 5 | [Rendering content](05-rendering-content.md) | `<MDMXEntry>` and the generated `.mdmx/server.ts`, draft/publish, Layer-2 readers |
 | 6 | [Production: GitHub mode](06-production-github.md) | GitHub OAuth app, sealed sessions, `GitHubProvider`, deployment |
 | 7 | [Troubleshooting](07-troubleshooting.md) | Common errors, HTTP status meanings, diagnostic codes |
 
@@ -28,7 +28,7 @@ components/mdmx/*.tsx ──(mdmx generate)──► .mdmx/registry.{json,ts}
         │                                        │
         │ your components                        │ drives validation, the editor
         ▼                                        ▼ palette, and prop panels
-   public site  ◄──(getDocuments)── content/*.mdx ◄──(save)── MDMXEditor
+   public site  ◄──(listEntries)─── content/*.mdx ◄──(save)── MDMXEditor
                                          ▲                        │
                                          └── ContentProvider ◄────┘
                                              (local FS in dev, GitHub in prod)
@@ -60,7 +60,7 @@ GitHub via the Git Data API (atomic multi-file commits, conflict detection).
 | Who it's for | Local authoring, prototyping | A deployed CMS your collaborators log into |
 | Auth | None (synthetic `local` session) | GitHub OAuth; push permission on the repo ⇒ CMS access |
 | Writes go to | The working tree via `LocalProvider` | Atomic commits via `GitHubProvider` |
-| Config | `localMode: true` | `auth` + `sessionSecret` + `createProvider` |
+| Config | nothing (mode detected) | three `MDMX_*` env vars |
 
 Guides 1–5 build the local-mode integration end to end; guide 6 converts it to
 GitHub mode. Validation, path safety, CSRF-origin checks, and conflict

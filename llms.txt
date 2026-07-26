@@ -1,14 +1,24 @@
 # MDMX
 
-> A git-native CMS toolkit for Next.js built on "MDMX": a strict, round-trippable
-> subset of MDX where the user's own React components are first-class blocks in a
-> Notion-style editor. Content is committed to the user's GitHub repo; a codegen
-> step turns their components into a typed registry that drives validation, the
-> editor palette, and prop panels. TypeScript, npm-workspaces monorepo, ESM.
+> A git-native CMS toolkit for Next.js built on "MDMX": a strict,
+> round-trippable subset of MDX where the user's own React components are
+> first-class blocks in a Notion-style editor. Content is committed to the
+> user's repo; a codegen step turns their components into a typed registry
+> that drives validation, the editor palette, prop panels, and the public
+> render. TypeScript, pnpm-workspaces monorepo, ESM.
+
+Setup is convention-first: `mdmx init nextjs` scaffolds the app,
+`createMDMXHandlers()` takes no arguments (structural values come from
+`mdmx.config.json`, secrets from the environment, mode is detected and fails
+closed in production), and `mdmx generate` writes the component maps and bound
+server helpers into a committed `.mdmx/` directory.
 
 Key invariants: canonical byte-stable serialization (changes are semver-major);
 component props must be JSON literals; out-of-subset content is preserved
 byte-for-byte via raw blocks; editing one prop changes one line of output.
+
+Vocabulary: a *document* is any MDMX file (core's concern); an *entry* is a
+document belonging to a collection (project/HTTP/dashboard vocabulary).
 
 Agents: documentation is part of "done". After each session, follow the
 wiki-upkeep checklist in AGENTS.md (append SessionLog, record ADRs, sync wiki).
@@ -17,31 +27,34 @@ wiki-upkeep checklist in AGENTS.md (append SessionLog, record ADRs, sync wiki).
 
 - [SPEC.md](SPEC.md): normative MDMX v1 grammar, canonical form, registry schema, diagnostics, provider contract
 - [AGENTS.md](AGENTS.md): agent operating guide — architecture map, commands, invariants, wiki-upkeep rule
-- [claude-code-handoff.md](agent-context/claude-code-handoff.md): start-here briefing for a Claude Code session
-- [docs/DECISIONS.md](docs/DECISIONS.md): Architecture Decision Record (ADR log)
+- [docs/DECISIONS.md](docs/DECISIONS.md): Architecture Decision Record (ADR-001…048)
+- [docs/guides/next-js/](docs/guides/next-js/): step-by-step integration, install → GitHub-mode production
 - [docs/wiki/Home.md](docs/wiki/Home.md): the documentation hub
-- [README.md](README.md): overview, package status, roadmap
+- [README.md](README.md): overview, quick start, package table, roadmap
 
 ## Wiki
 
 - [Architecture](docs/wiki/Architecture.md): the pipeline and how packages connect
 - [Packages](docs/wiki/Packages.md): per-package reference and test counts
-- [Invariants](docs/wiki/Invariants.md): the nine rules that must not break
-- [Glossary](docs/wiki/Glossary.md): MDMX, registry, control, children policy, …
+- [Invariants](docs/wiki/Invariants.md): the rules that must not break
+- [Glossary](docs/wiki/Glossary.md): document vs entry, registry, control, children policy, …
 - [Roadmap](docs/wiki/Roadmap.md): done / in-progress / next, by phase
-- [TwoColumn](docs/wiki/TwoColumn.md): the nested-editing implementation plan
 - [Testing](docs/wiki/Testing.md): suite organization and load-bearing guarantees
 - [SessionLog](docs/wiki/SessionLog.md): chronological change history
 
 ## Packages
 
-- [packages/core](packages/core): parser, validator (MDMX001–007), canonical serializer, Registry, defineMDMX, ContentProvider contract
-- [packages/cli](packages/cli): `mdmx generate` (TS type extraction → registry codegen), `mdmx check` (content lint)
-- [packages/editor](packages/editor): registry→ProseMirror schema, mdast⇄ProseMirror converters, command/palette layer (React UI pending)
-- [packages/next](packages/next): LocalProvider, content readers, sessions, GitHub OAuth, API handlers (mount page pending)
+- [packages/core](packages/core): parser, validator (MDMX001–009), canonical serializer, Registry, defineMDMX, ContentProvider contract (v2: deletions in the change set, binary reads)
+- [packages/project](packages/project): `mdmx.config.*` schema and loading (json + mjs), environment/mode resolution, registry loading
+- [packages/studio](packages/studio): Component Studio — template model, validation, registry merge, TSX eject, `/react` template renderer
+- [packages/cli](packages/cli): `mdmx init` (scaffold), `mdmx generate` (registry + component maps + bound server helpers + studio CSS), `mdmx check` (content lint + stale-registry detection), `mdmx dev` (watch)
+- [packages/editor](packages/editor): registry→ProseMirror schema, mdast⇄ProseMirror converters, React editor under `/react`
+- [packages/next](packages/next): route handlers, LocalProvider, entry readers, sessions, `AuthStrategy` seam, `/render` for public pages
+- [packages/dashboard](packages/dashboard): the drop-in CMS mounted at `/mdmx`
 - [packages/provider-github](packages/provider-github): atomic multi-file commits via the GitHub Git Data API with conflict detection
 
 ## Examples
 
-- [examples/demo](examples/demo): minimal consumer project; run `node ../../packages/cli/dist/bin.js generate` inside it
-- [examples/editor-prototype.html](examples/editor-prototype.html): interactive editor UI spec (self-contained React artifact)
+- [examples/demo-next](examples/demo-next): complete runnable Next.js app on the current recipe (`pnpm dev:next`)
+- [examples/demo](examples/demo): minimal consumer project for CLI exercises
+- [examples/editor-playground](examples/editor-playground): Vite harness for editor UI work

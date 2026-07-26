@@ -1,6 +1,6 @@
 {
   "name": "@mdmx/core",
-  "version": "0.4.1",
+  "version": "0.5.0",
   "description": "MDMX spec: parser, validator, and canonical serializer for the interactive MDX subset",
   "type": "module",
   "main": "./dist/index.js",

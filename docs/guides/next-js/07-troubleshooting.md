@@ -60,7 +60,7 @@ environment — never generate it at boot.
 
 ## Validation diagnostics
 
-Returned by saves (`PUT /file`), attached by `getDocuments(..., { registry })`,
+Returned by saves (`PUT /file`), attached by `getEntries(..., { registry })`,
 and printed by `mdmx check`:
 
 | Code | Severity | Meaning |
@@ -85,7 +85,7 @@ created before a component grew a new required prop (give it a `default` in
 **A block renders as a gray placeholder instead of the real component**
 The registry knows the component but the `components` map passed to
 `MDMXEditor` doesn't include it (or the key doesn't match the registry
-`name`). Update `lib/components.ts`.
+`name`). Re-run `mdmx generate` so the generated maps pick it up.
 
 **"could not parse MDMX" on save, or a component won't accept a child**
 The document violates the grammar — remember MDMX is a whitelist: no raw

@@ -1,73 +1,83 @@
 # 3 · The content API
 
-`createMDMXHandlers()` from `@mdmx/next` builds the CMS backend: auth, file
-listing/read/write/delete, and media upload, as **web-standard
-`Request → Response` handlers**. In the App Router you mount them as a
-catch-all route and export them directly.
+`createMDMXHandlers()` from `@mdmx/next` builds the CMS backend: auth, entry
+listing/read/write/delete, collections, studio components, and media upload,
+as **web-standard `Request → Response` handlers**. In the App Router you mount
+them as a catch-all route and export them directly.
 
 ## Mount the route
 
 ```ts
 // app/api/mdmx/[...route]/route.ts
-import { createMDMXHandlers, LocalProvider } from "@mdmx/next";
-import {
-  CONTENT_DIR,
-  MEDIA_DIR,
-  REPO,
-  projectRoot,
-  registry,
-} from "../../../../lib/mdmx-config";
+import { createMDMXHandlers } from "@mdmx/next";
 
-export const { GET, POST, PUT, DELETE } = createMDMXHandlers({
-  repo: REPO,
-  contentDir: CONTENT_DIR,
-  mediaDir: MEDIA_DIR,
-  localMode: true, // local authoring — see guide 6 for production
-  createProvider: () => new LocalProvider(projectRoot()),
-  registry: registry(),
-  validation: "report",
-  insecureCookies: true, // http://localhost
-});
-
+export const { GET, POST, PUT, DELETE } = createMDMXHandlers();
 export const dynamic = "force-dynamic";
 ```
 
-`export const dynamic = "force-dynamic"` matters: the route reads and writes
-the filesystem per request and must never be statically optimized.
+That's the whole file. `mdmx init nextjs` writes it for you.
 
-The route segment (`app/api/mdmx/…`) must match the `basePath` option
-(default `/api/mdmx`) — the handler derives its internal route from the URL.
+`export const dynamic = "force-dynamic"` matters: the route reads and writes
+per request and must never be statically optimized. The route segment
+(`app/api/mdmx/…`) must match `basePath` (default `/api/mdmx`) — the handler
+derives its internal route from the URL.
+
+## What resolves by itself
+
+Settings resolve on the first request and are cached (ADR-039):
+
+| Value | Comes from |
+| --- | --- |
+| `contentDir`, `mediaDir`, `componentsDir`, `basePath`, `mountPath`, `validation`, `repo`, collections | `mdmx.config.json` |
+| OAuth credentials, session secret | `MDMX_GITHUB_CLIENT_ID`, `MDMX_GITHUB_CLIENT_SECRET`, `MDMX_SESSION_SECRET` |
+| Registry | `.mdmx/registry.json` under the config's `outDir` |
+| Mode | Those env vars present → GitHub; absent → local (outside production) |
+| Provider | `LocalProvider` in local mode, `GitHubProvider` in GitHub mode |
+| `insecureCookies` | `NODE_ENV !== "production"` |
+
+A misconfiguration doesn't crash the build: the first request answers with an
+error naming exactly what's missing, and a corrected environment recovers on
+the next request without a restart.
 
 ## Local mode
 
-`localMode: true` skips GitHub OAuth entirely: every request runs as a
-synthetic `"local"` session, and `LocalProvider(rootDir)` reads and writes the
-working tree directly. You edit, hit save, and `git diff` shows a minimal
-canonical change — commit it like any other edit.
+With no OAuth environment variables set (and outside production), MDMX runs in
+local mode: every request is a synthetic `"local"` session and writes go
+straight to the working tree. You edit, hit save, and `git diff` shows a
+minimal canonical change — commit it like any other edit.
 
-Everything else still applies in local mode: server-side validation,
-path-safety confinement, CSRF-origin checks on mutations, and conflict
-detection via blob shas. **Never enable `localMode` in production** — it is
-an authentication bypass by design.
+Everything else still applies: server-side validation, path-safety
+confinement, CSRF-origin checks on mutations, and conflict detection via blob
+shas. In production, local mode requires `mode: "local"` **and**
+`allowLocalModeInProduction: true`, because it is an authentication bypass by
+design.
 
 ## Options reference (`MDMXHandlerOptions`)
 
-| Option | Required | Default | Meaning |
-| --- | --- | --- | --- |
-| `repo` | ✅ | — | `{ owner, name, branch }`. In local mode the values are informational (shown by `/me`); in GitHub mode they identify the repo for auth + commits |
-| `contentDir` | ✅ | — | Directory (repo-relative) writes of content are confined to |
-| `mediaDir` | ✅ | — | Directory media uploads are confined to (e.g. `public/media`) |
-| `createProvider` | ✅ | — | `(session) => ContentProvider` — `LocalProvider` locally, `GitHubProvider` in production |
-| `localMode` | | `false` | Skip OAuth, synthetic session. Development only |
-| `auth` | in GitHub mode | — | `{ clientId, clientSecret }` of the GitHub OAuth app (+ optional `apiBase`/`oauthBase` for GHE) |
-| `sessionSecret` | in GitHub mode | — | Secret sealing the session cookie (AES-GCM) |
-| `registry` | | — | When present, `.mdx` saves are re-validated server-side against it |
-| `configPath` | | `"mdmx.config.json"` | Project config file collections are resolved from at request time and written back to by the collection routes |
-| `validation` | | `"report"` | `"report"`: save and return diagnostics. `"strict"`: reject saves with error diagnostics (422) |
-| `basePath` | | `"/api/mdmx"` | Route prefix the handlers are mounted under |
-| `editorPath` | | `"/mdmx"` | Where to redirect after login |
-| `insecureCookies` | | `false` | Allow cookies over plain HTTP (development) |
-| `maxMediaBytes` | | 10 MiB | Upload size limit (413 beyond it) |
+Every option is optional — this is the override layer for projects whose
+layout differs from the convention.
+
+| Option | Default | Meaning |
+| --- | --- | --- |
+| `root` | `process.cwd()` | Project root config and content resolve against |
+| `repo` | config's `repo` | `{ owner, name, branch }`; required by GitHub mode |
+| `contentDir` | config (`content`) | Directory content writes are confined to |
+| `mediaDir` | config (`public/media`) | Directory media uploads are confined to |
+| `componentsDir` | config (`components/mdmx`) | Where studio eject writes TSX |
+| `mode` | detected | `"local"` or `"github"`, skipping detection |
+| `allowLocalModeInProduction` | `false` | Required to serve unauthenticated writes in production |
+| `auth` | from env | `{ clientId, clientSecret }` (+ `apiBase`/`oauthBase` for GHE). Passing it selects GitHub mode |
+| `sessionSecret` | from env | Secret sealing the session cookie (AES-GCM) |
+| `authStrategy` | from mode | An `AuthStrategy` implementation — the seam for non-GitHub hosts |
+| `createProvider` | from mode | `(session) => ContentProvider` |
+| `registry` | from `outDir` | Registry `.mdx` saves are validated against |
+| `configPath` | `"mdmx.config.json"` | Config file collections resolve from at request time |
+| `validation` | config (`"report"`) | `"report"`: save and return diagnostics. `"strict"`: reject error diagnostics (422) |
+| `basePath` | config (`"/api/mdmx"`) | Route prefix the handlers are mounted under |
+| `editorPath` | config `mountPath` (`"/mdmx"`) | Where to redirect after login |
+| `insecureCookies` | `NODE_ENV !== "production"` | Allow cookies over plain HTTP |
+| `maxMediaBytes` | 10 MiB | Upload size limit (413 beyond it) |
+| `env` | `process.env` | Environment to read secrets from (tests inject one) |
 
 ## Endpoint reference
 
