@@ -11,6 +11,53 @@ initial design-and-build conversation (12 commits).
 
 <!-- APPEND NEW ENTRIES ABOVE THIS LINE -->
 
+### S26 — 0.5 decisions locked: grilling session over the S25 review (no code changes)
+Question-by-question architecture grilling against the session objectives
+(quick recipe / extensible / layered API). Fifteen decisions made, resolving
+all seven of the S25 review's open decisions (two against its leans) and
+adding structural calls the review didn't propose. Consolidated into
+`.dev-context/plans/2026-07-26-0.5-plan.md` (decisions D1–D15, milestones
+M1–M5, target recipe, post-0.5 package graph — that doc wins where it and
+the S25 review disagree). Headlines: convention-over-configuration as the
+standing API principle (three-tier config, env-detected mode, fail-closed
+production); codegen owns the convention layer (generated client/server
+component maps, bound `.mdmx/server.ts` with `getEntry`/`MDMXEntry`,
+committed deterministic `.mdmx/`); `mdmx init nextjs`; build-time
+`studio.css` (supersedes the CDN-runtime posture); two new packages —
+`@mdmx/project` (config/env/mode resolution) and `@mdmx/studio` (model +
+`/react` renderer + `/ui` screens behind an injected `StudioClient`);
+provider contract v2 (deletions in the change set, binary reads, three
+methods); `AuthStrategy` seam; document/entry vocabulary split on the layer
+boundary; dashboard surface shrink + `export *` removal; 0.5 ends with the
+first npm publish (the real freeze).
+- Files/packages changed: none (docs only).
+- ADRs: **ADR-039 … ADR-048** (ADR-042/045 supersede parts of ADR-038;
+  ADR-048 amends ADR-034).
+- Tests: 285, unchanged.
+- Wiki pages touched: SessionLog; DECISIONS.md; plan doc added.
+- Follow-ups: execute M1–M5 per the 2026-07-26 plan; sync Roadmap/Home/
+  Packages pages when M2's package splits land.
+
+### S25 — 0.5 pre-release architecture/API/DX review (no code changes)
+Full-repo review session. Five parallel deep-read reviews (core+cli, editor,
+next+provider-github, dashboard, consumer-experience/docs), findings
+spot-verified, synthesized into
+`.dev-context/plans/2026-07-10-0.5-architecture-review.md` (untracked): four
+consumer surfaces, layering scorecard, package-by-package findings, 9
+release-blocking correctness issues, 8 ranked workstreams (W1–W8), 7 open
+decisions, and a do-not-change list. Headlines: repo-wide export-surface
+inflation (last free prune before 0.5), the Component Studio's missing seam
+(3× interpolation, 2× merge rule, untested outside core), five missing API
+affordances (core `validateDocument`, `SaveResult` sha, zero-config
+localMode, generated component maps, studio render helper), multiselect
+corruption in both editor and dashboard, and a docs wave (guides/llms.txt lag
+0.4.1; demo fails its own `mdmx check`).
+- Files/packages changed: none (this entry only).
+- ADRs: none — decisions deferred to the review doc's §7.
+- Tests: 285, unchanged.
+- Wiki pages touched: SessionLog.
+- Follow-ups: execute W1–W8 per the review doc after §7 decisions.
+
 ### S24 — Road to 0.4.1: responsive preview modes, private publishing, Component Studio
 Executed the 0.4.1 brief on `release/0.4.1` (autonomous run; one commit per
 verified milestone, browser-driven end-to-end checks via playwright).
