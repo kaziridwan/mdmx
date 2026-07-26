@@ -11,6 +11,46 @@ initial design-and-build conversation (12 commits).
 
 <!-- APPEND NEW ENTRIES ABOVE THIS LINE -->
 
+### S31 — M4b/M4d, the validation seam, typechecked tests, live verification
+- **M4b — `@mdmx/studio/ui`**: the builder screens (StudioView,
+  StudioEditorView, template-html, template-edit, canvas Tailwind runtime)
+  moved out of the dashboard behind an injected `StudioClient` +
+  `StudioHost`; `dashboard/src/studio-bridge.ts` implements both, and the two
+  dashboard view files are three-line adapters. The seam paid immediately —
+  `template-html`/`template-edit` (330 pure lines, previously untested) gained
+  14 tests. The whole studio feature now lives in one package.
+- **M4d — mark shortcuts**: `markKeymap` binds Mod-B / Mod-I / Mod-E /
+  Mod-Shift-X. `markCommands` had existed unused since the command layer
+  landed, so the editor shipped without bold/italic shortcuts.
+- **`validateDocument` seam** (W3): one pipeline for `mdmx check` and the save
+  route — subset rules + frontmatter in a single parse. Closes the bug where
+  unguarded `YAML.parse` let one malformed file abort an entire check run; it
+  is now **MDMX010**, a diagnostic with a span.
+- **Tests are typechecked**: every package gained a `tsconfig.test.json`
+  (review §3.4). First run caught six latent bugs no test failure would show —
+  three dashboard fixtures missing `studio`, a `saveFile` mock stale since
+  M2f added `sha`, studio fixtures missing `mdmxStudioVersion`, a positional
+  `children` render, and `setClassIn`'s signature disagreeing with its own
+  callers (widened to `string | null`).
+- **Live verification against demo-next** (:3111) found what nothing else
+  could: the generated `server.ts` imported `./registry.js`, which tsc
+  resolves and Next's bundler does not — **every public page 500'd**. Fixed
+  to an extensionless specifier + regression test. Re-verified: home,
+  published entry, private entry (studio component rendering compiled classes,
+  no CDN script), dashboard, Component Studio, editor palette — all clean, no
+  console errors.
+- **Publish readiness**: repository/homepage/bugs metadata added to all eight
+  packages; `npm pack --dry-run` confirms each ships `dist` only.
+- Files/packages changed: studio (new ui/), dashboard (bridge + adapters),
+  core (validate/parse), cli (emit fix), editor (keymap), all package.jsons.
+- ADRs: ADR-045 status completed (UI half shipped).
+- Tests: **388**, `pnpm verify` (typecheck incl. tests + suites) green.
+- Wiki pages touched: SessionLog, DECISIONS; SPEC/README/llms.txt/guide 07
+  for MDMX010.
+- Follow-ups before publish: **LICENSE file + `license` field are Kazi's call**
+  (not guessed); editor reference stylesheet extraction (visual, needs eyes);
+  dashboard `useLoad`/`LoadBoundary` primitives; Editor.tsx split.
+
 ### S30 — M4a + M5: studio routes extracted and tested, docs wave (release/0.5.0)
 - **M4a** (deferred from M2d): `routes/context.ts` defines the `RouteContext`
   a handler needs plus the shared `listStudioDefs`; `routes/studio.ts` holds
