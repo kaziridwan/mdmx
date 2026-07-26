@@ -2,6 +2,7 @@ import { existsSync, watch } from "node:fs";
 import { join, relative } from "node:path";
 import { generate, type GenerateResult } from "./generate.js";
 import type { MDMXConfig } from "@mdmx/project";
+import { STUDIO_COMPONENTS_DIR } from "@mdmx/studio";
 
 export interface DevSummary {
   result: GenerateResult;
@@ -50,6 +51,10 @@ export function watchTargets(cwd: string, config: MDMXConfig): string[] {
     const file = join(cwd, name);
     if (existsSync(file)) targets.add(file);
   }
+  // Studio definitions are components too: their specs land in the registry
+  // and their classes in studio.css, so a change there needs a regenerate
+  // exactly like editing a .tsx component does (ADR-042).
+  targets.add(join(cwd, config.contentDir, STUDIO_COMPONENTS_DIR));
   return [...targets].filter((t) => existsSync(t));
 }
 
