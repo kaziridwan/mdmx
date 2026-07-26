@@ -115,7 +115,7 @@ the HTTP API, the dashboard) speaks in entries.
 
 ```sh
 pnpm install
-pnpm test          # builds all packages, then runs all 388 tests
+pnpm test          # builds all packages, then runs all 389 tests
 pnpm build         # build all packages
 pnpm check         # typecheck all packages
 pnpm verify        # typecheck + test (pre-push gate)
