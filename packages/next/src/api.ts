@@ -33,6 +33,8 @@ import {
 } from "@mdmx/studio";
 import { parseProjectConfig, type MDMXMode, type ProjectConfigFile } from "@mdmx/project";
 import { defaultAuthStrategy, resolveSettings, type ResolvedSettings } from "./settings.js";
+import { listStudioDefs } from "./routes/context.js";
+import { handleStudioRoute } from "./routes/studio.js";
 import { gitBlobSha } from "./local-provider.js";
 import { AuthError, type AuthConfig } from "./auth.js";
 import type { AuthStrategy } from "./auth-strategy.js";
@@ -404,95 +406,14 @@ function buildHandlers(o: ResolvedSettings): MDMXHandlers {
 
       // ---- studio components (runtime template components) -----------------
 
-      if (route === "/studio/components" && method === "GET") {
-        const entries = await listStudioDefs(provider);
-        return withSession(
-          json(200, {
-            components: entries
-              .filter((e) => e.def != null)
-              .map((e) => ({ path: e.path, sha: e.sha, def: e.def })),
-            invalid: entries
-              .filter((e) => e.def == null)
-              .map((e) => ({ path: e.path, problems: e.problems })),
-          }),
-        );
-      }
-
-      const studioRoute = route.match(/^\/studio\/components\/([^/]+)$/);
-      if (studioRoute && method === "PUT") {
-        const name = decodeURIComponent(studioRoute[1]!);
-        const body = (await req.json()) as {
-          def?: unknown;
-          message?: string;
-          expectedSha?: string | null;
-        };
-        const defName = (body.def as Partial<StudioComponentDef> | undefined)?.name;
-        if (defName !== name) {
-          return withSession(json(400, { error: "definition name must match the route" }));
-        }
-        // Collisions: the baked code registry plus every OTHER stored def.
-        const taken = new Set<string>(o.registry?.components.map((c) => c.name) ?? []);
-        for (const entry of await listStudioDefs(provider)) {
-          if (entry.def && entry.def.name !== name) taken.add(entry.def.name);
-        }
-        const problems = validateStudioComponent(body.def, taken);
-        if (problems.length > 0) {
-          return withSession(json(400, { error: "invalid studio component", problems }));
-        }
-        const path = studioComponentPath(o.contentDir, name);
-        const result = await provider.commit(
-          [{ path, content: JSON.stringify(body.def, null, 2) + "\n" }],
-          body.message ?? `mdmx: studio component ${name}`,
-          body.expectedSha !== undefined
-            ? { expectedShas: { [path]: body.expectedSha } }
-            : undefined,
-        );
-        return withSession(
-          json(200, {
-            commit: result,
-            path,
-            spec: studioComponentToSpec(body.def as StudioComponentDef),
-          }),
-        );
-      }
-
-      if (studioRoute && method === "DELETE") {
-        const name = decodeURIComponent(studioRoute[1]!);
-        const path = studioComponentPath(o.contentDir, name);
-        const result = await provider.commit(
-          [{ path, delete: true }],
-          `mdmx: delete studio component ${name}`,
-        );
-        return withSession(json(200, { commit: result }));
-      }
-
-      // Eject: write the definition as a real defineMDMX TSX file. The JSON
-      // definition stays put — it keeps the component working at runtime
-      // until `mdmx generate` + a rebuild promote the code version (which
-      // then shadows it everywhere).
-      const ejectRoute = route.match(/^\/studio\/components\/([^/]+)\/eject$/);
-      if (ejectRoute && method === "POST") {
-        const name = decodeURIComponent(ejectRoute[1]!);
-        const stored = (await listStudioDefs(provider)).find((e) => e.def?.name === name);
-        if (!stored?.def) {
-          return withSession(json(404, { error: `no studio component "${name}"` }));
-        }
-        const path = assertSafePath(`${o.componentsDir}/${name}.tsx`);
-        const result = await provider.commit(
-          [{ path, content: studioComponentToTSX(stored.def) }],
-          `mdmx: eject studio component ${name} to code`,
-          { expectedShas: { [path]: null } }, // never overwrite an existing file
-        );
-        return withSession(
-          json(201, {
-            commit: result,
-            path,
-            note:
-              `Run \`mdmx generate\` and rebuild to promote the code component; ` +
-              `the studio definition keeps working until then and can be deleted after.`,
-          }),
-        );
-      }
+      // ---- studio (extracted; see routes/studio.ts) -----------------------
+      const studioResponse = await handleStudioRoute(
+        { settings: o, provider, json, withSession },
+        req,
+        route,
+        method,
+      );
+      if (studioResponse) return studioResponse;
 
       return json(404, { error: `no route ${method} ${route}` });
     } catch (err) {
@@ -569,36 +490,9 @@ function buildHandlers(o: ResolvedSettings): MDMXHandlers {
 
   // -- studio components: stored under <contentDir>/_components ---------------
 
-  interface StudioEntry {
-    path: string;
-    sha: string;
-    def: StudioComponentDef | null;
-    problems: string[];
-  }
-
-  /** Read every stored studio definition; malformed files carry problems. */
-  async function listStudioDefs(provider: ContentProvider): Promise<StudioEntry[]> {
-    const dir = `${o.contentDir}/${STUDIO_COMPONENTS_DIR}`;
-    let files;
-    try {
-      files = await provider.list(dir);
-    } catch (err) {
-      if (isNotFound(err)) return [];
-      throw err;
-    }
-    const out: StudioEntry[] = [];
-    for (const f of files) {
-      if (!f.path.endsWith(".json")) continue;
-      const { content, sha } = await readText(provider, f.path);
-      const { def, problems } = parseStudioComponent(content);
-      out.push({ path: f.path, sha, def, problems });
-    }
-    return out;
-  }
-
   /** Baked registry + valid stored studio defs, for save-time validation. */
   async function effectiveRegistry(provider: ContentProvider, base: Registry): Promise<Registry> {
-    const entries = await listStudioDefs(provider);
+    const entries = await listStudioDefs({ settings: o, provider });
     const defs = entries.map((e) => e.def).filter((d): d is StudioComponentDef => d != null);
     if (defs.length === 0) return base;
     // Same code-beats-studio rule the CLI applies (@mdmx/studio).
