@@ -1,9 +1,5 @@
-import type {
-  CollectionFieldConfig,
-  CollectionSpec,
-  Diagnostic,
-  StudioComponentDef,
-} from "@mdmx/core";
+import type { CollectionFieldConfig, CollectionSpec, Diagnostic } from "@mdmx/core";
+import type { StudioComponentDef } from "@mdmx/studio";
 
 /**
  * Thin typed client over the MDMX content API (see @mdmx/next). All calls are

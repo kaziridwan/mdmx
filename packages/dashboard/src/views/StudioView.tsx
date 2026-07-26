@@ -1,7 +1,8 @@
 "use client";
 import { useState } from "react";
 import { studioComponent } from "@mdmx/next/render";
-import type { JsonValue, StudioComponentDef } from "@mdmx/core";
+import type { JsonValue } from "@mdmx/core";
+import type { StudioComponentDef } from "@mdmx/studio";
 import type { StudioComponentEntry } from "../api-client.js";
 import { useDashboard } from "../context.js";
 import { Link } from "../shell/link.js";

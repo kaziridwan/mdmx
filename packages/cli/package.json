@@ -16,6 +16,7 @@
   "dependencies": {
     "@mdmx/core": "workspace:*",
     "@mdmx/project": "workspace:*",
+    "@mdmx/studio": "workspace:*",
     "tinyglobby": "~0.2.15",
     "typescript": "~5.5.4"
   },

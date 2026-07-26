@@ -1,4 +1,4 @@
-import type { TemplateChild, TemplateElement } from "@mdmx/core";
+import type { TemplateChild, TemplateElement } from "@mdmx/studio";
 
 /**
  * Immutable editing operations for the studio template tree (stage-2 UI:

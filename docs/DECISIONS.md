@@ -1282,7 +1282,17 @@ boundary). UI staying in dashboard (leaves the feature smeared across
 packages; the `StudioClient` seam the move forces is exactly the missing
 testability seam).
 
-**Status.** Planned — 0.5 M2 (package + seams) and M4 (UI split) (plan D11).
+**Status.** Shipped (semantics) — 0.5 M2c. `packages/studio` (18 tests):
+`model.ts` (types, path helper, `parseStudioComponent`), `validate.ts`
+(allowlists + `validateStudioComponent`), `spec.ts` (`studioComponentToSpec`),
+`merge.ts` (`mergeStudioSpecs` — the code-beats-studio rule, hoisted out of
+`cli/check.ts` and `next/api.ts`), `eject.ts` (TSX codegen), `interpolate.ts`
+(the one `{props.x}` implementation), and `@mdmx/studio/react` (the one
+template→React renderer, now consumed by `@mdmx/next/render`). Core no longer
+ships studio at all. The dashboard's private `interpolate` copy is gone; its
+`PreviewTree` keeps its own traversal because click-to-select paths are a
+genuinely different behaviour, not duplicated rendering. **Remaining:** the
+builder screens move to `@mdmx/studio/ui` behind `StudioClient` (M4).
 
 ## ADR-046 — Auth is an injectable strategy beside the provider seam
 

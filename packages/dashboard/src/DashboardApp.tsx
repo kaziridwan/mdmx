@@ -1,11 +1,7 @@
 "use client";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import {
-  Registry,
-  studioComponentToSpec,
-  type CollectionSpec,
-  type RegistrySpec,
-} from "@mdmx/core";
+import { Registry, type CollectionSpec, type RegistrySpec } from "@mdmx/core";
+import { studioComponentToSpec } from "@mdmx/studio";
 import type { ComponentMap } from "@mdmx/editor/react";
 import { studioComponent } from "@mdmx/next/render";
 import {

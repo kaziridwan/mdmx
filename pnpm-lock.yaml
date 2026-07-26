@@ -107,6 +107,9 @@ importers:
       '@mdmx/project':
         specifier: workspace:*
         version: link:../project
+      '@mdmx/studio':
+        specifier: workspace:*
+        version: link:../studio
       tinyglobby:
         specifier: ~0.2.15
         version: 0.2.17
@@ -178,6 +181,9 @@ importers:
       '@mdmx/next':
         specifier: workspace:*
         version: link:../next
+      '@mdmx/studio':
+        specifier: workspace:*
+        version: link:../studio
     devDependencies:
       '@types/node':
         specifier: ~22.10.10
@@ -270,6 +276,9 @@ importers:
       '@mdmx/project':
         specifier: workspace:*
         version: link:../project
+      '@mdmx/studio':
+        specifier: workspace:*
+        version: link:../studio
     devDependencies:
       '@types/mdast':
         specifier: ~4.0.4
@@ -306,6 +315,28 @@ importers:
       '@types/node':
         specifier: ~22.10.10
         version: 22.10.10
+
+  packages/studio:
+    dependencies:
+      '@mdmx/core':
+        specifier: workspace:*
+        version: link:../core
+    devDependencies:
+      '@types/node':
+        specifier: ~22.10.10
+        version: 22.10.10
+      '@types/react':
+        specifier: ^19.0.0
+        version: 19.2.17
+      '@types/react-dom':
+        specifier: ^19.0.0
+        version: 19.2.3(@types/react@19.2.17)
+      react:
+        specifier: ^19.0.0
+        version: 19.2.7
+      react-dom:
+        specifier: ^19.0.0
+        version: 19.2.7(react@19.2.7)
 
 packages:
 
