@@ -37,8 +37,8 @@ async function mountShell(me: Me): Promise<HTMLElement> {
         collections,
         route: { view: "collection", name: "posts" },
         onLogout: () => {},
+        children: createElement("div", { "data-role": "content" }, "hello"),
       },
-      createElement("div", { "data-role": "content" }, "hello"),
     ),
   );
   for (let i = 0; i < 8; i++) await flush();

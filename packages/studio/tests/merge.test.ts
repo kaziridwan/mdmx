@@ -12,6 +12,7 @@ const base: RegistrySpec = {
 
 function def(name: string): StudioComponentDef {
   return {
+    mdmxStudioVersion: 1,
     name,
     props: [],
     template: { tag: "div", children: [{ text: name }] },
