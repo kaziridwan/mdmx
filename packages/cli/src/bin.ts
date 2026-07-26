@@ -41,10 +41,13 @@ async function main(): Promise<number> {
     const result = await check(cwd, config);
     const output = formatDiagnostics(result);
     if (output) console.log(output);
+    if (result.staleRegistry) console.error(`mdmx: ${result.staleRegistry}`);
     console.log(
       `mdmx: ${result.errorCount} error(s), ${result.warningCount} warning(s)`,
     );
-    return result.errorCount > 0 ? 1 : 0;
+    // A stale committed registry fails CI: the palette and the validation
+    // rules would otherwise disagree with the components in the same commit.
+    return result.errorCount > 0 || result.staleRegistry ? 1 : 0;
   }
 
   if (command === "dev") {

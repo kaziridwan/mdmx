@@ -1,4 +1,4 @@
-import { existsSync, readFileSync, rmSync } from "node:fs";
+import { existsSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { Registry, type RegistrySpec } from "@mdmx/core";
@@ -90,12 +90,43 @@ describe("mdmx generate", () => {
     expect(registry.has("Callout")).toBe(true);
   });
 
-  it("emits a binding module with correct imports", () => {
+  it("emits a server-safe binding module with correct imports", () => {
     const ts = readFileSync(join(APP, ".mdmx/registry.ts"), "utf8");
     expect(ts).toContain('import Callout from "../components/mdmx/Callout";');
     expect(ts).toContain('import { Chart } from "../components/mdmx/Chart";');
     expect(ts).toContain("export const registry = new Registry(spec);");
+    expect(ts).toContain("export const serverComponents = { Callout, Chart };");
+    // No "use client": public pages must be able to import this on the server.
+    expect(ts).not.toContain('"use client"');
+  });
+
+  it("emits a client component map behind the RSC boundary", () => {
+    const ts = readFileSync(join(APP, ".mdmx/components.ts"), "utf8");
+    expect(ts.startsWith('"use client";')).toBe(true);
+    expect(ts).toContain('import Callout from "../components/mdmx/Callout";');
     expect(ts).toContain("export const components = { Callout, Chart };");
+  });
+
+  it("emits bound server helpers addressed by collection name", async () => {
+    const withCollections: MDMXConfig = {
+      ...config,
+      collections: { posts: { dir: "content/posts", fields: {} } },
+    };
+    await generate(APP, withCollections);
+    const ts = readFileSync(join(APP, ".mdmx/server.ts"), "utf8");
+    expect(ts).toContain('"posts": "content/posts"');
+    expect(ts).toContain("export async function MDMXEntry(");
+    expect(ts).toContain("export async function listEntries(");
+    expect(ts).toContain('import { serverComponents } from "./registry.js";');
+    await generate(APP, config); // restore
+  });
+
+  it("is deterministic: no timestamp, and a no-op regenerate writes nothing", async () => {
+    const json = readFileSync(join(APP, ".mdmx/registry.json"), "utf8");
+    expect(json).not.toContain("generatedAt");
+    const again = await generate(APP, config);
+    // Committed artifacts (ADR-040) must not churn on an unchanged run.
+    expect(again.changed).toEqual([]);
   });
 
   it("warns on a non-exported component and excludes it from both artifacts", () => {
@@ -161,5 +192,29 @@ describe("collections", () => {
   it("omits the collections key when none are configured", async () => {
     const res = await generate(APP, config);
     expect(res.spec.collections).toBeUndefined();
+  });
+});
+
+describe("stale registry detection", () => {
+  it("reports nothing when the committed registry matches the components", async () => {
+    const res = await check(APP, config);
+    expect(res.staleRegistry).toBeNull();
+  });
+
+  it("catches a committed registry that fell behind its components", async () => {
+    const registryPath = join(APP, ".mdmx/registry.json");
+    const original = readFileSync(registryPath, "utf8");
+    try {
+      const spec = JSON.parse(original) as RegistrySpec;
+      // Simulate "edited a component, forgot to regenerate": the committed
+      // artifact records the hash of the *old* component set.
+      spec.hash = "0000000000000000";
+      writeFileSync(registryPath, JSON.stringify(spec, null, 2) + "\n");
+      const res = await check(APP, config);
+      expect(res.staleRegistry).toContain("stale");
+      expect(res.staleRegistry).toContain("mdmx generate");
+    } finally {
+      writeFileSync(registryPath, original);
+    }
   });
 });

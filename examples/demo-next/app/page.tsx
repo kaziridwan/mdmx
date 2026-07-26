@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { cookies } from "next/headers";
-import { getEntries, getSession, privateHref, type MDMXEntry } from "@mdmx/next";
+import { getSession, privateHref, type MDMXEntry } from "@mdmx/next";
+import { listEntries } from "../.mdmx/server";
 import { SiteHeader } from "./site-header";
 
 // The public face of the demo: published posts for everyone; private posts
@@ -25,9 +26,9 @@ function PostRow({ doc, href, status }: { doc: MDMXEntry; href: string; status?:
 }
 
 export default async function Home() {
-  const published = await getEntries("content/posts", { status: "published" });
+  const published = await listEntries("posts");
   const session = getSession((await cookies()).toString(), { localMode: true });
-  const priv = session ? await getEntries("content/posts", { status: "private" }) : [];
+  const priv = session ? await listEntries("posts", { status: "private" }) : [];
 
   return (
     <>

@@ -1,16 +1,18 @@
 import { cookies } from "next/headers";
 import { notFound, redirect } from "next/navigation";
-import { getEntryBySlug, getSession, getStudioComponentDefs } from "@mdmx/next";
-import { MDMXContent, studioRenderComponents } from "@mdmx/next/render";
-import { serverComponents } from "../../../lib/components-server";
+import { getEntryBySlug, getSession } from "@mdmx/next";
+import { MDMXContent } from "@mdmx/next/render";
+import { renderComponents } from "../../../.mdmx/server";
 import { SiteHeader } from "../../site-header";
-import { StudioTailwindRuntime } from "../../studio-runtime";
 
 // /private/<collection path>/<slug> — entries with status "private", visible
 // only to an authenticated MDMX session (ADR: road-to-0.4.1). This demo runs
-// localMode, so the synthetic local session always passes; in GitHub mode the
-// sealed OAuth cookie is required and everyone else is sent to the login at
-// /mdmx. Anything that isn't private 404s: each status has exactly one home.
+// local mode, so the synthetic session always passes; in GitHub mode the
+// sealed OAuth cookie is required and everyone else is sent to /mdmx.
+//
+// A Layer-2 page: the collection directory comes from the URL rather than a
+// collection name, so it calls the reader itself — but the component map
+// (author components + studio components) still comes from codegen.
 export const dynamic = "force-dynamic";
 
 export default async function PrivatePostPage({
@@ -26,22 +28,17 @@ export default async function PrivatePostPage({
   const slug = segments[segments.length - 1]!;
   const collectionDir = ["content", ...segments.slice(0, -1)].join("/");
 
-  const doc = await getEntryBySlug(collectionDir, slug, { status: "private" });
-  if (!doc) notFound();
-
-  const studioDefs = await getStudioComponentDefs("content");
-  const components = { ...serverComponents, ...studioRenderComponents(studioDefs) };
-  const usesStudio = studioDefs.some((def) => doc.source.includes(`<${def.name}`));
+  const entry = await getEntryBySlug(collectionDir, slug, { status: "private" });
+  if (!entry) notFound();
 
   return (
     <>
-      <StudioTailwindRuntime enabled={usesStudio} />
       <SiteHeader />
       <article className="mdmx-page">
         <span className="site-badge" data-status="private">
           private
         </span>
-        <MDMXContent source={doc.source} components={components} />
+        <MDMXContent source={entry.source} components={await renderComponents()} />
       </article>
     </>
   );

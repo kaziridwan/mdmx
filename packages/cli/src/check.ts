@@ -4,6 +4,7 @@ import { glob } from "tinyglobby";
 import { parseDocument, Registry, validateFrontmatter, validateSource, type Diagnostic, type RegistrySpec } from "@mdmx/core";
 import { mergeStudioSpecs, parseStudioComponent, STUDIO_COMPONENTS_DIR } from "@mdmx/studio";
 import type { MDMXConfig } from "@mdmx/project";
+import { computeRegistryHash } from "./generate.js";
 
 export interface FileDiagnostics {
   file: string;
@@ -14,6 +15,8 @@ export interface CheckResult {
   files: FileDiagnostics[];
   errorCount: number;
   warningCount: number;
+  /** Non-null when the committed registry no longer matches the components. */
+  staleRegistry: string | null;
 }
 
 export async function check(cwd: string, config: MDMXConfig): Promise<CheckResult> {
@@ -25,6 +28,11 @@ export async function check(cwd: string, config: MDMXConfig): Promise<CheckResul
   }
   const spec = JSON.parse(readFileSync(registryPath, "utf8")) as RegistrySpec;
   const registry = new Registry(mergeStudioComponents(cwd, config, spec));
+
+  // The registry is committed (ADR-040), so CI has to catch the case where
+  // someone edits a component and forgets to regenerate — otherwise the
+  // editor palette and the validation rules quietly disagree with the code.
+  const staleRegistry = await detectStaleRegistry(cwd, config, spec);
 
   const contentFiles = await glob([`${config.contentDir}/**/*.{md,mdx}`], {
     cwd,
@@ -56,7 +64,7 @@ export async function check(cwd: string, config: MDMXConfig): Promise<CheckResul
     files.push({ file: rel, diagnostics });
   }
 
-  return { files, errorCount, warningCount };
+  return { files, errorCount, warningCount, staleRegistry };
 }
 
 /**
@@ -74,6 +82,24 @@ function mergeStudioComponents(cwd: string, config: MDMXConfig, spec: RegistrySp
     if (def) defs.push(def);
   }
   return mergeStudioSpecs(spec, defs);
+}
+
+/**
+ * Regenerate in memory and compare hashes. Returns a message when the
+ * committed artifact is out of date, or null when it is current.
+ */
+async function detectStaleRegistry(
+  cwd: string,
+  config: MDMXConfig,
+  committed: RegistrySpec,
+): Promise<string | null> {
+  if (!committed.hash) return null; // pre-0.5 artifact: nothing to compare
+  const { specHash } = await computeRegistryHash(cwd, config);
+  if (specHash === committed.hash) return null;
+  return (
+    `${join(config.outDir, "registry.json")} is stale (committed ${committed.hash}, ` +
+    `components hash ${specHash}). Run \`mdmx generate\` and commit the result.`
+  );
 }
 
 export function formatDiagnostics(result: CheckResult): string {

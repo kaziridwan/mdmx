@@ -16,6 +16,7 @@
     "@mdmx/dashboard": "workspace:*",
     "@mdmx/editor": "workspace:*",
     "@mdmx/next": "workspace:*",
+    "@mdmx/studio": "workspace:*",
     "next": "^15.3.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0"
