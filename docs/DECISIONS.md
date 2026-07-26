@@ -1172,7 +1172,14 @@ ESM-CJS-TS variants are where scaffolders break trust). A framework-generic
 multi-framework scaffolder). No scaffolder (leaves the README's pitch
 untrue).
 
-**Status.** Planned — 0.5 M3 (plan D5).
+**Status.** Shipped — 0.5 M3c. `mdmx init nextjs` creates `mdmx.config.json`,
+both mount files, a starter component and entry, adds the `generate`/`predev`/
+`prebuild` scripts to `package.json`, then runs `generate` so `next dev` works
+immediately. Existing files are skipped (the command is idempotent), and
+`next.config.*` is printed rather than rewritten — `mdmx check` reports a
+missing `transpilePackages` so the omission can't go unnoticed. Bare `mdmx
+init` lists targets; a non-Next directory gets a clear error rather than a
+half-scaffold.
 
 ## ADR-042 — Studio component CSS is compiled at generate time (supersedes ADR-038's browser-runtime posture)
 
