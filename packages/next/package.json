@@ -1,19 +1,60 @@
 {
   "name": "@mdmx/next",
-  "version": "0.3.1",
+  "version": "0.5.0",
   "description": "Next.js integration: editor mount, API route handlers, auth, and filesystem content readers",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/kaziridwan/mdmx.git",
+    "directory": "packages/next"
+  },
+  "homepage": "https://github.com/kaziridwan/mdmx#readme",
+  "bugs": {
+    "url": "https://github.com/kaziridwan/mdmx/issues"
+  },
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./render": {
+      "types": "./dist/render.d.ts",
+      "default": "./dist/render.js"
+    }
+  },
   "scripts": {
     "build": "tsc -p tsconfig.json",
-    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "typecheck": "tsc -p tsconfig.json --noEmit && tsc -p tsconfig.test.json",
     "test": "vitest run"
   },
   "dependencies": {
-    "@mdmx/core": "workspace:*"
+    "@mdmx/core": "workspace:*",
+    "@mdmx/project": "workspace:*",
+    "@mdmx/studio": "workspace:*"
   },
   "devDependencies": {
-    "@types/node": "~22.10.10"
-  }
+    "@mdmx/provider-github": "workspace:*",
+    "@types/mdast": "~4.0.4",
+    "@types/node": "~22.10.10",
+    "@types/react": "^19.0.0",
+    "mdast-util-mdx-jsx": "~3.2.0",
+    "react": "^19.0.0"
+  },
+  "peerDependencies": {
+    "react": ">=18",
+    "@mdmx/provider-github": "workspace:*"
+  },
+  "peerDependenciesMeta": {
+    "react": {
+      "optional": true
+    },
+    "@mdmx/provider-github": {
+      "optional": true
+    }
+  },
+  "files": [
+    "dist"
+  ]
 }

@@ -6,7 +6,7 @@ ROOT=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
 cd "$ROOT"
 
 echo "> Removing package dist/ dirs..."
-for p in core cli editor next provider-github; do
+for p in core cli editor next provider-github dashboard; do
   rm -rf "$ROOT/packages/$p/dist"
 done
 

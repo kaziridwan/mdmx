@@ -44,9 +44,19 @@ export function coerceControlValue(
   }
 }
 
-/** String form of a stored prop value for display in an input. */
-export function displayControlValue(value: JsonValue | undefined): string {
+/**
+ * String form of a stored prop value for display in an input. Must stay the
+ * inverse of `coerceControlValue` for the same control: a multiselect array
+ * displays comma-joined (JSON here would re-coerce into corrupted entries).
+ */
+export function displayControlValue(
+  value: JsonValue | undefined,
+  control?: ControlSpec,
+): string {
   if (value === undefined || value === null) return "";
+  if (control?.type === "multiselect" && Array.isArray(value)) {
+    return value.map((v) => String(v)).join(", ");
+  }
   if (typeof value === "string") return value;
   if (typeof value === "number" || typeof value === "boolean") return String(value);
   return JSON.stringify(value);

@@ -1,73 +1,58 @@
 import Link from "next/link";
-import { join } from "node:path";
-import { getDocuments, type MDMXDocument } from "@mdmx/next";
-import type { CollectionSpec } from "@mdmx/core";
-import { CmsHeader } from "../components/CmsHeader";
-import { CONTENT_DIR, projectRoot, registry } from "../lib/mdmx-config";
+import { cookies } from "next/headers";
+import { getSession, privateHref, type MDMXEntry } from "@mdmx/next";
+import { listEntries } from "../.mdmx/server";
+import { SiteHeader } from "./site-header";
 
-// Always read the working tree fresh (saves change it).
+// The public face of the demo: published posts for everyone; private posts
+// listed too when the viewer has an MDMX session (localMode: always).
 export const dynamic = "force-dynamic";
 
-export default async function Home() {
-  const reg = registry();
-  const docs = await getDocuments(join(projectRoot(), CONTENT_DIR), { registry: reg });
-
-  // Group every document under the collection that owns its path.
-  const byCollection = new Map<string, MDMXDocument[]>();
-  for (const doc of docs) {
-    const collection = reg.collectionForPath(`${CONTENT_DIR}/${doc.path}`);
-    if (!collection) continue;
-    const list = byCollection.get(collection.name) ?? [];
-    list.push(doc);
-    byCollection.set(collection.name, list);
-  }
-
+function PostRow({ doc, href, status }: { doc: MDMXEntry; href: string; status?: string }) {
+  const title = typeof doc.frontmatter.title === "string" ? doc.frontmatter.title : doc.slug;
+  const desc =
+    typeof doc.frontmatter.description === "string" ? doc.frontmatter.description : null;
   return (
-    <main className="mdmx-home">
-      <CmsHeader />
-      <h1>MDMX — local CMS</h1>
-      <p>
-        Your React components are first-class editor blocks. Content is organized
-        into <strong>collections</strong> — typed groupings whose entries save as
-        canonical MDMX into <code>{CONTENT_DIR}/</code> in this repo. Pick a
-        collection to browse or add posts.
-      </p>
-
-      {reg.collections.length === 0 ? (
-        <p className="mdmx-home-empty">No collections configured.</p>
-      ) : (
-        <ul className="mdmx-collection-grid">
-          {reg.collections.map((collection) => (
-            <CollectionCard
-              key={collection.name}
-              collection={collection}
-              docs={byCollection.get(collection.name) ?? []}
-            />
-          ))}
-        </ul>
-      )}
-    </main>
+    <div className="site-list-item">
+      <Link href={href}>{title}</Link>
+      {status ? (
+        <span className="site-badge" data-status={status}>
+          {status}
+        </span>
+      ) : null}
+      {desc ? <span className="site-list-desc">{desc}</span> : null}
+    </div>
   );
 }
 
-function CollectionCard({
-  collection,
-  docs,
-}: {
-  collection: CollectionSpec;
-  docs: MDMXDocument[];
-}) {
-  const published = docs.filter((d) => d.frontmatter.status === "published").length;
+export default async function Home() {
+  const published = await listEntries("posts");
+  const session = getSession((await cookies()).toString(), { localMode: true });
+  const priv = session ? await listEntries("posts", { status: "private" }) : [];
+
   return (
-    <li>
-      <Link href={`/collections/${collection.name}`} className="mdmx-collection-card">
-        <span className="mdmx-collection-name">{collection.name}</span>
-        <span className="mdmx-collection-meta">
-          {docs.length} {docs.length === 1 ? "entry" : "entries"}
-          {published > 0 ? ` · ${published} published` : ""}
-        </span>
-        <code className="mdmx-collection-dir">{collection.dir}</code>
-      </Link>
-    </li>
+    <>
+      <SiteHeader />
+      <main className="site-list">
+        <h1>Posts</h1>
+        {published.map((doc) => (
+          <PostRow key={doc.path} doc={doc} href={`/posts/${encodeURIComponent(doc.slug)}`} />
+        ))}
+        {published.length === 0 ? <p className="site-list-desc">Nothing published yet.</p> : null}
+        {priv.length > 0 ? (
+          <>
+            <h2>Private</h2>
+            {priv.map((doc) => (
+              <PostRow
+                key={doc.path}
+                doc={doc}
+                href={privateHref("posts", doc.slug)}
+                status="private"
+              />
+            ))}
+          </>
+        ) : null}
+      </main>
+    </>
   );
 }

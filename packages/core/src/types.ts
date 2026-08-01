@@ -44,7 +44,9 @@ export type DiagnosticCode =
   /** Required frontmatter field (per the collection schema) is missing. */
   | "MDMX008"
   /** Frontmatter field value does not match its declared control/type. */
-  | "MDMX009";
+  | "MDMX009"
+  /** Frontmatter is not valid YAML (or is not a mapping). */
+  | "MDMX010";
 
 export interface SourcePosition {
   line: number; // 1-indexed
@@ -143,6 +145,10 @@ export interface CollectionSpec {
 
 export interface RegistrySpec {
   mdmxRegistryVersion: number;
+  /**
+   * @deprecated Not emitted since 0.5: the artifacts are committed, so they
+   * must be byte-stable (ADR-040). Kept optional so older registries parse.
+   */
   generatedAt?: string;
   hash?: string;
   components: ComponentSpec[];
@@ -187,16 +193,34 @@ export class Registry {
    * `content/posts`.
    */
   collectionForPath(path: string): CollectionSpec | undefined {
-    const norm = path.replace(/^\.?\//, "");
-    let best: CollectionSpec | undefined;
-    for (const c of this.collections) {
-      const dir = c.dir.replace(/^\.?\//, "").replace(/\/$/, "");
-      if (norm === dir || norm.startsWith(dir + "/")) {
-        if (!best || dir.length > best.dir.length) best = c;
+    return collectionForPath(this.collections, path);
+  }
+}
+
+/**
+ * The collection a content path belongs to, matched by the longest `dir`
+ * prefix. Standalone so request-time collection lists (resolved from config,
+ * not baked into a registry) can use the same matching rule.
+ */
+export function collectionForPath(
+  collections: readonly CollectionSpec[],
+  path: string,
+): CollectionSpec | undefined {
+  const norm = path.replace(/^\.?\//, "");
+  let best: CollectionSpec | undefined;
+  let bestLen = -1;
+  for (const c of collections) {
+    const dir = c.dir.replace(/^\.?\//, "").replace(/\/$/, "");
+    if (norm === dir || norm.startsWith(dir + "/")) {
+      // Compare normalized lengths on both sides — a raw best.dir like
+      // "./content/" would otherwise get a 3-character head start.
+      if (dir.length > bestLen) {
+        best = c;
+        bestLen = dir.length;
       }
     }
-    return best;
   }
+  return best;
 }
 
 // ---------------------------------------------------------------------------

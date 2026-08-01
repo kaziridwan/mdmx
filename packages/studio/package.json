@@ -1,0 +1,58 @@
+{
+  "name": "@mdmx/studio",
+  "version": "0.5.0",
+  "description": "Component Studio: the runtime template-component model, validation, registry integration, TSX eject, and the single template→React renderer",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/kaziridwan/mdmx.git",
+    "directory": "packages/studio"
+  },
+  "homepage": "https://github.com/kaziridwan/mdmx#readme",
+  "bugs": {
+    "url": "https://github.com/kaziridwan/mdmx/issues"
+  },
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./react": {
+      "types": "./dist/react.d.ts",
+      "default": "./dist/react.js"
+    },
+    "./ui": {
+      "types": "./dist/ui/index.d.ts",
+      "default": "./dist/ui/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit && tsc -p tsconfig.test.json",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@mdmx/core": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "~22.10.10",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "jsdom": "~25.0.1",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
+  },
+  "peerDependencies": {
+    "react": ">=18"
+  },
+  "peerDependenciesMeta": {
+    "react": {
+      "optional": true
+    }
+  }
+}

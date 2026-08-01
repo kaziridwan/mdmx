@@ -790,3 +790,639 @@ stays framework-agnostic via a plain `backHref`).
 `/collections/[name]`, `CmsHeader`/`DocList`/`NewPostButton`, `lib/scaffold.ts`)
 is host-app scope, not core. No SPEC change. Open: media `list()` doesn't recurse
 into collection subdirs; caret-at-edge is layout-dependent so not jsdom-tested.
+
+## ADR-034 — `@mdmx/dashboard`: a drop-in app-layer package above the sibling rule
+
+**Context.** 0.4.0's goal is a full CMS dashboard the consumer gets by
+creating one page route (plus the API route) — no hand-built list/edit pages.
+That UI inherently composes two siblings: the editor (`@mdmx/editor/react`)
+and the Next.js glue (`@mdmx/next`). Invariant #9 says siblings only depend
+on each other through `core`, which kept the format/editor/provider layers
+untangled — but a dashboard that may not import the editor cannot exist.
+Putting the UI inside `@mdmx/next` would give the React-free glue package a
+React surface; growing `@mdmx/editor/react` would give the editor routing and
+auth concerns.
+
+**Decision.**
+- **New package `@mdmx/dashboard`, explicitly the app layer.** It depends on
+  `core` + `editor` + `next` and sits at the top of the dependency graph;
+  nothing depends on it. Invariant #9 is amended: *library* siblings still
+  only meet through `core`; `@mdmx/dashboard` is the one composition point
+  allowed to import them all. The format/editor/provider layers stay as
+  decoupled as before — the dashboard is a consumer of their public APIs, a
+  living test that those APIs suffice.
+- **Two-file mount is the canonical DX** (Outstatic's model): an optional
+  catch-all page (`app/mdmx/[[...slug]]/page.tsx`) built by
+  `createDashboardPage()`, and the existing API catch-all built by
+  `createMDMXHandlers()`. `@mdmx/dashboard/next` re-exports the `@mdmx/next`
+  surface so both files import from one package. App Router cannot serve
+  mutations from a `page.tsx`, so one file is physically impossible; two
+  ~3-line files is the honest minimum.
+- **The server side of the page stays thin.** It reads `.mdmx/registry.json`
+  per request and passes the spec + resolved config (both JSON) to the client
+  `DashboardApp`, which does everything else through the content API. One
+  data path (the API) serves both localMode and GitHub mode; the dashboard
+  has no provider access of its own. Author components cross the boundary as
+  client references via the factory's `components` option.
+- **The dashboard ships a stylesheet** (`dist/styles.css`, imported by the
+  `next` entry so the mount is styled with zero config): light + dark via
+  `prefers-color-scheme` with a `data-mdmx-theme` override, every value on
+  `--mdmx-*` custom properties. This deliberately diverges from the editor's
+  headless stance (ADR: editor stays unstyled): a drop-in product must look
+  like one out of the box, while the editor remains embeddable in any design
+  system. Consumers theme by overriding tokens or replacing the file.
+- **Routing is one pure function** (`resolveRoute(slug)`): the catch-all's
+  slug segments map to views (`home`, `collection`, `collection-new`,
+  `collection-edit`, `entry-new`, `editor`, `media`, `settings`), so the URL
+  scheme is unit-tested without React and navigation is plain `next/link`
+  server round-trips (fresh registry per view, no client cache to invalidate).
+- **Auth is a client gate over `/me`.** The page renders unconditionally; the
+  client asks the API who it is (401 → GitHub login screen → the existing
+  OAuth routes; localMode → synthetic `local` session, shown as a "local"
+  badge). The API remains the sole enforcement point — the gate is UX, not
+  security, matching the existing model where every mutation re-checks the
+  session server-side.
+
+**Alternatives rejected.** A `./dashboard` subpath of `@mdmx/next` (drags
+React into the glue package and still violates the sibling rule toward the
+editor, just implicitly). Growing `@mdmx/editor/react` into the shell (the
+editor package would take on `next` as a peer and auth/routing concerns).
+Server-gating the page via cookie unsealing in the page factory (would need
+the session secret in the page's config too — two places to misconfigure —
+for no security gain, since the API enforces everything). CSS Modules baked
+into components (hardest to theme; the single tokenized stylesheet is
+replaceable wholesale).
+
+**Status.** `packages/dashboard` scaffolded: config resolution, route
+resolver, typed API client, `AuthGate`, `DashboardShell` (navbar / left nav /
+main / contextual right panel), `HomeView`, placeholder views, stylesheet
+foundation, `createDashboardPage()` factory, `next/link` CJS-interop shim;
+19 tests (routes, gate, shell). Collection CRUD API + the real views land in
+the following 0.4.0 milestones. Root `test`/`check` scripts now build all
+packages first (dashboard typecheck/tests need sibling dists).
+
+## ADR-035 — Collections are config-as-code, resolved at request time
+
+**Context.** The 0.4.0 dashboard creates and edits collections. Collections
+live in `mdmx.config.json` and were baked into `.mdmx/registry.json` by
+`mdmx generate` — so a dashboard-created collection would not exist until the
+next generate + rebuild, which in GitHub mode means a redeploy before the
+author can add a first entry. Moving collections to a runtime store would fix
+the latency but fork the source of truth away from the config file the CLI
+and generate pipeline read.
+
+**Decision.**
+- **`mdmx.config.json` stays the single source of truth.** The dashboard
+  mutates collections by writing that file through the ContentProvider —
+  the same commit pipeline as content, with `expectedShas` conflict safety
+  (a concurrent config edit → 409, like any stale save).
+- **The API resolves collections per request** (`@mdmx/next`): new option
+  `configPath` (default `mdmx.config.json`); `GET /collections`,
+  `POST /collections`, `PUT /collections/:name` and the frontmatter
+  validation inside `PUT /file` all read the file via the provider and derive
+  `CollectionSpec[]` on the spot. A collection created from the dashboard is
+  therefore live immediately — in localMode *and* GitHub mode — while
+  `mdmx generate` keeps baking the same data into the registry for the CLI,
+  `mdmx check`, and build-time readers. No cache in 0.4.0: one provider read
+  per request that needs collections (a file read locally, one API call on
+  GitHub) is the predictable baseline; add caching only if it hurts.
+- **The conversion lives in core** (`collections-config.ts`):
+  record-form (authored) ⇄ array-form (registry) plus
+  `validateCollectionConfig` (name/dir shape, recursive `ControlSpec`
+  checking) and a standalone `collectionForPath`. The CLI's private
+  `normalizeCollections` was replaced by the same function — one canonical
+  derivation everywhere.
+- **Fallback + migrate-on-write.** When the config file is missing or has no
+  `collections` block, reads fall back to the collections baked into the
+  registry; the first collection write seeds those into the file so it
+  becomes complete and authoritative from then on. `PUT` edits fields only
+  (renaming a collection's `dir` means moving committed files — out of scope
+  for 0.4.0). Update uses `PUT /collections/:name`, not PATCH, so the
+  `MDMXHandlers` surface stays `{GET, POST, PUT, DELETE}` and existing mount
+  files keep working.
+- **Constraints enforced server-side:** collection names and field names are
+  `^[a-z0-9][a-z0-9_-]*$`; a collection's `dir` must sit under `contentDir`
+  (else the file API could never reach its entries); duplicates → 409;
+  invalid shapes → 400 with a `problems` list. `/me` now also reports
+  `contentDir`/`mediaDir`/`validation`/`localMode` for the settings surface.
+
+**Alternatives rejected.** A runtime collections store (`.mdmx/collections.
+json`) — instant but forks the source of truth and the CLI would need to
+merge two inputs. Regenerating the registry from the server (drags the TS
+compiler / `@mdmx/cli` into the request path). PATCH for updates (new method
+export forced into every consumer's route file). Writing config only at
+generate time (the status quo — exactly the redeploy latency this removes).
+
+**Limitation.** Runtime collection management requires a *JSON* config; a
+project configured only via `mdmx.config.mjs` gets read-fallback from the
+baked registry, but a dashboard write creates `mdmx.config.json`, which
+`loadConfig` prefers — such projects should migrate their config to JSON
+before using dashboard collection management.
+
+**Status.** `core/src/collections-config.ts` (+7 tests),
+`collectionForPath` extracted; `next/src/api.ts` collection routes +
+request-time resolution (+12 tests, incl. strict-mode MDMX008 on a
+just-created collection); CLI reuses the core derivation; dashboard client
+(`listCollections`/`createCollection`/`updateCollection`, richer `Me`) and a
+`DashboardContext` feeding live collections to the shell. Verified live:
+create → list → validated save, then config restored.
+
+## ADR-036 — Responsive preview modes: device-width canvas under CSS `zoom`, container queries for authors
+
+**Context.** The editor canvas was a fixed `max-width: 720px` column, so
+every component rendered in its narrow/"mobile" form regardless of how it
+would look on a real page (the headline complaint of the 0.4.1 brief). Two
+structural facts constrain the fix: window-level `@media` queries respond to
+the browser viewport, never to a canvas width; and container components
+(FeatureGrid, PricingTable, TwoColumn) laid out ALL children in one grid cell
+inside the editor, because ProseMirror's contentDOM wrapper sat between the
+component's grid/flex element and the child blocks.
+
+**Decision.**
+- **Canvas width presets, not an iframe.** The toolbar gets a
+  mobile/tablet/desktop switch (390/768/1280 px, persisted to
+  `localStorage("mdmx:viewport")`, default desktop). The canvas renders at
+  the real device width and is scaled to fit the pane with CSS `zoom`
+  (`--mdmx-canvas-w`, `--mdmx-canvas-zoom`); `zoom` affects layout, so no
+  phantom scroll height, and prosemirror-view 1.40 handles caret math under
+  it. Editing stays live in every mode. An iframe would make window media
+  queries literally true but drags the whole editor across a frame boundary
+  (style injection, portals, event plumbing) — rejected.
+- **The canvas is a named inline-size container** (`mdmx-canvas`); author
+  components respond to it with `@container` queries. The demo's `mk-*`
+  styles migrated from `@media` to `@container`, and public pages wrap
+  articles in the same kind of container (`.mdmx-page`), so the editor's
+  desktop preview and the published page reflow identically.
+- **The editable hole is layout-transparent.** `.mdmx-content` and the
+  PM-managed `.mdmx-contentdom` inside it are `display: contents`, so a
+  container component's grid/flex finally sees child NodeViews as direct
+  items. This is the second half of "components don't render the way they're
+  meant to" and benefits every viewport mode.
+
+**Alternatives rejected.** `transform: scale` (visual-only — layout height
+stays unscaled, producing dead scroll space); per-component editor CSS that
+duplicates each grid onto the wrapper (unbounded duplication); read-only
+device preview pane (doesn't fix editing).
+
+## ADR-037 — Publishing modes: `draft | private | published` with a viewer-side session guard
+
+**Context.** 0.4.1 adds a third publishing state: private entries render at
+`/private/<collection>/<slug>` for authenticated viewers only. `status` was
+already a plain collection frontmatter field (`draft | published`), and the
+demo app had no public rendering at all — every route redirected into the
+dashboard.
+
+**Decision.**
+- **`private` is just a status value**, not a new mechanism: collections add
+  it to their `status` select options; readers filter on it
+  (`getDocuments(dir, { status })` already existed). Semantics: drafts render
+  nowhere, published renders publicly, private renders only behind the guard
+  — each status has exactly one home, and anything else 404s.
+- **"Authenticated" = the MDMX session.** `@mdmx/next` exports
+  `getSession(cookieHeader, { sessionSecret | localMode })` — the sealed
+  GitHub-OAuth cookie in GitHub mode, the synthetic session in localMode
+  (private pages are always viewable in local dev). Web-standard inputs
+  only, so it works in server components, route handlers, and middleware.
+  `privateHref(collectionPath, slug)` builds the URL scheme. A separate
+  visitor-auth system was rejected: private means "anyone who can use the
+  CMS can view".
+- **A real renderer ships as `@mdmx/next/render`** (react as an optional
+  peer, its own subpath so the API/reader entry stays react-free):
+  `MDMXContent` walks core's mdast straight to React — markdown + GFM nodes,
+  component tags resolved through a ComponentMap with `evaluateAttributes`
+  props, recursion into component children, unknown components degrade to a
+  marked `<div>` instead of dropping content. The demo grew the public face
+  that proves the three modes end-to-end (home list, `/posts/[slug]`,
+  guarded `/private/[...path]`).
+
+**Alternatives rejected.** A dedicated `visibility` frontmatter field
+(duplicates `status`); MDX compilation for public pages (drags the MDX
+toolchain into the app when core's parser + a tree walk suffice);
+middleware-only guarding in the package (Next middleware is app-level; the
+package supplies the primitive instead).
+
+## ADR-038 — Component Studio: template-tree components in the content repo, Tailwind browser runtime, eject-to-TSX
+
+**Context.** 0.4.1's studio lets authors build Tailwind-styled components in
+the browser and use them immediately. MDMX components are TSX compiled into
+a typed registry by `mdmx generate` — a browser can't produce those without
+codegen plus a rebuild (and in GitHub mode, a redeploy). The repo also had no
+Tailwind at all, and arbitrary user-typed classes defeat build-time JIT.
+
+**Decision.**
+- **A studio component is data, not code:** a restricted element tree
+  (tag/attr allowlists — no script/style/iframe, no `on*`, no
+  `javascript:`/`data:` URLs, node/prop caps) with typed props
+  (string|number|boolean), `{props.x}` interpolation in text/attribute
+  values, and explicit `{slot}` nodes. Stored as JSON at
+  `<contentDir>/_components/<Name>.json` — committed through the provider
+  like content, so it works identically in localMode and GitHub mode with
+  path-safety and conflict checks for free. HTML is only an input format:
+  the UI parses markup via DOMParser into the tree (dropping and reporting
+  anything outside the allowlist); the server validates the JSON tree shape
+  — no HTML parser dependency, and rendering never touches
+  `dangerouslySetInnerHTML`.
+- **Runtime registry merge, code wins.** The API merges stored defs into its
+  registry for save-time validation; the dashboard fetches defs after auth
+  and merges specs + a generic `studioComponent(def)` renderer into the
+  registry/ComponentMap (rail "Studio" group, slash menu, prop panel, live
+  canvas render — indistinguishable from code components). `mdmx check`
+  merges them too. On a name clash the code component shadows the studio
+  def everywhere. The first studio fetch gates dashboard rendering: a
+  registry identity change re-creates the ProseMirror editor, which must
+  not happen underneath someone typing.
+- **Tailwind v4 browser runtime** (`@tailwindcss/browser`, URL configurable
+  via dashboard `tailwindSrc`) loads on demand wherever studio components
+  render — studio views, editor canvas, and public pages that use them. The
+  injected stylesheet imports **theme + utilities only, no preflight**:
+  preflight would reset the dashboard chrome and the author's own `mk-*`
+  styles. Build-time Tailwind stays possible later; the runtime is what
+  makes "type any class, see it now" true.
+- **Eject graduates, never migrates.** `studioComponentToTSX` (core)
+  generates a `defineMDMX` component file matching hand-written conventions;
+  `POST /studio/components/:name/eject` writes it to `componentsDir`
+  (default `components/mdmx/`, refusing to overwrite). The JSON definition
+  intentionally stays active until `mdmx generate` + rebuild promote the
+  code version — deleting it at eject time would break the component until
+  the next deploy.
+
+**Alternatives rejected.** Generating TSX directly from the studio (instant
+use only in localMode; GitHub mode would need a redeploy before first use,
+and editing means re-parsing generated code). Raw HTML strings as the stored
+format (server-side sanitizing needs an HTML parser; rendering needs
+`dangerouslySetInnerHTML`; eject needs a parser again). A fixed utility-class
+subset shipped as static CSS (defeats "Tailwind-style" authoring).
+
+## ADR-039 — Convention over configuration: three-tier config, env-detected mode, fail-closed production
+
+**Context.** The honest Next.js onboarding footprint was ~8 files / 90–130
+lines (S25 review §1B): `createMDMXHandlers` requires `repo`, `contentDir`,
+`mediaDir`, `createProvider`, and a hand-loaded registry; guide 01 tells the
+user to write `lib/mdmx-config.ts` (24 lines of `readFileSync`) themselves;
+`contentDir` lives in three places that must agree by hand. The 0.5 session
+objectives were: the most-used recipe quick, the API layered.
+
+**Decision.** The standing principle for every MDMX API surface: **Layer 1 is
+a zero/near-zero-argument convention path; Layer 2 keeps every explicit
+option as an override.** Config placement is three-tier:
+
+- `mdmx.config.json` — structural, committed, identical across environments:
+  `contentDir`, `mediaDir`, `componentsDir`, collections, **`repo`**
+  (owner/name/branch — facts, not secrets), `basePath`, `editorPath`,
+  `validation`.
+- Env vars — secrets and deploy-environment: `MDMX_GITHUB_CLIENT_ID`,
+  `MDMX_GITHUB_CLIENT_SECRET`, `MDMX_SESSION_SECRET`.
+- Options object — overrides only, plus test injection (`createProvider`,
+  `now`).
+
+Everything else derives: registry from `outDir`, `configPath` from the
+project root, `insecureCookies` from `NODE_ENV`. **Mode is auto-detected**:
+OAuth env vars present → GitHub mode; absent → local mode, but only when
+`NODE_ENV !== "production"` — production with no auth configured **fails
+closed** with an error naming the exact missing env vars. Explicit
+`mode: "local" | "github"` remains as an override; local mode in production
+additionally requires `allowLocalModeInProduction: true` (local mode means
+unauthenticated writes).
+
+**Alternatives rejected.** `repo` in env (not a secret, needed by the CLI,
+identical everywhere). A committed `"mode"` field in config (ships the same
+value to dev and prod; env overrides would reintroduce detection anyway).
+Silent local fallback in production (fail-open on auth). Keeping explicit
+`localMode` as the entry point (boilerplate paid by everyone forever; the
+surprise of env-triggered OAuth is visible and recoverable, the boilerplate
+is not).
+
+**Status.** Shipped (handlers) — 0.5 M3a. `createMDMXHandlers()` takes no
+required arguments: `next/src/settings.ts` resolves structural values from
+`mdmx.config.json` via `@mdmx/project`, secrets and mode from the environment,
+the registry from `outDir`, and the provider from the mode (`LocalProvider`,
+or `GitHubProvider` via an optional peer import). Every value stays
+overridable. Resolution is lazy — first request, then cached — so the mount
+file stays three synchronous lines and a misconfiguration answers with a
+readable 500 naming the missing variables instead of crashing the build; a
+fixed environment recovers without a restart. Passing `auth` explicitly counts
+as choosing GitHub mode. `examples/demo-next` now mounts the API with
+`createMDMXHandlers()` and `lib/mdmx-config.ts` is deleted.
+
+## ADR-040 — Codegen owns the convention layer: generated component maps, bound server entry, committed deterministic `.mdmx/`
+
+**Context.** One component appeared in three parallel lists (generated
+`registry.ts` — which lacked `"use client"` and had zero consumers — plus
+hand-maintained `lib/components.ts` and `lib/components-server.ts`, existing
+only because the RSC boundary needs a `"use client"` re-export the server
+pages must not share). Public pages hand-stitched studio rendering per route
+(defs fetch + map merge + substring sniff + a copied Tailwind CDN runtime).
+Package code cannot import userland paths — but generated code can import
+everything. Guides said commit `.mdmx/`; `.gitignore` ignored it.
+
+**Decision.** `mdmx generate` emits the whole convention layer into `.mdmx/`:
+
+- `registry.json` — data (unchanged).
+- `registry.ts` — server-safe: spec + `serverComponents` map.
+- `components.ts` — the same map behind `"use client"`, for the dashboard
+  mount.
+- `server.ts` — bound Layer-1 helpers closing over config + maps:
+  `getEntry`/`MDMXEntry` (collection addressed **by name** via
+  `mdmx.config.json`, default status `published`, studio defs fetched and
+  merged internally, missing entry → `notFound()`); imports `studio.css`
+  (ADR-042).
+
+`getDocumentBySlug` + `MDMXContent` + a caller-supplied map remain the
+explicit Layer 2. **`.mdmx/` is committed**, which makes determinism a hard
+requirement: `generatedAt` leaves the artifacts, writes are hash-gated (no
+byte churn on no-op regenerates), and `mdmx check` fails when the committed
+registry is stale relative to source.
+
+**Alternatives rejected.** A registry↔map lint over hand-written maps (keeps
+the triplication, only detects drift). Runtime map resolution inside the
+packages (impossible across the userland import boundary). Ignoring `.mdmx/`
+(loses reviewable registry diffs — the WYSIWYG contract — and
+clone-then-browse; the CI-regeneration argument is moot since `predev`/
+`prebuild` regenerate regardless).
+
+**Status.** Shipped — 0.5 M3b. `mdmx generate` emits `registry.json`,
+`registry.ts` (spec + `serverComponents`, no directive), `components.ts`
+(`"use client"`), and `server.ts` (bound `listEntries`/`getEntry`/`MDMXEntry`
++ `renderComponents`, collections addressed by name). Determinism: no
+`generatedAt` in any artifact, writes skipped when bytes are unchanged
+(`GenerateResult.changed` reports what moved), and `mdmx check` fails when the
+committed registry's hash no longer matches the components. `.mdmx/` is no
+longer git-ignored. `examples/demo-next` deleted `lib/components.ts` and
+`lib/components-server.ts`; its post page is `<MDMXEntry collection="posts"
+slug={slug} />`.
+
+## ADR-041 — `mdmx init nextjs`: scaffold the recipe, create-don't-mutate
+
+**Context.** After ADR-039/040, the remaining onboarding steps are files
+codegen cannot own: `mdmx.config.json`, the two mount files,
+`transpilePackages`, and `package.json` scripts — all copy-from-guide today.
+
+**Decision.** A CLI scaffolder, target-scoped as a subcommand
+(`mdmx init nextjs`; bare `mdmx init` lists targets; future frameworks get
+their own subcommand). It **creates** `mdmx.config.json`, the API route and
+dashboard page mounts, a starter component, and a starter entry — skipping
+any file that exists, never overwriting — then runs `mdmx generate` so
+`next dev` works immediately. It may add scripts to `package.json` (safe
+JSON). It does **not** edit `next.config.*`: it prints the
+`transpilePackages` snippet, and `mdmx check` warns when it is missing.
+
+**Alternatives rejected.** Codemodding `next.config` (comments/formatting/
+ESM-CJS-TS variants are where scaffolders break trust). A framework-generic
+`init` (extensibility comes from the layered API, not a speculative
+multi-framework scaffolder). No scaffolder (leaves the README's pitch
+untrue).
+
+**Status.** Shipped — 0.5 M3c. `mdmx init nextjs` creates `mdmx.config.json`,
+both mount files, a starter component and entry, adds the `generate`/`predev`/
+`prebuild` scripts to `package.json`, then runs `generate` so `next dev` works
+immediately. Existing files are skipped (the command is idempotent), and
+`next.config.*` is printed rather than rewritten — `mdmx check` reports a
+missing `transpilePackages` so the omission can't go unnoticed. Bare `mdmx
+init` lists targets; a non-Next directory gets a clear error rather than a
+half-scaffold.
+
+## ADR-042 — Studio component CSS is compiled at generate time (supersedes ADR-038's browser-runtime posture)
+
+**Context.** ADR-038 shipped studio styling on public pages via the Tailwind
+browser CDN runtime — a third-party script that compiles CSS after load:
+FOUC, render-blocking, CDN dependency on production marketing pages, plus a
+fragile per-route substring sniff deciding when to inject it.
+
+**Decision.** `mdmx generate` scans `content/_components/*.json`, extracts
+class lists (pure string work in `@mdmx/studio`), and compiles a static
+`.mdmx/studio.css` via Tailwind's node API — a dependency of `@mdmx/cli`
+only, never shipped to the app. The generated `server.ts` imports it, so it
+rides the app's normal CSS pipeline with zero user steps. `mdmx dev` watches
+`content/_components/`. For Tailwind-v4 hosts, delegation via an `@source`
+line over an emitted class file is documented as an optimization. The CDN
+runtime remains for the editor canvas (live editing genuinely needs
+on-the-fly utilities) and as an explicit opt-in elsewhere. Staleness window:
+in GitHub mode a just-created studio component's classes reach the deployed
+CSS at the next deploy — the same window the definition itself already has
+under ADR-035's request-time model; documented, not machinery.
+
+**Alternatives rejected.** CDN-by-default with `tailwindSrc` pass-through
+(the S25 §7-6 lean — honest but leaves the production defect in the default
+path). Requiring the host to run Tailwind (breaks every non-Tailwind
+consumer).
+
+**Status.** Shipped — 0.5 M3d. `cli/src/studio-css.ts`:
+`extractStudioClasses` walks the template trees, `compileStudioCss` builds the
+utilities through Tailwind v4's `compile()` API (a CLI dependency; preflight
+deliberately excluded so studio components don't reset the host's styles), and
+`generate` writes `.mdmx/studio.css`, which the generated `server.ts` imports.
+Without Tailwind installed it emits the class manifest plus the `@source`
+delegation instructions instead of failing. `examples/demo-next` deleted
+`app/studio-runtime.tsx` — the CDN script and the substring sniff that decided
+when to inject it are both gone; the demo's studio component now ships 2.5 KB
+of real CSS.
+
+## ADR-043 — `@mdmx/project`: the project layer gets a package
+
+**Context.** Project-config parsing existed twice and had already drifted:
+`cli/config.ts` loads `mdmx.config.json` **or** `.mjs`; `next/api.ts`'s
+private `ProjectConfigFile` reads JSON only — an `.mjs`-configured project
+gets a working CLI and a runtime that silently ignores its collections.
+ADR-039/040 add mode resolution, env handling, and registry-from-disk on top
+of whichever home this logic gets. Core must stay platform-agnostic
+(browser-consumed via the editor); the CLI must not depend on `@mdmx/next`.
+
+**Decision.** A new package `@mdmx/project` — config schema + loader (json
+and mjs), env/mode resolution, registry-from-disk — depending only on
+`@mdmx/core` (types), consumed by cli, next, and dashboard. One schema, one
+validator, one set of error messages. `@mdmx/next` re-exports the common
+surface so most consumers never type the package name.
+
+**Alternatives rejected.** A node-only subpath of core (changes core's
+identity as the pure spec kernel). Living in `@mdmx/next` (the CLI would
+depend on the framework runtime — inverted layering). Status quo (the drift
+is the proof it needs an owner).
+
+**Status.** Shipped — 0.5 M2b. `packages/project` (13 tests): `MDMXConfig`
+schema + `loadConfig` (json **and** mjs), `mergeConfig`/`validateConfig`,
+`parseProjectConfig` + `ProjectConfigFile` (the provider-read shape the
+runtime uses, ADR-035), `resolveMode`/`insecureCookiesDefault` (ADR-039), and
+`loadRegistry`/`loadRegistrySpec`. `@mdmx/cli` deleted its own `config.ts` and
+`@mdmx/next` its private `ProjectConfigFile` — the json-vs-mjs drift that made
+`.mjs` projects silently lose their collections at runtime is gone.
+
+## ADR-044 — Provider contract v2: deletions in the change set, binary reads
+
+**Context.** `ContentProvider.delete()` is a separate operation from
+`commit()`, so any rename/move (slug change, cross-collection move, media
+rename) is two commits and non-atomic — violating the invariant the
+contract's own design notes name as the reason `commit` takes an array.
+`read()` returns `string` while writes accept `Uint8Array` — asymmetric, and
+provider-backed media reads have no typed path (the 1–100MB GitHub blob
+truncation bug sits here). Phase 3 makes providers a public extension point;
+contract changes are cheapest now, ecosystem breaks later.
+
+**Decision.** Minimal revision in 0.5: `FileChange` becomes
+`{ path, content } | { path, delete: true }` and standalone `delete()` is
+removed — the contract shrinks to `list`/`read`/`commit` and gains atomic
+rename/move for free. `read()` returns `content: Uint8Array | string`
+(binary-capable); text call sites use a small helper. Nothing speculative
+(no history, blame, branches, pagination) — features pull those in when
+real. LocalProvider, GitHubProvider, and the in-memory fake update in
+lockstep, per the existing invariant.
+
+**Alternatives rejected.** Deferring until rename ships (by then GitLab/
+third-party providers may exist; every change becomes an ecosystem break).
+`readBinary()` sibling (keeps the asymmetry; pre-1.0 is when the honest
+union is allowed). Adding capabilities speculatively (the contract's
+smallness is its strength).
+
+**Status.** Shipped — 0.5 M2a. `core/src/provider.ts`: `FileWrite | FileDelete`
+union, `isFileDelete`, `read(path, {as})` plus typed `readText`/`readBytes`
+helpers; standalone `delete()` removed. LocalProvider and GitHubProvider
+updated in lockstep (+ the deferred §5-4 fix: GitHubProvider now falls back to
+the Blob API when the Contents API answers `encoding: "none"` for 1–100MB
+files, instead of silently returning empty content). Atomic rename is covered
+by a test in both providers.
+
+## ADR-045 — Component Studio becomes `@mdmx/studio` — model, renderer, and UI (supersedes ADR-038's placement and the S25 §7-1 lean)
+
+**Context.** Studio landed without a seam: model + eject in core
+(`studio.ts`, 462 lines, four jobs), untested routes in next, ~1,100
+untested UI lines in dashboard; `{props.x}` interpolation defined three
+times, the code-beats-studio merge rule twice, template→React twice — the
+triplication exists precisely because core must stay React-free and so could
+never host the one true renderer. The S25 lean was a core submodule,
+"revisit if studio grows a real Tailwind build step" — which ADR-042 just
+added.
+
+**Decision.** A dedicated package, three entries:
+
+- `@mdmx/studio` (deps: core only) — template model + path helpers, tag/attr
+  allowlist validation, `studioComponentToSpec` + `mergeStudioSpecs`,
+  `interpolate`, TSX eject codegen, class extraction.
+- `@mdmx/studio/react` — the single template→React renderer;
+  `@mdmx/next/render` and the dashboard preview both consume it.
+- `@mdmx/studio/ui` — the builder screens (StudioEditorView split into
+  PreviewTree/Inspector/PropRowEditor) shipping their own stylesheet chunk,
+  wired through an injected **`StudioClient`** interface (load/save/eject/
+  problems) that the dashboard's api-client implements — making the screens
+  testable against a fake client.
+
+Core never imports studio — the registry merge is performed by callers — so
+the graph stays acyclic: `core ← studio ← cli, next, dashboard`. The
+dashboard remains the composition point (`dashboard → studio/ui`, never the
+reverse).
+
+**Alternatives rejected.** `core/studio/` submodule (the S25 lean — cannot
+host the React renderer, so the worst duplication survives; and the feature
+is "mainly a component-builder thing" that will get messy without a hard
+boundary). UI staying in dashboard (leaves the feature smeared across
+packages; the `StudioClient` seam the move forces is exactly the missing
+testability seam).
+
+**Status.** Shipped (semantics) — 0.5 M2c. `packages/studio` (18 tests):
+`model.ts` (types, path helper, `parseStudioComponent`), `validate.ts`
+(allowlists + `validateStudioComponent`), `spec.ts` (`studioComponentToSpec`),
+`merge.ts` (`mergeStudioSpecs` — the code-beats-studio rule, hoisted out of
+`cli/check.ts` and `next/api.ts`), `eject.ts` (TSX codegen), `interpolate.ts`
+(the one `{props.x}` implementation), and `@mdmx/studio/react` (the one
+template→React renderer, now consumed by `@mdmx/next/render`). Core no longer
+ships studio at all. The dashboard's private `interpolate` copy is gone; its
+`PreviewTree` keeps its own traversal because click-to-select paths are a
+genuinely different behaviour, not duplicated rendering. **Shipped (UI)** — 0.5 M4b: `@mdmx/studio/ui` holds
+`StudioView`, `StudioEditorView`, `template-html`, `template-edit`, and the
+canvas Tailwind runtime. They take a `StudioClient` (entries / refresh / save
+/ remove / eject) and a `StudioHost` (contentDir, hrefFor, navigate, Link,
+tailwindSrc); `dashboard/src/studio-bridge.ts` implements both from the
+dashboard's context, and the dashboard's two view files are now three-line
+adapters. The seam paid immediately: `template-html`/`template-edit` — 330
+lines of pure logic with no tests while they lived in the dashboard — gained
+14. The shared stylesheet stays in the dashboard for now (one token system,
+one file); splitting it is a separate question from owning the feature.
+
+## ADR-046 — Auth is an injectable strategy beside the provider seam
+
+**Context.** Storage is pluggable (`createProvider`); auth is not — the
+GitHub OAuth flow, token verification, and push-permission check are
+hard-called inside `api.ts`. A GitLab deployment reuses the provider seam
+and hits this wall. `auth.ts`'s three functions are already the de-facto
+interface.
+
+**Decision.** Promote in 0.5: an `AuthStrategy` interface (begin-login →
+callback-exchange → verify-access) with `GitHubOAuthStrategy` as the shipped
+implementation, selected by ADR-039's mode detection; local mode's synthetic
+session is the trivial second implementation. Ships with the api.ts route
+split (routes/{entries,collections,studio,auth} + thin dispatcher) so the
+restructuring happens once. Building an actual second OAuth strategy is
+explicitly out of scope.
+
+**Alternatives rejected.** Deferring to 0.6 (the interface freezes at
+publish; a provider seam without an auth seam is half a plug for Phase 3's
+GitLab goal).
+
+**Status.** Shipped (seam) — 0.5 M2d. `next/src/auth-strategy.ts`:
+`AuthStrategy` (beginLogin / completeLogin / verifyAccess) with
+`GitHubOAuthStrategy` and `LocalAuthStrategy`; `createMDMXHandlers` takes an
+optional `authStrategy` beside `createProvider` and defaults it from
+`auth`/`localMode`, so existing mounts are unchanged. Login, callback, and the
+5-minute re-verification now go through the strategy — `api.ts` no longer
+calls the OAuth functions directly. Proven by a fake non-GitHub host in the
+tests. **Deferred to M4:** the mechanical `handle()` route split, which is
+internal structure and carries no post-publish cost.
+
+## ADR-047 — Vocabulary: a *document* is any MDMX file; an *entry* is a document in a collection
+
+**Context.** The dashboard UI and guides say "entry"; the HTTP route is
+`GET /documents`; readers are `getDocuments`/`MDMXDocument`; neither term
+was in the Glossary (S25 §3.6). The new Layer-1 helpers (ADR-040) were named
+`getEntry`/`MDMXEntry`, forcing the collision.
+
+**Decision.** Both words, as different concepts falling exactly on the
+core/project layer boundary: **document** is the spec-level thing (core:
+`parseDocument`, grammar, diagnostics); **entry** is a document belonging to
+a collection — schema, status, slug (project, next, HTTP routes, dashboard,
+guides). `GET /documents` → `GET /entries`; the Layer-2 readers rename to
+entry vocabulary. Nothing is published yet, so the rename breaks nobody.
+Glossary gains both terms with the relationship stated.
+
+**Alternatives rejected.** "Document" in code / "entry" in UI (the S25 lean
+— permanent split vocabulary, and it would rename the new Layer-1 surface
+into the less accurate word). "Entry" everywhere (erases a real distinction
+core legitimately needs).
+
+**Status.** Shipped — 0.5 M2e. `GET /documents` → `GET /entries` (payload key
+`documents` → `entries`); `getDocuments`/`getDocumentBySlug` →
+`getEntries`/`getEntryBySlug`; `MDMXDocument`/`GetDocumentsOptions` →
+`MDMXEntry`/`GetEntriesOptions`; the dashboard client's `listDocuments`/
+`DocumentMeta` → `listEntries`/`EntryMeta`. Core keeps document vocabulary
+(`parseDocument`, `validateSource`) untouched. Glossary gained both terms;
+guide 03's endpoint table updated. Nothing is published yet, so the rename
+broke no consumers.
+
+## ADR-048 — Dashboard surface shrinks; the `export *` re-export is removed (amends ADR-034)
+
+**Context.** `@mdmx/dashboard`'s root entry exports 15+ symbols with zero
+consumers anywhere in the repo (and is incomplete for the composability it
+implies); `@mdmx/dashboard/next` does `export * from "@mdmx/next"`, blanket
+semver-coupling to a sibling's entire surface including internals slated for
+deletion — while the flagship demo imports `@mdmx/next` directly,
+contradicting the package's own headline.
+
+**Decision.** Root entry shrinks to `DashboardApp` + config/types + theme
+helpers; everything else internal (un-exporting after publish is breaking,
+re-exporting later is free). The `export *` is deleted with no curated
+replacement: ADR-034's "one package to import" onboarding motive is obsolete
+now that `mdmx init nextjs` writes the mount files — users never type these
+imports — so each scaffolded file imports from its honest home (`route.ts`
+from `@mdmx/next`, `page.tsx` from `@mdmx/dashboard/next`).
+
+**Alternatives rejected.** Finishing the composability surface (zero
+demand; speculative API to maintain through the freeze). A curated re-export
+(still couples release cadences for no consumer benefit post-scaffolder).
+
+**Status.** Shipped — 0.5 M2f. Dashboard root entry is now `DashboardApp` +
+config/types + `DashboardRoute`; `export * from "@mdmx/next"` is deleted from
+`@mdmx/dashboard/next`. Pruned alongside it (same reasoning, repo-wide):
+`@mdmx/editor/react` 44 → 9 symbols, `@mdmx/next` 24 → 10 (session crypto and
+cookie helpers are internal again — `serializeCookie` in userland was a small
+injection hazard), and `@mdmx/cli` no longer leaks its config loader. Every
+package now has `files: ["dist"]`, and `cli`/`provider-github` gained
+`exports` maps. `@mdmx/next` also gained a barrel-contract test — the
+published surface asserted as a list, closing the "entry points are never
+exercised" blind spot the prune made urgent.

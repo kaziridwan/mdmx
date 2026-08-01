@@ -282,10 +282,66 @@ body.mdmx-resizing {
   position: relative;
   overflow-y: auto;
 }
+/* Responsive preview: --mdmx-canvas-w/--mdmx-canvas-zoom come from the editor
+   (viewport switch in the toolbar); the canvas is a container-query root. */
 .mdmx-canvas {
-  max-width: 720px;
+  width: var(--mdmx-canvas-w, 720px);
+  max-width: none;
   margin: 0 auto;
   padding: 48px 40px 240px;
+  zoom: var(--mdmx-canvas-zoom, 1);
+  container: mdmx-canvas / inline-size;
+}
+.mdmx-canvas[data-viewport="mobile"],
+.mdmx-canvas[data-viewport="tablet"] {
+  border-left: 1px dashed var(--line);
+  border-right: 1px dashed var(--line);
+}
+
+/* -- Toolbar (always rendered since the viewport switch moved in) --------- */
+.mdmx-toolbar {
+  position: sticky;
+  top: 0;
+  z-index: 15;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 40px;
+  background: rgba(251, 251, 253, 0.9);
+  backdrop-filter: blur(6px);
+  border-bottom: 1px solid var(--line);
+}
+.mdmx-toolbar-title {
+  font-family: "IBM Plex Mono", ui-monospace, monospace;
+  font-size: 13px;
+  color: var(--muted);
+}
+.mdmx-viewport-switch {
+  display: inline-flex;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  overflow: hidden;
+}
+.mdmx-viewport-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 26px;
+  border: 0;
+  background: #fff;
+  color: var(--muted);
+  cursor: pointer;
+}
+.mdmx-viewport-btn + .mdmx-viewport-btn {
+  border-left: 1px solid var(--line);
+}
+.mdmx-viewport-btn:hover {
+  color: var(--ink);
+}
+.mdmx-viewport-btn[aria-pressed="true"] {
+  background: var(--indigo-wash);
+  color: var(--indigo);
 }
 .mdmx-canvas .ProseMirror {
   outline: none;
@@ -370,6 +426,13 @@ body.mdmx-resizing {
 }
 .mdmx-content {
   font-family: "Newsreader", serif;
+  /* Layout-transparent editable hole: container components' flex/grid must
+     see child blocks as direct items, not one wrapper div. Applies to the
+     React hole and the PM-managed contentDOM inside it. */
+  display: contents;
+}
+.mdmx-contentdom {
+  display: contents;
 }
 .mdmx-placeholder {
   border: 1px dashed var(--line);

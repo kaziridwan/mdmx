@@ -5,6 +5,17 @@ CommonMark + a GFM slice, block-level JSX for registered components only,
 props-as-JSON, no imports/expressions/raw-HTML/inline-JSX. Defined normatively
 in `SPEC.md`.
 
+**Document** — any MDMX file: frontmatter plus a body in the MDMX subset.
+Documents are `@mdmx/core`'s concern — parsing, the grammar, diagnostics — and
+a document need not belong to a collection.
+
+**Entry** — a document that belongs to a collection, so it has a slug, a
+frontmatter schema, and (usually) a status. Everything above the collection
+line speaks in entries: `@mdmx/project`, `@mdmx/next`'s readers
+(`getEntries`/`getEntryBySlug`), the `GET /entries` route, the dashboard, and
+the guides. Every entry is a document; not every document is an entry
+(ADR-047).
+
 **Registry** — the generated catalog of editable components. Two artifacts:
 `registry.json` (pure data) and `registry.ts` (binds real components).
 Produced by `mdmx generate`. Drives validation, the editor palette, prop
@@ -35,7 +46,7 @@ it is semver-major.
 **Raw node (`mdmx_raw`)** — the escape hatch. Out-of-subset content becomes an
 opaque read-only block storing the exact source slice, re-emitted verbatim.
 
-**Diagnostic** — `{code, severity, message, span}`. Codes MDMX001–007 (see
+**Diagnostic** — `{code, severity, message, span}`. Codes MDMX001–010 (see
 SPEC.md §4) are stable API.
 
 **mdast** — the markdown AST (from remark). The interchange hub: text and

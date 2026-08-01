@@ -15,12 +15,13 @@ registry that drives validation, the editor palette, and prop panels.
 
 | Doc | What it covers |
 | --- | --- |
-| [Architecture](Architecture.md) | The five packages, the data-flow pipeline, how they fit |
+| [Next.js integration guides](../guides/next-js/README.md) | Consumer-facing, step-by-step: install → components/registry → content API → editor → rendering → GitHub mode → troubleshooting |
+| [Architecture](Architecture.md) | The eight packages, the data-flow pipeline, how they fit |
 | [Packages](Packages.md) | Per-package reference: exports, responsibilities, test counts |
-| [Invariants](Invariants.md) | The nine rules that must never break, and why |
+| [Invariants](Invariants.md) | The rules that must never break, and why |
 | [Glossary](Glossary.md) | Terms: MDMX, registry, control, children policy, raw node, … |
 | [Roadmap](Roadmap.md) | Done / in-progress / next, by phase |
-| [TwoColumn](TwoColumn.md) | The concrete plan for nested editing (next big feature) |
+| [TwoColumn](TwoColumn.md) | The nested-editing implementation (shipped in 0.4) |
 | [Testing](Testing.md) | How the suites are organized and the guarantees they lock |
 | [Session Log](SessionLog.md) | Chronological record of what each work session changed |
 | `../DECISIONS.md` | Architecture Decision Record — the "why" behind every choice |
@@ -29,20 +30,28 @@ registry that drives validation, the editor palette, and prop panels.
 
 ## Status at a glance
 
-- **5 packages** at **v0.3.1**, 210 tests, all green; strict TypeScript throughout.
-- The **entire headless pipeline** is implemented and tested: define a
-  component → generate a typed registry → edit as a validated block document
-  → serialize to canonical MDMX → commit atomically with conflict safety →
-  read back at build time.
-- The **flat React editor UI** is built (`@mdmx/editor/react`): React NodeViews
-  over the existing schema/converters (raw ProseMirror, ADR-023), rail palette,
-  slash menu, prop panel, the signature live-source pane, and a save toolbar.
-- A **runnable local Next.js app** (`examples/demo-next`) dogfoods the full
-  loop: list → edit → save canonical MDMX to disk, conflict-safe, no GitHub
-  needed (`localMode`, ADR-024).
-- **Collections & draft/publish** (ADR-025): typed frontmatter defined in config,
-  validated (MDMX008/009), edited via the editor's frontmatter panel (canonical
-  YAML). Next: nested editing (TwoColumn), media library UI.
+- **8 packages** at **v0.5.0** (`release/0.5.0`), 364 tests, all green; strict
+  TypeScript throughout; Next 15 + React 19.
+- **Setup is convention-first (0.5)**: `mdmx init nextjs` scaffolds the app,
+  `createMDMXHandlers()` takes no arguments, and `mdmx generate` writes the
+  component maps and bound server helpers into a committed `.mdmx/`. Mode is
+  detected from the environment and fails closed in production (ADR-039–042).
+- The **entire pipeline** is implemented and tested: define a component →
+  generate a typed registry → edit as a validated block document → serialize
+  to canonical MDMX → commit atomically with conflict safety → render at build
+  time.
+- **Two seams make it extensible**: `ContentProvider` (v2 — deletions in the
+  change set, binary reads, atomic rename) and `AuthStrategy` (begin/complete/
+  verify), so another git host plugs in without touching the routes.
+- **The drop-in dashboard** (`@mdmx/dashboard`, ADR-034): two mount files give
+  the full CMS at `/mdmx` — auth gate, collections + entry tables, new-entry
+  scaffolding, the embedded block editor, collection field editing, media
+  library, settings, ⌘K quick-open, and the Component Studio.
+- **Component Studio** lives in its own package (`@mdmx/studio`, ADR-045):
+  build template components in the browser, render them through one shared
+  renderer, eject to real `defineMDMX` TSX when they settle. Their CSS is
+  compiled at build time (ADR-042) — no browser Tailwind runtime on public
+  pages.
 
 See [Roadmap](Roadmap.md) for the detailed breakdown.
 

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { EditorState } from "prosemirror-state";
+import { EditorState, TextSelection } from "prosemirror-state";
 import { Registry, type RegistrySpec } from "@mdmx/core";
 import {
   buildSchema,
@@ -8,6 +8,7 @@ import {
   insertComponent,
   slashItems,
   groupSlashItems,
+  markKeymap,
 } from "../src/index.js";
 
 const spec: RegistrySpec = {
@@ -159,5 +160,29 @@ describe("buildComponentNode (subtree seeding)", () => {
       if (n.type.name === "mdmx_Column") cols += 1;
     });
     expect(cols).toBe(2);
+  });
+});
+
+describe("markKeymap", () => {
+  it("binds the shortcuts writers expect, for the marks the schema has", () => {
+    const keys = markKeymap(schema);
+    expect(Object.keys(keys)).toEqual(
+      expect.arrayContaining(["Mod-b", "Mod-i", "Mod-e", "Mod-Shift-x"]),
+    );
+  });
+
+  it("actually toggles the mark it is bound to", () => {
+    const doc = schema.node("doc", null, [
+      schema.node("paragraph", null, [schema.text("hello")]),
+    ]);
+    let state = EditorState.create({ schema, doc });
+    state = state.apply(state.tr.setSelection(TextSelection.create(state.doc, 1, 6)));
+
+    let next: EditorState | null = null;
+    markKeymap(schema)["Mod-b"]!(state, (tr) => {
+      next = state.apply(tr);
+    });
+    expect(next).not.toBeNull();
+    expect(next!.doc.rangeHasMark(1, 6, schema.marks.strong!)).toBe(true);
   });
 });

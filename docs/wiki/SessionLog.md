@@ -11,6 +11,436 @@ initial design-and-build conversation (12 commits).
 
 <!-- APPEND NEW ENTRIES ABOVE THIS LINE -->
 
+### S31 — M4b/M4d, the validation seam, typechecked tests, live verification
+- **M4b — `@mdmx/studio/ui`**: the builder screens (StudioView,
+  StudioEditorView, template-html, template-edit, canvas Tailwind runtime)
+  moved out of the dashboard behind an injected `StudioClient` +
+  `StudioHost`; `dashboard/src/studio-bridge.ts` implements both, and the two
+  dashboard view files are three-line adapters. The seam paid immediately —
+  `template-html`/`template-edit` (330 pure lines, previously untested) gained
+  14 tests. The whole studio feature now lives in one package.
+- **M4d — mark shortcuts**: `markKeymap` binds Mod-B / Mod-I / Mod-E /
+  Mod-Shift-X. `markCommands` had existed unused since the command layer
+  landed, so the editor shipped without bold/italic shortcuts.
+- **`validateDocument` seam** (W3): one pipeline for `mdmx check` and the save
+  route — subset rules + frontmatter in a single parse. Closes the bug where
+  unguarded `YAML.parse` let one malformed file abort an entire check run; it
+  is now **MDMX010**, a diagnostic with a span.
+- **Tests are typechecked**: every package gained a `tsconfig.test.json`
+  (review §3.4). First run caught six latent bugs no test failure would show —
+  three dashboard fixtures missing `studio`, a `saveFile` mock stale since
+  M2f added `sha`, studio fixtures missing `mdmxStudioVersion`, a positional
+  `children` render, and `setClassIn`'s signature disagreeing with its own
+  callers (widened to `string | null`).
+- **Live verification against demo-next** (:3111) found what nothing else
+  could: the generated `server.ts` imported `./registry.js`, which tsc
+  resolves and Next's bundler does not — **every public page 500'd**. Fixed
+  to an extensionless specifier + regression test. Re-verified: home,
+  published entry, private entry (studio component rendering compiled classes,
+  no CDN script), dashboard, Component Studio, editor palette — all clean, no
+  console errors. The **edit→save loop** was driven in the browser: typing
+  updated the live source pane, saving changed exactly one line of the file.
+  M2f's sha change was then exercised against the running server — save 1
+  returns a sha, save 2 using only that sha (no re-read) succeeds, and a stale
+  sha still 409s, so the extra request is gone and conflict detection is
+  intact.
+- **Publish readiness**: repository/homepage/bugs metadata added to all eight
+  packages; `npm pack --dry-run` confirms each ships `dist` only.
+- Files/packages changed: studio (new ui/), dashboard (bridge + adapters),
+  core (validate/parse), cli (emit fix), editor (keymap), all package.jsons.
+- ADRs: ADR-045 status completed (UI half shipped).
+- Tests: **388**, `pnpm verify` (typecheck incl. tests + suites) green.
+- Wiki pages touched: SessionLog, DECISIONS; SPEC/README/llms.txt/guide 07
+  for MDMX010.
+- Follow-ups before publish: **LICENSE file + `license` field are Kazi's call**
+  (not guessed); editor reference stylesheet extraction (visual, needs eyes);
+  dashboard `useLoad`/`LoadBoundary` primitives; Editor.tsx split.
+
+### S30 — M4a + M5: studio routes extracted and tested, docs wave (release/0.5.0)
+- **M4a** (deferred from M2d): `routes/context.ts` defines the `RouteContext`
+  a handler needs plus the shared `listStudioDefs`; `routes/studio.ts` holds
+  list/save/delete/eject and `api.ts` dispatches to it. The point is the 12
+  new studio route tests — the family the review found completely untested,
+  including the two riskiest writes (a save must reject an invalid template
+  and write nothing; eject must never overwrite existing source).
+- **M5 docs wave**: README rewritten around the 0.5 recipe (quick start,
+  8-package table, vocabulary); guides 01/03/04/05/06/07 updated — the
+  deleted `lib/mdmx-config.ts`, `lib/components.ts`, `next-mdx-remote`
+  recipe, `localMode: true`, and `GET /documents` are all gone; guide 05 now
+  teaches `<MDMXEntry>` and the generated `.mdmx/server.ts` with a Layer-2
+  section. `llms.txt` rewritten (8 packages, convention-first setup).
+  SPEC.md gained **§7 Studio components** (the normative gap: allowlists,
+  interpolation, limits, code-beats-studio, build-time CSS) and a rewritten
+  §6 provider contract (v2 + the `AuthStrategy` seam), plus the
+  registry-vs-spec version-counter note. Wiki Home/Architecture/Packages/
+  Roadmap/Glossary/Testing updated for eight packages, MDMX001–009, and the
+  new artifact set. All packages bumped to **0.5.0**.
+- Files/packages changed: next (routes/), all docs, every package.json.
+- ADRs: none new (039–048 already recorded).
+- Tests: **364**, `pnpm verify` green.
+- Wiki pages touched: SessionLog, Home, Architecture, Packages, Roadmap,
+  Glossary, Testing; SPEC.md; README; llms.txt; guides 01–07.
+- Follow-ups: M4b (`@mdmx/studio/ui` move behind `StudioClient`), Editor.tsx
+  split and dashboard `useLoad`/`LoadBoundary` primitives, then publish.
+
+### S29 — M3: the convention layer (release/0.5.0)
+Milestone M3 — everything additive that makes the most-used recipe short
+(ADR-039…042). Three commits:
+- **M3a — zero-argument handlers**: `createMDMXHandlers()` resolves dirs,
+  repo, validation, registry, mode, and provider from `mdmx.config.json` +
+  the environment (`next/src/settings.ts`). Resolution is lazy, so the mount
+  file stays synchronous and a misconfiguration answers with a readable 500
+  naming the missing env vars instead of crashing the build.
+  `lib/mdmx-config.ts` is deleted from the demo.
+- **M3b + M3d — codegen owns the convention layer**: `mdmx generate` emits
+  `registry.json`, `registry.ts` (`serverComponents`), `components.ts`
+  (`"use client"`), `server.ts` (bound `listEntries`/`getEntry`/`MDMXEntry`/
+  `renderComponents`), and `studio.css` — real Tailwind utilities compiled
+  through the v4 `compile()` API, preflight excluded, Tailwind confined to the
+  CLI. `.mdmx/` is committed now, so `generatedAt` left the artifacts, writes
+  are hash-gated, and `mdmx check` fails on a stale committed registry. The
+  demo deleted `lib/components.ts`, `lib/components-server.ts` and
+  `app/studio-runtime.tsx`; its post page is one `<MDMXEntry>` call.
+- **M3c — `mdmx init nextjs`**: scaffolds config, both mounts, a starter
+  component and entry, adds the generate scripts, runs generate. Idempotent,
+  never overwrites, never rewrites `next.config.*` (prints the snippet;
+  `mdmx check` warns when `transpilePackages` is missing).
+- Files/packages changed: cli (emit/init/studio-css/studio-defs), next
+  (settings), core (RegistrySpec.generatedAt deprecated), project, demo-next.
+- ADRs: 039–042 moved to Shipped.
+- Tests: **352** (was 334 after M2), `pnpm verify` green; both examples pass
+  `mdmx check`.
+- Wiki pages touched: SessionLog, DECISIONS.
+- Follow-ups: M4 (internal structure: the deferred `handle()` route split,
+  `@mdmx/studio/ui` move, Editor.tsx split, dashboard primitives), then M5
+  (docs wave + publish). The guides still describe the pre-0.5 recipe.
+
+### S28 — M2: the breaking wave (release/0.5.0)
+Milestone M2 of `.dev-context/plans/2026-07-26-0.5-plan.md` — everything whose
+cost explodes after the first publish. Six commits:
+- **M2a — provider contract v2** (ADR-044): `FileChange` = `FileWrite |
+  FileDelete`, standalone `delete()` removed (atomic rename/move for free),
+  `read(path, {as})` + typed `readText`/`readBytes`. Carried the M1-deferred
+  fix: `GitHubProvider.read` falls back to the Blob API for 1–100MB files
+  instead of returning silently-truncated content.
+- **M2b — `@mdmx/project`** (ADR-043): config schema + `loadConfig` (json
+  **and** mjs), `validateConfig`, `parseProjectConfig`, `resolveMode`
+  (fail-closed in production, ADR-039), registry-from-disk. The CLI's
+  `config.ts` and the runtime's private `ProjectConfigFile` are gone with the
+  json-vs-mjs drift that silently dropped `.mjs` projects' collections.
+- **M2c — `@mdmx/studio`** (ADR-045): core's 462-line `studio.ts` becomes
+  model / validate / spec / merge / eject / interpolate + `@mdmx/studio/react`.
+  Kills the 3× `{props.x}` interpolation and the 2× code-beats-studio merge
+  rule. Graph stays acyclic (`core ← studio ← cli, next, dashboard`).
+- **M2d — `AuthStrategy` seam** (ADR-046): beginLogin / completeLogin /
+  verifyAccess, `GitHubOAuthStrategy` + `LocalAuthStrategy`, injectable beside
+  `createProvider`; proven by a fake non-GitHub host in tests.
+- **M2e — entry/document vocabulary** (ADR-047): `GET /entries`,
+  `getEntries`/`getEntryBySlug`, `MDMXEntry`, dashboard `listEntries`; core
+  keeps document vocabulary. Glossary + guide 03 updated.
+- **M2f — surface freeze** (ADR-048): dashboard root entry shrunk and its
+  `export *` deleted; editor/react 44→9, next 24→10; `files: ["dist"]`
+  everywhere + `exports` maps for cli/provider-github; `PUT /file` returns the
+  new blob sha (kills the dashboard's post-save re-read); barrel-contract test
+  for `@mdmx/next`.
+- Files/packages changed: all packages; two new (`@mdmx/project`,
+  `@mdmx/studio`) — eight in total.
+- ADRs: 043–048 moved from Planned to Shipped (044/045 note what deferred).
+- Tests: **334** (was 303 after M1), `pnpm verify` green.
+- Wiki pages touched: SessionLog, Glossary, DECISIONS; guide 03 endpoint table.
+- Follow-ups: M3 (convention layer), M4 (internal structure — includes the
+  deferred `handle()` route split and the `@mdmx/studio/ui` move), M5 (docs +
+  publish). Architecture/Packages/Home wiki pages need the two new packages
+  when M5's docs wave runs.
+
+### S27 — M1: 0.5 correctness blockers (release/0.5.0)
+Executed milestone M1 of `.dev-context/plans/2026-07-26-0.5-plan.md` — the
+S25 review's §5 blockers plus the W1 additions, each with a regression test:
+- **core**: `collectionForPath` longest-prefix compared normalized vs raw
+  lengths (a `"./"`-prefixed dir got a head start); props built on
+  null-prototype objects (`__proto__` attr/key can no longer rebind);
+  MDMX006 uses `Object.hasOwn` (required prop named `toString` now
+  reported); cli `check` normalizes win32 separators before collection
+  matching.
+- **cli**: a non-exported `defineMDMX` component is now excluded from both
+  registry artifacts with an actionable warning (previously emitted a
+  non-compiling registry.ts).
+- **editor**: multiselect display/coerce made symmetric
+  (`displayControlValue` takes the control; arrays display comma-joined);
+  `Control` gained a real multiselect input.
+- **dashboard**: `ApiError` carries the server's `problems[]` (collection
+  form validation visible again); field-draft default round-trip fixed for
+  multiselect (array, not JSON string) and advanced/json string defaults
+  (JSON-encoded both ways); CollectionView delete failures surface as an
+  error line instead of an unhandled rejection.
+- **next**: `clearCookie` honors `insecureCookies` (dev logout works over
+  http); GitHub mode without `auth`/`sessionSecret` fails at factory time
+  with a named-option error; 5-minute re-verify distinguishes AuthError
+  (401 + clear) from transport failure (503, session kept); API responses
+  send `cache-control: no-store`; collection existence checks use
+  `Object.hasOwn` (a collection named `constructor` works).
+- **provider-github**: lost ref-update race (non-fast-forward 422) maps to
+  `ConflictError` (409 conflict UX); truncated tree listing throws a
+  deliberate 500 instead of an accidental unhandled crash. (Blob-read
+  truncation fix deferred to M2, landing with the D9 binary `read()`.)
+- **demo-next**: passes its own `mdmx check` again (empty `<Stat />` given
+  real props, `losslessly.asd` typo, roadmap.mdx trailing newline).
+- Files/packages changed: all six packages + demo content (see commit).
+- ADRs: none (implements S25 findings; decisions were ADR-039…048 in S26).
+- Tests: **303** (was 285; +18 regression tests), `pnpm verify` green.
+- Wiki pages touched: SessionLog. (Version/test-count sync in README /
+  wiki/Home stays in M2 per the plan.)
+- Follow-ups: M2 — the breaking wave (package splits, provider contract v2,
+  auth seam, entry rename, export prune).
+
+### S26 — 0.5 decisions locked: grilling session over the S25 review (no code changes)
+Question-by-question architecture grilling against the session objectives
+(quick recipe / extensible / layered API). Fifteen decisions made, resolving
+all seven of the S25 review's open decisions (two against its leans) and
+adding structural calls the review didn't propose. Consolidated into
+`.dev-context/plans/2026-07-26-0.5-plan.md` (decisions D1–D15, milestones
+M1–M5, target recipe, post-0.5 package graph — that doc wins where it and
+the S25 review disagree). Headlines: convention-over-configuration as the
+standing API principle (three-tier config, env-detected mode, fail-closed
+production); codegen owns the convention layer (generated client/server
+component maps, bound `.mdmx/server.ts` with `getEntry`/`MDMXEntry`,
+committed deterministic `.mdmx/`); `mdmx init nextjs`; build-time
+`studio.css` (supersedes the CDN-runtime posture); two new packages —
+`@mdmx/project` (config/env/mode resolution) and `@mdmx/studio` (model +
+`/react` renderer + `/ui` screens behind an injected `StudioClient`);
+provider contract v2 (deletions in the change set, binary reads, three
+methods); `AuthStrategy` seam; document/entry vocabulary split on the layer
+boundary; dashboard surface shrink + `export *` removal; 0.5 ends with the
+first npm publish (the real freeze).
+- Files/packages changed: none (docs only).
+- ADRs: **ADR-039 … ADR-048** (ADR-042/045 supersede parts of ADR-038;
+  ADR-048 amends ADR-034).
+- Tests: 285, unchanged.
+- Wiki pages touched: SessionLog; DECISIONS.md; plan doc added.
+- Follow-ups: execute M1–M5 per the 2026-07-26 plan; sync Roadmap/Home/
+  Packages pages when M2's package splits land.
+
+### S25 — 0.5 pre-release architecture/API/DX review (no code changes)
+Full-repo review session. Five parallel deep-read reviews (core+cli, editor,
+next+provider-github, dashboard, consumer-experience/docs), findings
+spot-verified, synthesized into
+`.dev-context/plans/2026-07-10-0.5-architecture-review.md` (untracked): four
+consumer surfaces, layering scorecard, package-by-package findings, 9
+release-blocking correctness issues, 8 ranked workstreams (W1–W8), 7 open
+decisions, and a do-not-change list. Headlines: repo-wide export-surface
+inflation (last free prune before 0.5), the Component Studio's missing seam
+(3× interpolation, 2× merge rule, untested outside core), five missing API
+affordances (core `validateDocument`, `SaveResult` sha, zero-config
+localMode, generated component maps, studio render helper), multiselect
+corruption in both editor and dashboard, and a docs wave (guides/llms.txt lag
+0.4.1; demo fails its own `mdmx check`).
+- Files/packages changed: none (this entry only).
+- ADRs: none — decisions deferred to the review doc's §7.
+- Tests: 285, unchanged.
+- Wiki pages touched: SessionLog.
+- Follow-ups: execute W1–W8 per the review doc after §7 decisions.
+
+### S24 — Road to 0.4.1: responsive preview modes, private publishing, Component Studio
+Executed the 0.4.1 brief on `release/0.4.1` (autonomous run; one commit per
+verified milestone, browser-driven end-to-end checks via playwright).
+
+- **M1 — responsive preview modes** (ADR-036): mobile/tablet/desktop switch
+  in the editor toolbar; canvas renders at real device width (390/768/1280)
+  under CSS `zoom` scale-to-fit; canvas is a named inline-size container and
+  the demo `mk-*` styles moved from `@media` to `@container` so modes
+  actually reflow. Root cause fix shipped alongside: `.mdmx-content` +
+  `.mdmx-contentdom` are `display: contents`, so grid/flex container
+  components (FeatureGrid, PricingTable, TwoColumn) finally lay out child
+  blocks as real items inside the editor. New `viewport.ts` (widths, storage,
+  zoom math) exported from `@mdmx/editor/react`.
+- **M2 — private status groundwork** (ADR-037): `status` gains `private`
+  (demo config select; dashboard badge); `@mdmx/next` exports
+  `getSession(cookieHeader, {sessionSecret|localMode})` and
+  `privateHref(collectionPath, slug)`; `SESSION_COOKIE` moved to session.ts
+  as shared API. +7 next tests.
+- **M3 — public rendering** (ADR-037): new `@mdmx/next/render` subpath
+  (react optional peer): `MDMXContent` renders mdast → React (markdown +
+  GFM + component tags via `evaluateAttributes`); demo-next grew a public
+  site — home lists published (+ Private section for sessions),
+  `/posts/[slug]` published-only, `/private/[...path]` session-guarded
+  private-only, drafts 404 everywhere. Newsletter became a client component
+  (RSC boundary). Demo gains a private `team-notes` post.
+- **M4 — studio backend** (ADR-038): core `studio.ts` — template-tree model
+  (tag/attr allowlists, URL-scheme checks, node caps), validation,
+  `studioComponentToSpec`, storage path under `<contentDir>/_components/`;
+  `@mdmx/next` routes `GET/PUT/DELETE /studio/components(/:name)` via the
+  provider (conflict-safe, collision-checked) and merges stored defs into
+  save-time validation; `@mdmx/next/render` gains `studioComponent(def)`
+  (tree → React, no dangerouslySetInnerHTML) + `getStudioComponentDefs`
+  reader; dashboard merges defs into registry + ComponentMap after auth
+  (rail "Studio" group, slash menu, prop panel, live render). +8 core tests.
+- **M5 — studio UI stage 1**: `/mdmx/studio` list (live preview cards) +
+  editor view: HTML+Tailwind source pane ⇄ sanitized tree (DOMParser in,
+  pretty-printer out, dropped nodes reported), live in-page preview, prop
+  schema builder, conflict-safe save. Tailwind v4 browser runtime
+  (theme+utilities, **no preflight**; `tailwindSrc` config) loads on demand
+  in the dashboard and on public demo pages using studio components. The
+  initial studio fetch now gates dashboard rendering (registry swap would
+  reset a mounted editor mid-typing).
+- **M6 — studio UI stage 2**: click-to-select on the preview, inspector
+  (class string, group-wise quick controls for padding/radius/type/colors/
+  layout/gap, text editing with bind-text-to-prop, href/src/alt, delete),
+  element palette (+Section/+Heading/+Text/+Button/+Image/+Row). All edits
+  are immutable ops on the same tree the HTML pane serializes from
+  (`template-edit.ts`).
+- **M7 — eject to TSX** (ADR-038): core `studioComponentToTSX` codegen
+  (typed props interface, Impl with defaults, JSX from tree, defineMDMX
+  config); `POST /studio/components/:name/eject` writes
+  `components/mdmx/<Name>.tsx` (never overwrites); def stays active until
+  `mdmx generate` + rebuild promote the code version. `mdmx check` merges
+  studio defs. Verified: ejected file extracts via the real generate
+  pipeline and typechecks. +2 core tests.
+- **M8 — release hygiene**: all packages 0.4.0 → 0.4.1; ADR-036/037/038;
+  this entry; Packages/Roadmap/PROJECT_STATUS sync. Tests: 285 total
+  (core 55, cli 19, editor 109, next 57, provider-github 7, dashboard 38).
+- Wiki pages touched: SessionLog, Packages, Roadmap; DECISIONS.md;
+  PROJECT_STATUS.md.
+- Follow-ups: studio defs are leaf components (no children region yet);
+  quick-control palette is a curated subset; `mdmx dev` HMR for studio defs
+  not wired; pre-existing demo `welcome.mdx` has an empty `<Stat />`
+  flagged by `mdmx check` (MDMX006, unrelated to 0.4.1).
+
+
+### S23 — Road to 0.4.0: platform upgrade + `@mdmx/dashboard` scaffold (in progress)
+Executing the 0.4.0 milestone plan on `release/0.4.0` (autonomous run; one
+commit per green milestone). This entry grows as milestones land.
+
+- **M1 — Next 15 + React 19** (`c913cf2`): next `^15.3` (→15.5.20),
+  react/react-dom `^19` (→19.2.7) across demo-next, editor devDeps,
+  playground, cli/demo type deps. Next 15 async request APIs: demo pages now
+  `await params`. Editor mount tests: settle loop 4→8 ticks (React 19
+  schedules nested-root renders across more macrotasks). Verified: 210 tests,
+  demo production build, dev-server smoke (pages 200, content API serving).
+- **M2 — `@mdmx/dashboard` scaffold** (ADR-034): new app-layer package
+  (core+editor+next; amends Invariant #9 with the one composition point).
+  Ships: `createDashboardPage()` optional-catch-all factory reading
+  `.mdmx/registry.json` per request; `@mdmx/dashboard/next` re-exports the
+  `@mdmx/next` surface (two ~3-line mount files); client `DashboardApp` with
+  pure `resolveRoute(slug)` view router; `AuthGate` over `/me` (login screen
+  / unreachable-API help / localMode auto-enter with "local" badge);
+  `DashboardShell` (navbar, left nav, main, contextual right slot); typed
+  API client (`UnauthorizedError` drops to login); shipped stylesheet
+  (`--mdmx-*` tokens, light+dark, `data-mdmx-theme` override) imported by the
+  package itself → zero-config styling via transpilePackages; `next/link`
+  NodeNext-CJS interop shim. 19 new tests (routes/gate/shell). Root
+  `test`/`check` now build all packages first. Demo mounts the dashboard at
+  `/mdmx` alongside its old pages (replaced in M8); smoke-verified: `/mdmx`
+  200, route-scoped CSS chunk contains tokens, `/me` answers local.
+- **M3 — collections API, resolved at request time** (ADR-035): collections
+  stay config-as-code; the API reads/writes `mdmx.config.json` **through the
+  provider per request**, so dashboard-created collections are live without
+  regenerate/redeploy in both modes. New: `configPath` option;
+  `GET/POST /collections`, `PUT /collections/:name` (fields only; dir
+  immutable; PUT not PATCH to keep the handler surface); registry fallback +
+  seed-on-first-write migration; name/dir/control validation server-side
+  (400 + problems, 409 duplicates); frontmatter validation in `PUT /file` now
+  uses the request-time set (MDMX008 fires on a just-created collection —
+  live-tested). Core: `collections-config.ts` (record⇄array derivation +
+  `validateCollectionConfig` + standalone `collectionForPath`; CLI now reuses
+  it). `/me` reports contentDir/mediaDir/validation/localMode. Dashboard:
+  collections client methods, `DashboardContext` + live collection state
+  behind the gate. +19 tests (7 core, 12 next) → 248 total.
+- **M4 — dashboard core surfaces**: the CMS is now usable end to end from
+  `/mdmx`. New `GET /documents?dir=` in `@mdmx/next` (listing + parsed
+  frontmatter in one round trip; malformed files degrade to empty
+  frontmatter, bodies excluded). Dashboard views: `CollectionView` (entry
+  table with title/status badge/path, client filter, confirmed delete with
+  listed sha), `EntryNewView` (title→slug scaffold via `scaffoldDocument` —
+  moved from the demo into the package — committed `expectedSha: null`, then
+  straight into the editor), `EditorView` (embedded `MDMXEditor` via
+  `next/dynamic` `ssr:false` with CJS-interop shim; sha-refreshing saves;
+  `MediaSource` adapter over the API; back-link to the collection),
+  `CollectionFormView` (create + field-schema edit over a pure
+  `field-draft.ts` draft⇄config converter; nested list/object controls pass
+  through an "advanced" escape hatch verbatim). Editor routes carry the full
+  repo-relative path (`/mdmx/edit/content/posts/x.mdx`). Styles: forms,
+  field rows, entry table, status badges. +11 tests (2 next, 9 dashboard) →
+  259 total; all dashboard routes smoke-tested live against the demo.
+- **M5 — media library + settings**: `MediaView` (image grid over
+  `GET /files`, upload via local `media-upload.ts` helpers — the editor's
+  equivalents can't be imported statically without dragging ProseMirror into
+  the SSR graph; `Blob.arrayBuffer` with FileReader fallback; copy-URL;
+  confirmed delete with listed sha). `SettingsView` (session + repo,
+  content/media dirs, validation mode, registry stats, logout) plus a
+  **theme pin**: system/light/dark radio persisting to localStorage and
+  applying `data-mdmx-theme` on the root; re-applied on dashboard load.
+  +5 tests → 264 total; media/settings routes smoke-tested live.
+- **M6 — quick-open (Cmd/Ctrl+K)**: palette over entries (fresh
+  `GET /documents` per open) + collections + pages + "new …" actions; pure
+  `quick-open.ts` scoring (prefix > word-prefix > substring; label outranks
+  detail) with a navbar trigger. Keyboard: ⌘K toggle, arrows, Enter, Esc;
+  listbox/option ARIA. The shell takes the trigger as a `search` slot so it
+  stays context-free. +5 tests → 269 total.
+- **M7 — stylesheet completion**: the embedded editor is now fully styled by
+  the shipped stylesheet — the demo's reference editor CSS ported onto the
+  `--mdmx-*` tokens (new: `--mdmx-accent-wash`, `--mdmx-code-*`,
+  `--mdmx-content-font`), **scoped under `.mdmx-dash-editor`** so a
+  standalone editor mount elsewhere stays headless. Covers rail, canvas
+  typography, NodeViews/placeholders/TwoColumn, slash menu, prop panel +
+  controls, dark source pane with amber active line, toolbar, media modal,
+  mobile sheets/FABs, ProseMirror cursors — all light+dark via tokens
+  (webfont references dropped; system font stacks). A11y: `:focus-visible`
+  rings, `prefers-reduced-motion` disables sheet transitions/spinner.
+  Verified the editor route's CSS chunk ships the scoped chrome. 269 tests.
+- **M8 — demo-next converted to the two-file mount**: deleted the hand-built
+  CMS (`app/collections/`, `app/edit/` + `EditorClient`, `CmsHeader`,
+  `DocList`, `NewPostButton`, `lib/scaffold.ts`); `/` now redirects to
+  `/mdmx`. `globals.css` shrank ~1330 → ~330 lines: only the demo's own
+  `mk-*` author-component styles remain — all CMS/editor chrome comes from
+  the package stylesheet. The route table is exactly `/`,
+  `/api/mdmx/[...route]`, `/mdmx/[[...slug]]`. README rewritten around the
+  two-file DX. Smoke-verified: redirect, editor 200, byte-identical
+  conflict-safe save. 269 tests green.
+- **M9 — release hygiene (0.4.0)**: SPEC §5 amended with the runtime
+  collection-resolution rule (config authoritative, registry = build-time
+  snapshot, seed-on-first-write, name/dir constraints). Wiki synced: Home
+  (6 packages, v0.4.0, 269 tests, dashboard bullet), Architecture (six-package
+  table, ADR-034 discipline note), Packages (+@mdmx/dashboard section, new
+  core/next rows, counts), Roadmap (Phase 2.5 table, next-milestone rewrite).
+  Guides updated to the dashboard-first DX: README map, install (dashboard
+  package + mount in layout/transpile), content API (configPath +
+  collections/documents endpoints + config-as-code semantics), guide 4
+  rewritten as "Mounting the dashboard" (DashboardPageOptions, theming
+  tokens, manual editor mount kept as the advanced path), production ("The
+  dashboard in production" replaces the stale editor-pages section),
+  troubleshooting (+unstyled-dashboard and gate-unreachable entries). Root
+  README package table + roadmap; **all packages bumped to 0.4.0**. Final
+  gate: 269 tests, guide link check clean.
+- **This session's ADRs**: ADR-034 (app-layer dashboard package),
+  ADR-035 (collections config-as-code, request-time resolution).
+
+### S22 — Next.js integration guide series (docs only)
+- **docs/guides/next-js/** (new): seven consumer-facing guides documenting how
+  to integrate MDMX into a Next.js App Router site, written against the actual
+  v0.3.1 API surface and mirroring `examples/demo-next`:
+  - `README.md` — overview, package map, local vs GitHub mode, prerequisites
+  - `01-installation.md` — packages, `transpilePackages`, layout, `pre*` scripts,
+    shared `lib/mdmx-config.ts`
+  - `02-components-and-registry.md` — `defineMDMX()` + `DefineMDMXConfig`
+    reference, children policies, constraints, `ControlSpec`, `mdmx.config.json`,
+    collections, `generate`/`check`/`dev`
+  - `03-content-api.md` — `createMDMXHandlers()` mount, `localMode`, full
+    `MDMXHandlerOptions`, endpoint + error-status reference
+  - `04-editor.md` — server page + client mount (`next/dynamic` `ssr:false`),
+    sha-refreshing save loop, `MDMXEditorProps` reference, `MediaSource`
+    adapter, no-stylesheet styling note
+  - `05-rendering-content.md` — `getDocuments`/`getDocumentBySlug`,
+    draft/publish via `status`, rendering with standard MDX tooling
+    (`next-mdx-remote/rsc` + `remark-gfm` recipe; MDMX ships no renderer)
+  - `06-production-github.md` — OAuth app setup, env vars, `GitHubProvider`
+    swap-in, authorization model (push permission ⇒ access, 5-min re-verify),
+    production checklist
+  - `07-troubleshooting.md` — startup/API/editor failure modes, HTTP status
+    map, MDMX001–009 diagnostics table
+- **docs/wiki/Home.md** — added the guide series to the map of the docs.
+- **README.md** (root) — added the guides to "Repo guides".
+- No code, spec, or behavior changes; no ADR needed.
+
 ### S21 — Collections UI, new-post authoring, paste-to-upload, caret-at-edge
 - **editor (package code)**:
   - `Editor.tsx` — **caret at document edge**: a `mousedown` on the canvas

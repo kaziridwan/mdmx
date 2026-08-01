@@ -113,6 +113,18 @@ export class FakeGitHub {
       return json(201, { sha });
     }
 
+    // GET /git/blobs/:sha — the >1MB read path (Contents API declines those)
+    m = rest.match(/^\/git\/blobs\/([0-9a-f]+)$/);
+    if (m && method === "GET") {
+      const blob = this.blobs.get(m[1]!);
+      if (!blob) return json(404, { message: "blob not found" });
+      return json(200, {
+        sha: m[1],
+        encoding: "base64",
+        content: blob.toString("base64"),
+      });
+    }
+
     // GET /git/trees/:sha (?recursive=1)
     m = rest.match(/^\/git\/trees\/([0-9a-f]+)$/);
     if (m && method === "GET") {

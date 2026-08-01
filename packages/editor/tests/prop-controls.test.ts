@@ -50,6 +50,18 @@ describe("displayControlValue", () => {
     expect(displayControlValue("x")).toBe("x");
     expect(displayControlValue(["a", "b"])).toBe('["a","b"]');
   });
+
+  it("displays multiselect arrays comma-joined, matching the coercion", () => {
+    const multiselect = { type: "multiselect", options: ["a", "b", "c"] } as const;
+    expect(displayControlValue(["a", "b"], multiselect)).toBe("a, b");
+  });
+
+  it("round-trips multiselect values through display → coerce unchanged", () => {
+    const multiselect = { type: "multiselect", options: ["a", "b", "c"] } as const;
+    const stored = ["a", "b"];
+    const redisplayed = displayControlValue(stored, multiselect);
+    expect(coerceControlValue(multiselect, redisplayed)).toEqual(stored);
+  });
 });
 
 describe("setPropValue", () => {

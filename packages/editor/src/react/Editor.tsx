@@ -7,6 +7,7 @@ import {
   type ComponentType,
   type CSSProperties,
   type MouseEvent as ReactMouseEvent,
+  type ReactNode,
 } from "react";
 import { EditorState, NodeSelection, Selection } from "prosemirror-state";
 import { EditorView } from "prosemirror-view";
@@ -18,7 +19,12 @@ import { dropCursor } from "prosemirror-dropcursor";
 import { gapCursor } from "prosemirror-gapcursor";
 import { parseMDX, type CollectionSpec, type Registry } from "@mdmx/core";
 import { buildSchema, componentNodeName, componentNameFromNode } from "../schema.js";
-import { mdmxInputRules, initialProps, resolveComponentDrop } from "../commands.js";
+import {
+  markKeymap,
+  mdmxInputRules,
+  initialProps,
+  resolveComponentDrop,
+} from "../commands.js";
 import { fromMdast } from "../from-mdast.js";
 import { createReactNodeView } from "./react-node-view.js";
 import { makeComponentBlock } from "./ComponentBlock.js";
@@ -32,7 +38,23 @@ import {
   storeSidebarWidth,
 } from "./sidebar-resize.js";
 import { SlashMenu } from "./SlashMenu.js";
-import { CodeIcon, SlidersIcon, LayersIcon } from "./icons.js";
+import {
+  CodeIcon,
+  SlidersIcon,
+  LayersIcon,
+  SmartphoneIcon,
+  TabletIcon,
+  MonitorIcon,
+} from "./icons.js";
+import {
+  VIEWPORT_MODES,
+  VIEWPORT_WIDTHS,
+  DEFAULT_VIEWPORT,
+  canvasZoom,
+  readStoredViewport,
+  storeViewport,
+  type ViewportMode,
+} from "./viewport.js";
 import { MediaLibrary } from "./MediaLibrary.js";
 import {
   insertImage,
@@ -149,6 +171,29 @@ export function MDMXEditor({
   // Mobile: which off-canvas sheet is open (desktop ignores this; FABs are
   // hidden by CSS and the rail/sidebar are normal columns).
   const [mobilePanel, setMobilePanel] = useState<"palette" | "sidebar" | null>(null);
+  // Responsive preview: canvas renders at the mode's device width, zoomed to
+  // fit the pane (see viewport.ts).
+  const [viewport, setViewport] = useState<ViewportMode>(
+    () => readStoredViewport() ?? DEFAULT_VIEWPORT,
+  );
+  const wrapRef = useRef<HTMLDivElement>(null);
+  const [paneWidth, setPaneWidth] = useState<number | null>(null);
+
+  useEffect(() => {
+    const wrap = wrapRef.current;
+    if (!wrap || typeof ResizeObserver === "undefined") return;
+    const observer = new ResizeObserver((entries) => {
+      const w = entries[0]?.contentRect.width;
+      if (w != null) setPaneWidth(w);
+    });
+    observer.observe(wrap);
+    return () => observer.disconnect();
+  }, []);
+
+  const selectViewport = useCallback((mode: ViewportMode) => {
+    setViewport(mode);
+    storeViewport(mode);
+  }, []);
 
   useEffect(() => {
     const mount = mountRef.current;
@@ -165,6 +210,10 @@ export function MDMXEditor({
       plugins: [
         history(),
         keymap({ "Mod-z": undo, "Mod-y": redo, "Shift-Mod-z": redo }),
+        // Mark shortcuts. `markCommands` existed since the command layer
+        // landed but was never wired to a keymap, so the editor shipped
+        // without Mod-B/Mod-I — the shortcuts every writer reaches for first.
+        keymap(markKeymap(schema)),
         mdmxInputRules(schema),
         keymap(baseKeymap),
         dropCursor({ class: "mdmx-dropcursor", width: 2 }),
@@ -353,7 +402,14 @@ export function MDMXEditor({
     [view],
   );
 
-  const showToolbar = onSave != null || media != null || htmlCode != null;
+  // The viewport switch lives in the toolbar, so it always renders now.
+  const zoom = canvasZoom(viewport, paneWidth ?? VIEWPORT_WIDTHS[viewport]);
+
+  const viewportIcons: Record<ViewportMode, ReactNode> = {
+    mobile: <SmartphoneIcon size={14} />,
+    tablet: <TabletIcon size={14} />,
+    desktop: <MonitorIcon size={14} />,
+  };
 
   return (
     <MediaPickerContext.Provider value={media ? requestMedia : null}>
@@ -374,8 +430,8 @@ export function MDMXEditor({
         snippets={snippets}
         onInsertSnippet={insertSnippet}
       />
-      <div className="mdmx-canvas-wrap">
-        {showToolbar ? (
+      <div className="mdmx-canvas-wrap" ref={wrapRef}>
+        {
           <div className="mdmx-toolbar">
             {backHref ? (
               <a className="mdmx-toolbar-back" href={backHref}>
@@ -383,6 +439,25 @@ export function MDMXEditor({
               </a>
             ) : null}
             <span className="mdmx-toolbar-title">{docTitle ?? "Untitled"}</span>
+            <div
+              className="mdmx-viewport-switch"
+              role="group"
+              aria-label="Preview viewport"
+            >
+              {VIEWPORT_MODES.map((mode) => (
+                <button
+                  key={mode}
+                  type="button"
+                  className="mdmx-viewport-btn"
+                  title={`${mode.charAt(0).toUpperCase()}${mode.slice(1)} preview (${VIEWPORT_WIDTHS[mode]}px)`}
+                  aria-label={`${mode} preview`}
+                  aria-pressed={viewport === mode}
+                  onClick={() => selectViewport(mode)}
+                >
+                  {viewportIcons[mode]}
+                </button>
+              ))}
+            </div>
             {media ? (
               <button
                 type="button"
@@ -452,8 +527,19 @@ export function MDMXEditor({
               </>
             ) : null}
           </div>
-        ) : null}
-        <div className="mdmx-canvas" ref={mountRef} onMouseDown={handleCanvasPointerDown} />
+        }
+        <div
+          className="mdmx-canvas"
+          ref={mountRef}
+          onMouseDown={handleCanvasPointerDown}
+          data-viewport={viewport}
+          style={
+            {
+              ["--mdmx-canvas-w"]: `${VIEWPORT_WIDTHS[viewport]}px`,
+              ["--mdmx-canvas-zoom"]: zoom,
+            } as CSSProperties
+          }
+        />
         {view && state ? <SlashMenu view={view} state={state} registry={registry} schema={schema} /> : null}
         {media && mediaPick ? (
           <MediaLibrary

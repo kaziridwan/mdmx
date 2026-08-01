@@ -1,13 +1,22 @@
 {
   "name": "@mdmx/provider-github",
-  "version": "0.3.1",
+  "version": "0.5.0",
   "description": "ContentProvider implementation over the GitHub Git Data API (atomic multi-file commits)",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/kaziridwan/mdmx.git",
+    "directory": "packages/provider-github"
+  },
+  "homepage": "https://github.com/kaziridwan/mdmx#readme",
+  "bugs": {
+    "url": "https://github.com/kaziridwan/mdmx/issues"
+  },
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "scripts": {
     "build": "tsc -p tsconfig.json",
-    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "typecheck": "tsc -p tsconfig.json --noEmit && tsc -p tsconfig.test.json",
     "test": "vitest run"
   },
   "dependencies": {
@@ -15,5 +24,14 @@
   },
   "devDependencies": {
     "@types/node": "~22.10.10"
+  },
+  "files": [
+    "dist"
+  ],
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
   }
 }

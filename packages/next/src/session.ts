@@ -19,6 +19,9 @@ export interface SessionData {
 
 const VERSION = "v1";
 
+/** Name of the sealed-session cookie set by the auth flow. */
+export const SESSION_COOKIE = "mdmx_session";
+
 function keyFor(secret: string): Buffer {
   if (secret.length < 16) {
     throw new Error("MDMX session secret must be at least 16 characters");
@@ -90,8 +93,10 @@ export function serializeCookie(
   return parts.join("; ");
 }
 
-export function clearCookie(name: string, path = "/"): string {
-  return `${name}=; Path=${path}; Max-Age=0; HttpOnly; SameSite=Lax; Secure`;
+export function clearCookie(name: string, path = "/", secure = true): string {
+  // `secure` must match how the cookie was set: browsers ignore a Secure
+  // deletion over plain http, silently no-opping logout in dev GitHub mode.
+  return `${name}=; Path=${path}; Max-Age=0; HttpOnly; SameSite=Lax${secure ? "; Secure" : ""}`;
 }
 
 export function parseCookies(header: string | null): Record<string, string> {

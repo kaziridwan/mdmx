@@ -1,8 +1,11 @@
 import type { Node, Parent, Root } from "mdast";
 import type { MdxJsxFlowElement } from "mdast-util-mdx-jsx";
 import { evaluateAttributes } from "./props.js";
-import { parseMDX } from "./parse.js";
+import { parseDocument, parseMDX } from "./parse.js";
+import { validateFrontmatter } from "./frontmatter.js";
+import { collectionForPath } from "./types.js";
 import type {
+  CollectionSpec,
   ComponentSpec,
   Diagnostic,
   Registry,
@@ -94,6 +97,46 @@ export function validateTree(tree: Root, options: ValidateOptions): Diagnostic[]
 /** Convenience: parse + validate source text. */
 export function validateSource(source: string, options: ValidateOptions): Diagnostic[] {
   return validateTree(parseMDX(source), options);
+}
+
+export interface ValidateDocumentOptions extends ValidateOptions {
+  /**
+   * Repo-relative path, used to find the document's collection so its
+   * frontmatter is checked against the right schema. Without it, frontmatter
+   * validation is skipped (the document isn't an entry).
+   */
+  path?: string;
+  /** Collections to match `path` against; defaults to the registry's. */
+  collections?: readonly CollectionSpec[];
+}
+
+/**
+ * Validate a document end to end: subset rules, plus frontmatter against its
+ * collection when it has one.
+ *
+ * `mdmx check` and the save route used to hand-stitch this same sequence
+ * (validateSource → parseDocument → collectionForPath → validateFrontmatter),
+ * parsing every file twice and diverging in their error handling. One seam,
+ * one parse, one behaviour.
+ */
+export function validateDocument(
+  source: string,
+  options: ValidateDocumentOptions,
+): Diagnostic[] {
+  const { tree, frontmatter, frontmatterDiagnostic } = parseDocument(source);
+  const diagnostics = validateTree(tree, options);
+  if (frontmatterDiagnostic) diagnostics.push(frontmatterDiagnostic);
+
+  if (options.path) {
+    const collections = options.collections ?? options.registry.collections;
+    const collection = collectionForPath(collections, options.path);
+    // Frontmatter that failed to parse can't be checked against a schema —
+    // reporting MDMX008 for every field on top of MDMX010 is just noise.
+    if (collection && !frontmatterDiagnostic) {
+      diagnostics.push(...validateFrontmatter(frontmatter, collection));
+    }
+  }
+  return diagnostics;
 }
 
 /**
@@ -207,7 +250,7 @@ function validateComponent(
     }
   }
   for (const p of spec.props) {
-    if (p.required && !(p.name in props) && p.default === undefined) {
+    if (p.required && !Object.hasOwn(props, p.name) && p.default === undefined) {
       diagnostics.push({
         code: "MDMX006",
         severity: "error",

@@ -1,22 +1,50 @@
 {
   "components": "components/mdmx/**/*.tsx",
   "contentDir": "content",
+  "mediaDir": "public/media",
   "outDir": ".mdmx",
+  "repo": {
+    "owner": "mdmx",
+    "name": "demo-next",
+    "branch": "main"
+  },
   "collections": {
     "posts": {
       "dir": "content/posts",
       "fields": {
-        "title": { "control": { "type": "text" }, "required": true },
+        "title": {
+          "control": {
+            "type": "text"
+          },
+          "required": true
+        },
         "status": {
-          "control": { "type": "select", "options": ["draft", "published"] },
+          "control": {
+            "type": "select",
+            "options": [
+              "draft",
+              "private",
+              "published"
+            ]
+          },
           "required": true,
           "default": "draft"
         },
-        "slug": { "control": { "type": "text" } },
-        "description": { "control": { "type": "textarea" } },
+        "slug": {
+          "control": {
+            "type": "text"
+          }
+        },
+        "description": {
+          "control": {
+            "type": "textarea"
+          }
+        },
         "coverImage": {
-          "control": { "type": "image" },
-          "description": "Pick from the media library (Browse…)"
+          "control": {
+            "type": "image"
+          },
+          "description": "Pick from the media library (Browse\u2026)"
         }
       }
     }

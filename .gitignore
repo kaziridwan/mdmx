@@ -1,7 +1,7 @@
 node_modules/
 dist/
-.mdmx/
 *.tsbuildinfo
 .DS_Store
 .claude/
 .dev-context/
+.agent-context/

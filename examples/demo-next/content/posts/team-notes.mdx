@@ -1,0 +1,22 @@
+---
+title: Team notes (private)
+status: private
+slug: team-notes
+description: Only visible to authenticated CMS users, at /private/posts/team-notes.
+---
+
+# Team notes
+
+This entry has `status: private` — it renders at `/private/posts/team-notes`
+for anyone with an MDMX session, and 404s everywhere else.
+
+<Callout variant="info" title="How private mode works">
+  Draft entries render nowhere, published entries render publicly, and private
+  entries render behind the session guard.
+</Callout>
+
+<Stat value="3" label="publish modes" trend="up" delta={1} />
+
+## Studio components render here too
+
+<PromoCard title="Built in the browser" body="This card is a studio component: a Tailwind-styled template stored as JSON in content/_components/, rendered without any rebuild." ctaLabel="Open the studio" ctaHref="/mdmx/studio" />

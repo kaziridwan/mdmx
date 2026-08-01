@@ -1,8 +1,8 @@
-import { cpSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { cpSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { loadConfig, type MDMXConfig } from "../src/config.js";
+import { loadConfig, type MDMXConfig } from "@mdmx/project";
 import {
   dev,
   runGenerate,
@@ -19,7 +19,7 @@ let config: MDMXConfig;
 beforeEach(async () => {
   app = mkdtempSync(join(tmpdir(), "mdmx-dev-"));
   cpSync(FIXTURE, app, { recursive: true });
-  config = await loadConfig(app);
+  ({ config } = await loadConfig(app));
 });
 
 afterEach(() => {
@@ -41,6 +41,26 @@ describe("watchTargets", () => {
     expect(targets).toContain(join(app, "components/mdmx"));
     expect(targets).toContain(join(app, "mdmx.config.json"));
     expect(targets.some((t) => t.includes(".mdmx"))).toBe(false);
+  });
+
+  it("watches studio definitions when the project has them (ADR-042)", () => {
+    const studioDir = join(app, "content", "_components");
+    // Absent → not watched (fs.watch on a missing path would throw).
+    expect(watchTargets(app, config)).not.toContain(studioDir);
+
+    mkdirSync(studioDir, { recursive: true });
+    writeFileSync(
+      join(studioDir, "Promo.json"),
+      JSON.stringify({
+        mdmxStudioVersion: 1,
+        name: "Promo",
+        props: [],
+        template: { tag: "div", classes: "rounded", children: [{ text: "hi" }] },
+      }),
+    );
+    // Present → watched: their specs land in the registry and their classes
+    // in studio.css, so editing one needs a regenerate like a .tsx does.
+    expect(watchTargets(app, config)).toContain(studioDir);
   });
 });
 

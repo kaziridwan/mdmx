@@ -2,11 +2,13 @@ import { Buffer } from "node:buffer";
 import {
   assertSafePath,
   ConflictError,
+  isFileDelete,
   type CommitOptions,
   type CommitResult,
   type ContentProvider,
   type FileChange,
   type FileMeta,
+  type ReadOptions,
 } from "@mdmx/core";
 
 export interface GitHubProviderOptions {
@@ -68,14 +70,42 @@ export class GitHubProvider implements ContentProvider {
       .map((e) => ({ path: e.path, sha: e.sha as string, size: e.size ?? 0 }));
   }
 
-  async read(path: string): Promise<{ content: string; sha: string }> {
+  async read(
+    path: string,
+    options?: ReadOptions,
+  ): Promise<{ content: string | Uint8Array; sha: string }> {
     const safe = assertSafePath(path);
     const data = (await this.api(
       "GET",
       `/repos/${this.o.owner}/${this.o.repo}/contents/${encodePath(safe)}?ref=${this.o.branch}`,
-    )) as { content: string; sha: string; encoding: string };
-    const content = Buffer.from(data.content, "base64").toString("utf8");
-    return { content, sha: data.sha };
+    )) as { content?: string; sha: string; encoding?: string };
+
+    // The Contents API only inlines blobs up to 1MB; above that it answers
+    // `encoding: "none"` with empty content. Returning that verbatim would
+    // hand callers a silently truncated file — and a later save would commit
+    // the truncation. Fall back to the Blob API (up to 100MB).
+    const buf =
+      data.encoding === "base64" && data.content
+        ? Buffer.from(data.content, "base64")
+        : await this.readBlob(data.sha);
+
+    return options?.as === "bytes"
+      ? { content: new Uint8Array(buf), sha: data.sha }
+      : { content: buf.toString("utf8"), sha: data.sha };
+  }
+
+  private async readBlob(sha: string): Promise<Buffer> {
+    const blob = (await this.api(
+      "GET",
+      `/repos/${this.o.owner}/${this.o.repo}/git/blobs/${sha}`,
+    )) as { content?: string; encoding?: string };
+    if (blob.encoding !== "base64" || blob.content === undefined) {
+      throw new GitHubApiError(
+        500,
+        `blob ${sha} is too large to read through the API (over 100MB)`,
+      );
+    }
+    return Buffer.from(blob.content, "base64");
   }
 
   async commit(
@@ -88,6 +118,11 @@ export class GitHubProvider implements ContentProvider {
     return this.write(message, options, async () => {
       const entries: TreeEntry[] = [];
       for (const change of safeChanges) {
+        if (isFileDelete(change)) {
+          // A null sha in the tree removes the path.
+          entries.push({ path: change.path, mode: "100644", type: "blob", sha: null });
+          continue;
+        }
         const isBinary = typeof change.content !== "string";
         const body = isBinary
           ? {
@@ -104,17 +139,6 @@ export class GitHubProvider implements ContentProvider {
       }
       return entries;
     });
-  }
-
-  async delete(
-    path: string,
-    message: string,
-    options?: CommitOptions,
-  ): Promise<CommitResult> {
-    const safe = assertSafePath(path);
-    return this.write(message, options, async () => [
-      { path: safe, mode: "100644", type: "blob", sha: null },
-    ]);
   }
 
   // -- Git Data flow -----------------------------------------------------------
@@ -162,10 +186,23 @@ export class GitHubProvider implements ContentProvider {
       ...(this.o.committer ? { committer: this.o.committer } : {}),
     })) as { sha: string };
 
-    await this.api("PATCH", `${repo}/git/refs/heads/${this.o.branch}`, {
-      sha: newCommit.sha,
-      force: false,
-    });
+    try {
+      await this.api("PATCH", `${repo}/git/refs/heads/${this.o.branch}`, {
+        sha: newCommit.sha,
+        force: false,
+      });
+    } catch (err) {
+      // The branch advanced between the head read and the ref update: GitHub
+      // rejects the non-fast-forward with a 422. Surface it as the same
+      // conflict the expectedShas check raises, not a generic API error.
+      if (err instanceof GitHubApiError && err.status === 422) {
+        throw new ConflictError(
+          entries[0]?.path ?? this.o.branch,
+          "the branch advanced during the commit (non-fast-forward ref update)",
+        );
+      }
+      throw err;
+    }
 
     return { sha: newCommit.sha, message };
   }
@@ -187,7 +224,12 @@ export class GitHubProvider implements ContentProvider {
       truncated: boolean;
     };
     if (tree.truncated) {
-      throw new GitHubApiError(200, "tree listing truncated; repository too large for recursive listing");
+      // Status 500 so the route layer maps it to a JSON error deliberately —
+      // a 2xx status here would fall through as an unhandled exception.
+      throw new GitHubApiError(
+        500,
+        "tree listing truncated; repository too large for recursive listing",
+      );
     }
     return tree.tree;
   }

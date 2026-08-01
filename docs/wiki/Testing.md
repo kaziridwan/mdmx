@@ -1,6 +1,6 @@
 # Testing
 
-210 tests across five packages, all green. The suites aren't just coverage —
+389 tests across eight packages, all green. The suites aren't just coverage —
 several *are* the spec, locking guarantees that define the product.
 
 ## How to run

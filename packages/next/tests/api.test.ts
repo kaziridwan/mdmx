@@ -4,14 +4,17 @@ import { join } from "node:path";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { Registry, type RegistrySpec } from "@mdmx/core";
 import {
+  AuthError,
   createMDMXHandlers,
+  LocalAuthStrategy,
   LocalProvider,
-  parseCookies,
-  seal,
-  unseal,
+  type AuthStrategy,
   type MDMXHandlers,
   type SessionData,
 } from "../src/index.js";
+// Session crypto is internal (not published from the barrel), so its tests
+// reach for it directly.
+import { parseCookies, seal, unseal } from "../src/session.js";
 
 const SECRET = "test-secret-test-secret";
 const BASE = "https://site.example/api/mdmx";
@@ -227,6 +230,74 @@ describe("auth guard", () => {
     const res = await h.GET(new Request(`${BASE}/me`, { headers: { cookie: stale } }));
     expect(res.status).toBe(401);
   });
+
+  it("503s (keeping the session) when re-verification fails on transport, not auth", async () => {
+    const failingFetch: typeof globalThis.fetch = async () => {
+      throw new TypeError("fetch failed");
+    };
+    const h = makeHandlers({
+      auth: { clientId: "id", clientSecret: "secret", fetch: failingFetch },
+    });
+    const stale = sessionCookie({ verifiedAt: now - 6 * 60 * 1000 });
+    const res = await h.GET(new Request(`${BASE}/me`, { headers: { cookie: stale } }));
+    expect(res.status).toBe(503);
+    // A GitHub outage must not log the editor out.
+    expect(res.headers.getSetCookie().find((c) => c.startsWith("mdmx_session="))).toBeUndefined();
+  });
+});
+
+describe("configuration and response hygiene", () => {
+  it("fails closed when GitHub mode is asked for without credentials", async () => {
+    // Resolution is lazy now (ADR-039), so the failure lands on the first
+    // request as a readable error rather than crashing the module import.
+    const h = makeHandlers({
+      auth: undefined,
+      sessionSecret: undefined,
+      mode: "github",
+      env: {},
+    });
+    const res = await h.GET(req("GET", "/me"));
+    expect(res.status).toBe(500);
+    const { error } = (await res.json()) as { error: string };
+    expect(error).toContain("MDMX_GITHUB_CLIENT_ID");
+    expect(error).toContain("MDMX_SESSION_SECRET");
+  });
+
+  it("refuses to run local mode in production without an explicit opt-in", async () => {
+    const h = makeHandlers({
+      auth: undefined,
+      sessionSecret: undefined,
+      mode: "local",
+      env: { NODE_ENV: "production" },
+    });
+    const res = await h.GET(req("GET", "/me"));
+    expect(res.status).toBe(500);
+    expect(((await res.json()) as { error: string }).error).toMatch(
+      /allowLocalModeInProduction/,
+    );
+  });
+
+  it("clears cookies without Secure when insecureCookies is set (dev logout works over http)", async () => {
+    const h = makeHandlers({ insecureCookies: true });
+    const res = await h.POST(new Request(`${BASE}/auth/logout`, { method: "POST" }));
+    expect(res.status).toBe(200);
+    const cleared = res.headers.get("set-cookie")!;
+    expect(cleared).toContain("mdmx_session=;");
+    expect(cleared).not.toContain("Secure");
+  });
+
+  it("keeps Secure on cleared cookies in production", async () => {
+    const h = makeHandlers({ env: { NODE_ENV: "production" } });
+    const res = await h.POST(new Request(`${BASE}/auth/logout`, { method: "POST" }));
+    expect(res.headers.get("set-cookie")).toContain("Secure");
+  });
+
+  it("marks API responses cache-control: no-store", async () => {
+    const h = makeHandlers();
+    const res = await h.GET(req("GET", "/me"));
+    expect(res.status).toBe(200);
+    expect(res.headers.get("cache-control")).toBe("no-store");
+  });
 });
 
 describe("content API", () => {
@@ -393,13 +464,13 @@ describe("localMode (no GitHub OAuth)", () => {
     );
     const res = await h.GET(localReq("GET", "/file?path=content/posts/seed-local.mdx"));
     expect(res.status).toBe(200);
-    expect((await res.json()).content).toContain("<Callout");
+    expect(((await res.json()) as { content: string }).content).toContain("<Callout");
   });
 
   it("reports the synthetic local identity at /me", async () => {
     const res = await localHandlers().GET(localReq("GET", "/me"));
     expect(res.status).toBe(200);
-    expect((await res.json()).login).toBe("local");
+    expect(((await res.json()) as Record<string, unknown>).login).toBe("local");
   });
 
   it("writes a file to the working tree without auth", async () => {
@@ -409,7 +480,7 @@ describe("localMode (no GitHub OAuth)", () => {
     );
     expect(put.status).toBe(200);
     const read = await h.GET(localReq("GET", "/file?path=content/posts/local.mdx"));
-    expect((await read.json()).content).toBe("# Local\n");
+    expect(((await read.json()) as Record<string, unknown>).content).toBe("# Local\n");
   });
 
   it("still rejects cross-origin mutations", async () => {
@@ -431,7 +502,7 @@ describe("localMode (no GitHub OAuth)", () => {
       localReq("PUT", "/file", { path: "content/posts/bad.mdx", content: "<Bad foo=1 />" }),
     );
     expect(res.status).toBe(400);
-    expect((await res.json()).error).toMatch(/parse/i);
+    expect(((await res.json()) as Record<string, unknown>).error).toMatch(/parse/i);
   });
 });
 
@@ -482,8 +553,8 @@ describe("frontmatter validation on save", () => {
   it("report mode: saves but returns frontmatter diagnostics", async () => {
     const res = await handlers("report").PUT(put("content/posts/r.mdx", missingTitle));
     expect(res.status).toBe(200);
-    const body = await res.json();
-    expect(body.diagnostics.map((d: { code: string }) => d.code)).toContain("MDMX008");
+    const body = (await res.json()) as { diagnostics: { code: string }[] };
+    expect(body.diagnostics.map((d) => d.code)).toContain("MDMX008");
   });
 
   it("strict mode: rejects invalid frontmatter with 422", async () => {
@@ -499,5 +570,86 @@ describe("frontmatter validation on save", () => {
   it("ignores frontmatter rules outside the collection dir", async () => {
     const res = await handlers("strict").PUT(put("content/top.mdx", missingTitle));
     expect(res.status).toBe(200);
+  });
+});
+
+describe("AuthStrategy seam (ADR-046)", () => {
+  /** A minimal non-GitHub host: the seam is only proven by a second one. */
+  function fakeStrategy(overrides: Partial<AuthStrategy> = {}): AuthStrategy {
+    return {
+      name: "fake-host",
+      beginLogin: ({ redirectUri, state }) =>
+        `https://git.example/oauth?redirect=${encodeURIComponent(redirectUri)}&state=${state}`,
+      completeLogin: async () => ({ login: "ada", token: "fake-token" }),
+      verifyAccess: async () => ({ login: "ada" }),
+      ...overrides,
+    };
+  }
+
+  it("drives login through the injected strategy", async () => {
+    const h = makeHandlers({ authStrategy: fakeStrategy() });
+    const res = await h.GET(new Request(`${BASE}/auth/login`));
+    expect(res.status).toBe(302);
+    expect(res.headers.get("location")).toContain("git.example/oauth");
+  });
+
+  it("seals a session from the strategy's identity on callback", async () => {
+    const h = makeHandlers({ authStrategy: fakeStrategy() });
+    const res = await h.GET(
+      new Request(`${BASE}/auth/callback?code=whatever&state=s1`, {
+        headers: { cookie: "mdmx_oauth_state=s1" },
+      }),
+    );
+    expect(res.status).toBe(302);
+    const sessionSet = res.headers.getSetCookie().find((c) => c.startsWith("mdmx_session="))!;
+    const sealed = parseCookies(sessionSet.split(";")[0]!)["mdmx_session"]!;
+    expect(unseal(sealed, SECRET)!.login).toBe("ada");
+  });
+
+  it("re-verification asks the strategy, and its AuthError revokes the session", async () => {
+    let calls = 0;
+    const h = makeHandlers({
+      authStrategy: fakeStrategy({
+        verifyAccess: async () => {
+          calls += 1;
+          throw new AuthError(403, "no push access on this host");
+        },
+      }),
+    });
+    const stale = sessionCookie({ verifiedAt: now - 6 * 60 * 1000 });
+    const res = await h.GET(new Request(`${BASE}/me`, { headers: { cookie: stale } }));
+    expect(calls).toBe(1);
+    expect(res.status).toBe(401);
+  });
+
+  it("local mode is the trivial second implementation, not a special case", async () => {
+    const strategy = new LocalAuthStrategy("dev");
+    expect(strategy.beginLogin()).toBeNull();
+    expect(await strategy.completeLogin()).toEqual({ login: "dev", token: "" });
+    expect(await strategy.verifyAccess()).toEqual({ login: "dev" });
+  });
+});
+
+describe("save response", () => {
+  it("returns the new blob sha so the client needn't re-read (review 3.2-2)", async () => {
+    const h = makeHandlers();
+    const content = '---\ntitle: Sha\n---\n\n<Callout variant="info">\n  Hi.\n</Callout>\n';
+    const res = await h.PUT(req("PUT", "/file", { path: "content/posts/sha.mdx", content }));
+    expect(res.status).toBe(200);
+    const { sha } = (await res.json()) as { sha: string };
+    expect(sha).toMatch(/^[0-9a-f]{40}$/);
+
+    // It is the sha the provider reports, so a follow-up save with it as
+    // expectedSha succeeds rather than 409-ing.
+    const listed = await new LocalProvider(root).list("content/posts");
+    expect(listed.find((f) => f.path === "content/posts/sha.mdx")!.sha).toBe(sha);
+    const second = await h.PUT(
+      req("PUT", "/file", {
+        path: "content/posts/sha.mdx",
+        content: content.replace("Hi.", "Hi again."),
+        expectedSha: sha,
+      }),
+    );
+    expect(second.status).toBe(200);
   });
 });
