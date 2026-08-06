@@ -8,6 +8,7 @@
     "build": "pnpm --filter @mdmx/core build && pnpm --filter @mdmx/project --filter @mdmx/studio build && pnpm --filter @mdmx/provider-github --filter @mdmx/cli --filter @mdmx/editor --filter @mdmx/next --filter @mdmx/dashboard build",
     "test": "pnpm build && pnpm -r test",
     "check": "pnpm build && pnpm -r typecheck",
+    "start": "sh scripts/dev-next.sh",
     "verify": "sh scripts/check.sh",
     "generate": "sh scripts/generate.sh",
     "dev:next": "sh scripts/dev-next.sh",

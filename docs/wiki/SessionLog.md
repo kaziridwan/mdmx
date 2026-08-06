@@ -11,6 +11,16 @@ initial design-and-build conversation (12 commits).
 
 <!-- APPEND NEW ENTRIES ABOVE THIS LINE -->
 
+### S32 — repo hygiene: attribution scrub, root `start` script
+- **History rewrite**: every `Co-Authored-By: Claude …` trailer removed from
+  all 64 commits across all branches (`git filter-branch --msg-filter`);
+  `main` and `release/0.5.0` force-pushed to origin. Commit content and
+  authorship are unchanged — only the trailers were dropped. Future commits
+  carry no attribution (disabled in tooling settings).
+- **`pnpm start`**: root script alias for `scripts/dev-next.sh` (install →
+  build → link `mdmx` bin → `next dev` for demo-next). Verified: server
+  ready on :3000, home page 200.
+
 ### S31 — M4b/M4d, the validation seam, typechecked tests, live verification
 - **M4b — `@mdmx/studio/ui`**: the builder screens (StudioView,
   StudioEditorView, template-html, template-edit, canvas Tailwind runtime)
