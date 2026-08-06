@@ -3,8 +3,8 @@ dist/
 *.tsbuildinfo
 .DS_Store
 .claude/
-.dev-context/*
-!.dev-context/sessions/
-.dev-context/sessions/*
-!.dev-context/sessions/.gitkeep
+# .dev-context: keep folder skeleton (.gitkeep files) only, ignore all content
+.dev-context/**
+!.dev-context/**/
+!.dev-context/**/.gitkeep
 .agent-context/
