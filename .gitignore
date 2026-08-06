@@ -3,5 +3,8 @@ dist/
 *.tsbuildinfo
 .DS_Store
 .claude/
-.dev-context/
+.dev-context/*
+!.dev-context/sessions/
+.dev-context/sessions/*
+!.dev-context/sessions/.gitkeep
 .agent-context/
