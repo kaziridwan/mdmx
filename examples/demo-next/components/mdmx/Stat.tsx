@@ -1,4 +1,5 @@
 import { defineMDMX } from "@mdmx/core";
+import { cn } from "@/lib/utils";
 
 interface StatProps {
   /** The headline number, preformatted */
@@ -8,12 +9,26 @@ interface StatProps {
   delta?: number;
 }
 
-function StatImpl({ value, label }: StatProps) {
+const TREND = { up: "▲", down: "▼", flat: "—" } as const;
+
+function StatImpl({ value, label, trend, delta }: StatProps) {
   return (
-    <figure>
-      <span>{value}</span>
-      <figcaption>{label}</figcaption>
-    </figure>
+    <div className="flex w-fit min-w-40 flex-col items-start gap-0.5 rounded-xl border bg-card px-4 py-3 text-left">
+      <span className="font-heading text-2xl font-semibold text-primary tabular-nums">{value}</span>
+      <span className="text-xs tracking-wider text-muted-foreground uppercase">{label}</span>
+      {trend || delta != null ? (
+        <span
+          className={cn(
+            "mt-1 text-xs font-medium",
+            trend === "up" && "text-emerald-600",
+            trend === "down" && "text-destructive",
+            (!trend || trend === "flat") && "text-muted-foreground",
+          )}
+        >
+          {trend ? TREND[trend] : null} {delta != null ? `${delta > 0 ? "+" : ""}${delta}` : null}
+        </span>
+      ) : null}
+    </div>
   );
 }
 

@@ -1,5 +1,8 @@
 import type { ReactNode } from "react";
 import { defineMDMX } from "@mdmx/core";
+import { buttonVariants } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { cn } from "@/lib/utils";
 
 interface PricingTierProps {
   name: string;
@@ -12,29 +15,25 @@ interface PricingTierProps {
   children: ReactNode;
 }
 
-function PricingTierImpl({
-  name,
-  price,
-  period,
-  ctaLabel,
-  ctaHref,
-  featured,
-  children,
-}: PricingTierProps) {
+function PricingTierImpl({ name, price, period, ctaLabel, ctaHref, featured, children }: PricingTierProps) {
   return (
-    <article className="mk-tier" data-featured={featured ? "true" : undefined}>
-      <h3 className="mk-tier-name">{name}</h3>
-      <p className="mk-tier-price">
-        <span className="mk-tier-amount">{price}</span>
-        {period ? <span className="mk-tier-period">/{period}</span> : null}
-      </p>
-      <div className="mk-tier-features">{children}</div>
+    <Card data-featured={featured ? "true" : undefined} className={cn("h-full", featured && "ring-2 ring-primary")}>
+      <CardHeader>
+        <CardDescription className="text-xs font-medium tracking-wider uppercase">{name}</CardDescription>
+        <CardTitle className="text-3xl font-semibold tabular-nums">
+          {price}
+          {period ? <span className="ml-0.5 text-base font-normal text-muted-foreground">/{period}</span> : null}
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="flex-1 text-sm text-muted-foreground">{children}</CardContent>
       {ctaLabel ? (
-        <a className="mk-btn mk-btn-primary" href={ctaHref ?? "#"}>
-          {ctaLabel}
-        </a>
+        <CardFooter>
+          <a className={cn(buttonVariants({ variant: featured ? "default" : "outline" }), "w-full")} href={ctaHref ?? "#"}>
+            {ctaLabel}
+          </a>
+        </CardFooter>
       ) : null}
-    </article>
+    </Card>
   );
 }
 

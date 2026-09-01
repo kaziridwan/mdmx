@@ -126,7 +126,13 @@ in mind:
   the dashboard, whose body colors differ.
 - Bare-element rules for your content belong on your content class (`.mdmx-page
   h2 { … }`), not on `body`/`h2` globally, or they'll style the dashboard
-  too. If you use Tailwind, keep them in `@layer base` so utilities on your
+  too.
+- In the editor each block sits in a plain wrapper `<div>`. Two things
+  follow: write sibling rhythm in `rem` (`.mdmx-page > * + * { margin-top:
+  1rem }`), since an `em` value would compute against the wrapper's font
+  size; and give a shrink-wrapped block `flex w-fit` rather than
+  `inline-flex`, so it lays out the same inside a grid on the page and
+  inside its wrapper in the canvas. If you use Tailwind, keep them in `@layer base` so utilities on your
   components still win (the demo's `globals.css` shows the pattern).
 
 ## Advanced: mounting the editor manually

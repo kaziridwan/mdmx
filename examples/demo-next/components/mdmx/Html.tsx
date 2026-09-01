@@ -8,7 +8,10 @@ interface HtmlProps {
 
 function HtmlImpl({ code }: HtmlProps) {
   return (
-    <div className="mk-html" dangerouslySetInnerHTML={{ __html: sanitizeHtml(code ?? "") }} />
+    <div
+      className="rounded-lg border border-dashed"
+      dangerouslySetInnerHTML={{ __html: sanitizeHtml(code ?? "") }}
+    />
   );
 }
 

@@ -11,7 +11,7 @@ initial design-and-build conversation (12 commits).
 
 <!-- APPEND NEW ENTRIES ABOVE THIS LINE -->
 
-### S33 — 0.6.0 release session (release/0.6.0): M1 Next 16, M2 Tailwind + shadcn, M3 canvas parity, M4 interactivity
+### S33 — 0.6.0 release session (release/0.6.0): M1 Next 16, M2 Tailwind + shadcn, M3 canvas parity, M4 interactivity, M5 shadcn blocks
 - **M1 — Next 16**: demo-next on `next@16.3.4` (Turbopack by default) with
   React 19.2 types; `@mdmx/dashboard`'s `next` devDependency bumped in step
   so one copy resolves (its `next/link.js`/`next/dynamic.js` shims are typed
@@ -113,6 +113,38 @@ initial design-and-build conversation (12 commits).
   block without navigating, ⌘-click opens a tab, typing into the
   Newsletter's input works without selecting the block, and clicking the
   block's heading selects it; `mdmx generate` writes `mdmxRegistryVersion: 2`.
+- **M5 — shadcn blocks + content** (ADR-053). demo-next now registers **39**
+  author components: the 17 marketing components rebuilt on shadcn
+  primitives and utilities with their names and props unchanged (content
+  untouched; `mdmx check` 0/0), plus **22 shadcn components as blocks** in a
+  new `UI` palette category (Accordion/AccordionItem, Alert, AspectRatio,
+  Avatar, Badge, Button, Card, Collapsible, Empty, HoverCard, Item, Kbd,
+  Progress, Separator, Skeleton, Spinner, Table, Tabs/Tab, Toggle, Tooltip).
+  The rules that decide what can be a block came out of building them: no
+  React context across blocks (each nested block is its own React root —
+  Accordion items are self-contained collapsibles, Tabs broadcasts the
+  active tab as a scoped CSS rule), containers are grids that never size
+  items with `> *` (the editor's TwoColumn flex patch is gone), editable
+  regions stay mounted (`keepMounted`), popup bodies are props with the
+  trigger as the rich-text child. Carousel and ButtonGroup stay installed but
+  unregistered for those reasons. `mk-*`, `.site-*`, `.twocol` CSS deleted;
+  fonts via `next/font` as the theme's `--font-sans/serif/mono`; primary is
+  the demo's indigo; new `posts/blocks.mdx` shows one of each.
+- **Parity, measured again** with the rebuilt components: `layout` 0/9,
+  `welcome`, `marketing`, `blocks` differ only in `border-radius` (plus
+  `animate-pulse` timing) — and every radius diff has one cause: the
+  studio's CDN Tailwind runtime compiles the same utilities with the
+  *default* radius scale and loads after the app's stylesheet. That is the
+  evidence M6 (studio Tailwind handoff) acts on. Two demo-side lessons
+  became content-class guidance (guide 04, ADR-050): sibling rhythm in
+  `rem` (a wrapper inherits the article's font size) and `flex w-fit`
+  rather than `inline-flex` for shrink-wrapped blocks. Also reverted the
+  canvas to `white-space: normal` (M3 had followed ProseMirror's `pre-wrap`
+  suggestion; markdown collapses soft breaks, and the page is the truth).
+- Verified live: 18 surfaces clean (two new: `/posts/blocks` and its
+  editor), 12/12 interactivity checks (Tabs switch, accordions open, the
+  newsletter input types — all inside the editor), `next build` 0 warnings,
+  `pnpm verify` green. demo-next README rewritten for what the app is now.
 - **Housekeeping**: a Next 15 dev server left on :3456 by the grilling
   session was killed. pnpm 11's `minimumReleaseAge` wrote
   `minimumReleaseAgeExclude` entries for `next@16.3.4` into
@@ -130,7 +162,8 @@ initial design-and-build conversation (12 commits).
   pnpm-workspace.yaml.
 - ADRs: ADR-049 (dashboard stylesheet host-independence in `@layer base`),
   ADR-050 (the canvas is the page), ADR-051 (`fit` default + collapsible
-  panels), ADR-052 (event routing, `render.interactive`, canvas link policy).
+  panels), ADR-052 (event routing, `render.interactive`, canvas link policy),
+  ADR-053 (shadcn blocks: the rules, and why Carousel/ButtonGroup aren't).
 - Tests: 389 → 414 (+22 editor, +2 dashboard, +1 cli), `pnpm verify` green.
 - Wiki pages touched: SessionLog, Roadmap (new Phase 2.8 — 0.6.0 milestone
   table), Home (status line), Packages (editor files + stylesheet, dashboard
@@ -138,9 +171,10 @@ initial design-and-build conversation (12 commits).
   Interactive routing), DECISIONS, SPEC (§5 registry v2 + event routing,
   §8), guide 02 (`render`), guide 04 (theming, `contentClassName`, manual
   mounts, interactivity), guide 07, AGENTS.md.
-- Follow-ups: examples/demo-next/README.md still describes the 0.4-era
-  `lib/components.ts` mount (M7 docs wave); Roadmap has no 0.5.0 phase
-  section (M7).
+- Follow-ups: Roadmap has no 0.5.0 phase section (M7); the CLI extractor
+  should honor tsconfig `paths` so prop types imported through `@/` infer
+  (0.7 candidate, ADR-053); Carousel as a block needs a wrapper-aware slide
+  contract (0.7 candidate).
 
 ### S32 — repo hygiene: attribution scrub, root `start` script
 - **History rewrite**: every `Co-Authored-By: Claude …` trailer removed from

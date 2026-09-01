@@ -2,7 +2,7 @@ import type { ReactNode } from "react";
 import { defineMDMX } from "@mdmx/core";
 
 function Column({ children }: { children: ReactNode }) {
-  return <div className="col">{children}</div>;
+  return <div className="min-w-0">{children}</div>;
 }
 
 export default defineMDMX(Column, {

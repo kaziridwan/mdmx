@@ -12,11 +12,13 @@ function LogoCloudImpl({ title, names }: LogoCloudProps) {
     .map((s) => s.trim())
     .filter(Boolean);
   return (
-    <section className="mk-logos">
-      {title ? <p className="mk-logos-title">{title}</p> : null}
-      <div className="mk-logos-row">
+    <section className="py-3 text-center">
+      {title ? (
+        <p className="mt-0 mb-3.5 text-xs font-medium tracking-wider text-muted-foreground uppercase">{title}</p>
+      ) : null}
+      <div className="flex flex-wrap justify-center gap-x-7 gap-y-3">
         {items.map((name, i) => (
-          <span className="mk-logo" key={i}>
+          <span className="font-heading text-lg font-semibold text-foreground/55" key={i}>
             {name}
           </span>
         ))}

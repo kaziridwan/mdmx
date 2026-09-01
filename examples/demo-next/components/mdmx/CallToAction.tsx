@@ -1,5 +1,7 @@
 import type { ReactNode } from "react";
 import { defineMDMX } from "@mdmx/core";
+import { buttonVariants } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 
 interface CallToActionProps {
   heading: string;
@@ -17,13 +19,23 @@ function CallToActionImpl({
   variant = "solid",
   children,
 }: CallToActionProps) {
+  const solid = variant === "solid";
   return (
-    <section className="mk-cta" data-variant={variant}>
-      <div className="mk-cta-body">
-        <h2 className="mk-cta-heading">{heading}</h2>
-        <div className="mk-cta-copy">{children}</div>
+    <section
+      data-variant={variant}
+      className={cn(
+        "flex flex-wrap items-center justify-between gap-6 rounded-2xl px-8 py-7",
+        solid ? "bg-primary text-primary-foreground" : "bg-muted text-foreground",
+      )}
+    >
+      <div className="min-w-0 flex-1 basis-64">
+        <h2 className="font-heading mt-0 mb-1.5 text-xl font-semibold">{heading}</h2>
+        <div className={cn("text-base", solid ? "opacity-90" : "text-muted-foreground")}>{children}</div>
       </div>
-      <a className="mk-btn mk-btn-primary" href={buttonHref}>
+      <a
+        className={cn(buttonVariants({ variant: solid ? "secondary" : "default", size: "lg" }), "whitespace-nowrap")}
+        href={buttonHref}
+      >
         {buttonLabel}
       </a>
     </section>

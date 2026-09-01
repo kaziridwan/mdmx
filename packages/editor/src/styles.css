@@ -451,11 +451,13 @@ body.mdmx-resizing {
   outline: 1px dashed var(--mdmx-border);
   outline-offset: -1px;
 }
-/* ProseMirror's own requirements — not styling. */
+/* ProseMirror's own requirements — not styling. `white-space` is left to the
+   page on purpose: ProseMirror suggests `pre-wrap`, but markdown collapses a
+   paragraph's soft line breaks and runs of spaces, so `pre-wrap` would show
+   breaks the page never renders (ADR-050). */
 .mdmx-editor .mdmx-canvas .ProseMirror {
   outline: none;
   position: relative;
-  white-space: pre-wrap;
   word-wrap: break-word;
 }
 
@@ -586,14 +588,11 @@ body.mdmx-resizing {
   font-size: 12px;
   color: var(--mdmx-fg-muted);
 }
-/* Demo TwoColumn integration (removed in 0.6 M5 when TwoColumn is rebuilt):
-   the page's `.twocol > *` cannot reach through the display:contents
-   wrappers, so the flex-item rule is repeated one level down. The page's own
-   `.twocol` layout, gap, and container query apply in the canvas as-is. */
-.mdmx-editor .mdmx-component .twocol > .mdmx-content > .mdmx-contentdom > * {
-  flex: 1;
-  min-width: 0;
-}
+/* Container components and block wrappers: a container's child blocks are
+   the editor's `.mdmx-nodeview` wrappers (the two hole elements between are
+   display:contents). Grid auto-placement treats them as items with nothing
+   to configure; a flex container that sizes items with a `> *` rule would
+   not reach them — style items by their own class instead (ADR-053). */
 
 /* -- slash menu -- */
 .mdmx-editor .mdmx-slash {

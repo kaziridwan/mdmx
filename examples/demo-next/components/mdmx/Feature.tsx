@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { defineMDMX } from "@mdmx/core";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 interface FeatureProps {
   title: string;
@@ -10,15 +11,17 @@ interface FeatureProps {
 
 function FeatureImpl({ title, icon, children }: FeatureProps) {
   return (
-    <article className="mk-feature">
-      {icon ? (
-        <span className="mk-feature-icon" aria-hidden>
-          {icon}
-        </span>
-      ) : null}
-      <h3 className="mk-feature-title">{title}</h3>
-      <div className="mk-feature-body">{children}</div>
-    </article>
+    <Card size="sm" className="h-full">
+      <CardHeader>
+        {icon ? (
+          <span className="text-2xl leading-none" aria-hidden>
+            {icon}
+          </span>
+        ) : null}
+        <CardTitle>{title}</CardTitle>
+      </CardHeader>
+      <CardContent className="text-sm text-muted-foreground">{children}</CardContent>
+    </Card>
   );
 }
 

@@ -1,7 +1,325 @@
 {
   "mdmxRegistryVersion": 2,
-  "hash": "059f523d22be4ec1",
+  "hash": "5d4141a927f3acb2",
   "components": [
+    {
+      "name": "Accordion",
+      "category": "UI",
+      "icon": "chevrons-down-up",
+      "description": "Stacked, expandable sections (holds AccordionItem blocks)",
+      "source": "components/mdmx/Accordion.tsx",
+      "children": {
+        "policy": "blocks"
+      },
+      "props": [],
+      "constraints": {
+        "allowedParents": null,
+        "allowedChildren": [
+          "AccordionItem"
+        ]
+      },
+      "render": {
+        "mode": "live"
+      }
+    },
+    {
+      "name": "AccordionItem",
+      "category": "UI",
+      "icon": "chevron-down",
+      "description": "One expandable section inside an Accordion",
+      "source": "components/mdmx/AccordionItem.tsx",
+      "children": {
+        "policy": "blocks"
+      },
+      "props": [
+        {
+          "name": "title",
+          "required": true,
+          "control": {
+            "type": "text",
+            "placeholder": "Section title"
+          }
+        },
+        {
+          "name": "open",
+          "required": false,
+          "control": {
+            "type": "boolean"
+          },
+          "description": "Start expanded",
+          "default": false
+        }
+      ],
+      "constraints": {
+        "allowedParents": [
+          "Accordion"
+        ],
+        "allowedChildren": null
+      },
+      "render": {
+        "mode": "live"
+      }
+    },
+    {
+      "name": "Alert",
+      "category": "UI",
+      "icon": "alert-triangle",
+      "description": "Callout with an optional title and icon",
+      "source": "components/mdmx/Alert.tsx",
+      "children": {
+        "policy": "rich-text"
+      },
+      "props": [
+        {
+          "name": "title",
+          "required": false,
+          "control": {
+            "type": "text",
+            "placeholder": "Heads up"
+          }
+        },
+        {
+          "name": "variant",
+          "required": false,
+          "control": {
+            "type": "select",
+            "options": [
+              "default",
+              "destructive"
+            ]
+          },
+          "default": "default"
+        },
+        {
+          "name": "icon",
+          "required": false,
+          "control": {
+            "type": "text",
+            "placeholder": "💡"
+          },
+          "description": "Emoji or short glyph shown before the title"
+        }
+      ],
+      "constraints": {
+        "allowedParents": null,
+        "allowedChildren": null
+      },
+      "render": {
+        "mode": "live"
+      }
+    },
+    {
+      "name": "AspectRatio",
+      "category": "UI",
+      "icon": "crop",
+      "description": "An image cropped to a fixed aspect ratio",
+      "source": "components/mdmx/AspectRatio.tsx",
+      "children": {
+        "policy": "none"
+      },
+      "props": [
+        {
+          "name": "src",
+          "required": true,
+          "control": {
+            "type": "image"
+          },
+          "description": "Image URL (pick from the media library)"
+        },
+        {
+          "name": "alt",
+          "required": false,
+          "control": {
+            "type": "text",
+            "placeholder": "Describe the image"
+          }
+        },
+        {
+          "name": "ratio",
+          "required": false,
+          "control": {
+            "type": "select",
+            "options": [
+              "16/9",
+              "4/3",
+              "1/1",
+              "3/2",
+              "21/9"
+            ]
+          },
+          "default": "16/9"
+        }
+      ],
+      "constraints": {
+        "allowedParents": null,
+        "allowedChildren": null
+      },
+      "render": {
+        "mode": "live"
+      }
+    },
+    {
+      "name": "Avatar",
+      "category": "UI",
+      "icon": "user",
+      "description": "A round profile image with initials fallback",
+      "source": "components/mdmx/Avatar.tsx",
+      "children": {
+        "policy": "none"
+      },
+      "props": [
+        {
+          "name": "src",
+          "required": false,
+          "control": {
+            "type": "image"
+          },
+          "description": "Image URL (pick from the media library)"
+        },
+        {
+          "name": "fallback",
+          "required": true,
+          "control": {
+            "type": "text",
+            "placeholder": "JD"
+          },
+          "description": "Initials shown while the image loads or when there is none"
+        },
+        {
+          "name": "alt",
+          "required": false,
+          "control": {
+            "type": "text"
+          }
+        },
+        {
+          "name": "size",
+          "required": false,
+          "control": {
+            "type": "select",
+            "options": [
+              "default",
+              "sm",
+              "lg"
+            ]
+          },
+          "default": "default"
+        }
+      ],
+      "constraints": {
+        "allowedParents": null,
+        "allowedChildren": null
+      },
+      "render": {
+        "mode": "live"
+      }
+    },
+    {
+      "name": "Badge",
+      "category": "UI",
+      "icon": "tag",
+      "description": "A small status label",
+      "source": "components/mdmx/Badge.tsx",
+      "children": {
+        "policy": "none"
+      },
+      "props": [
+        {
+          "name": "label",
+          "required": true,
+          "control": {
+            "type": "text",
+            "placeholder": "New"
+          }
+        },
+        {
+          "name": "variant",
+          "required": false,
+          "control": {
+            "type": "select",
+            "options": [
+              "default",
+              "destructive",
+              "secondary",
+              "outline",
+              "ghost"
+            ]
+          },
+          "default": "default"
+        }
+      ],
+      "constraints": {
+        "allowedParents": null,
+        "allowedChildren": null
+      },
+      "render": {
+        "mode": "live"
+      }
+    },
+    {
+      "name": "Button",
+      "category": "UI",
+      "icon": "mouse-pointer-click",
+      "description": "A button, optionally linking somewhere",
+      "source": "components/mdmx/Button.tsx",
+      "children": {
+        "policy": "none"
+      },
+      "props": [
+        {
+          "name": "label",
+          "required": true,
+          "control": {
+            "type": "text",
+            "placeholder": "Click me"
+          }
+        },
+        {
+          "name": "href",
+          "required": false,
+          "control": {
+            "type": "link"
+          },
+          "description": "Where the button links to; leave empty for a plain button"
+        },
+        {
+          "name": "variant",
+          "required": false,
+          "control": {
+            "type": "select",
+            "options": [
+              "default",
+              "destructive",
+              "secondary",
+              "outline",
+              "ghost",
+              "link"
+            ]
+          },
+          "default": "default"
+        },
+        {
+          "name": "size",
+          "required": false,
+          "control": {
+            "type": "select",
+            "options": [
+              "default",
+              "sm",
+              "lg"
+            ]
+          },
+          "default": "default"
+        }
+      ],
+      "constraints": {
+        "allowedParents": null,
+        "allowedChildren": null
+      },
+      "render": {
+        "mode": "live"
+      }
+    },
     {
       "name": "Callout",
       "category": "Content",
@@ -98,6 +416,90 @@
       }
     },
     {
+      "name": "Card",
+      "category": "UI",
+      "icon": "square",
+      "description": "A bordered card with an optional header; holds any blocks",
+      "source": "components/mdmx/Card.tsx",
+      "children": {
+        "policy": "blocks"
+      },
+      "props": [
+        {
+          "name": "title",
+          "required": false,
+          "control": {
+            "type": "text",
+            "placeholder": "Card title"
+          }
+        },
+        {
+          "name": "description",
+          "required": false,
+          "control": {
+            "type": "text",
+            "placeholder": "Optional description"
+          }
+        },
+        {
+          "name": "size",
+          "required": false,
+          "control": {
+            "type": "select",
+            "options": [
+              "default",
+              "sm"
+            ]
+          },
+          "default": "default"
+        }
+      ],
+      "constraints": {
+        "allowedParents": null,
+        "allowedChildren": null
+      },
+      "render": {
+        "mode": "live"
+      }
+    },
+    {
+      "name": "Collapsible",
+      "category": "UI",
+      "icon": "chevrons-up-down",
+      "description": "A section that folds away behind a toggle",
+      "source": "components/mdmx/Collapsible.tsx",
+      "children": {
+        "policy": "blocks"
+      },
+      "props": [
+        {
+          "name": "title",
+          "required": true,
+          "control": {
+            "type": "text",
+            "placeholder": "Show details"
+          },
+          "description": "The toggle's label"
+        },
+        {
+          "name": "open",
+          "required": false,
+          "control": {
+            "type": "boolean"
+          },
+          "description": "Start expanded",
+          "default": false
+        }
+      ],
+      "constraints": {
+        "allowedParents": null,
+        "allowedChildren": null
+      },
+      "render": {
+        "mode": "live"
+      }
+    },
+    {
       "name": "Column",
       "category": "Layout",
       "icon": "square",
@@ -111,6 +513,50 @@
         "allowedParents": [
           "TwoColumn"
         ],
+        "allowedChildren": null
+      },
+      "render": {
+        "mode": "live"
+      }
+    },
+    {
+      "name": "Empty",
+      "category": "UI",
+      "icon": "inbox",
+      "description": "An empty-state placeholder with a title and description",
+      "source": "components/mdmx/Empty.tsx",
+      "children": {
+        "policy": "none"
+      },
+      "props": [
+        {
+          "name": "title",
+          "required": true,
+          "control": {
+            "type": "text",
+            "placeholder": "Nothing here yet"
+          }
+        },
+        {
+          "name": "description",
+          "required": false,
+          "control": {
+            "type": "textarea",
+            "placeholder": "What to do about it"
+          }
+        },
+        {
+          "name": "icon",
+          "required": false,
+          "control": {
+            "type": "text",
+            "placeholder": "📭"
+          },
+          "description": "Emoji or short glyph"
+        }
+      ],
+      "constraints": {
+        "allowedParents": null,
         "allowedChildren": null
       },
       "render": {
@@ -154,6 +600,15 @@
             "type": "text",
             "placeholder": "Frequently asked question?"
           }
+        },
+        {
+          "name": "open",
+          "required": false,
+          "control": {
+            "type": "boolean"
+          },
+          "description": "Start expanded",
+          "default": true
         }
       ],
       "constraints": {
@@ -325,6 +780,43 @@
       }
     },
     {
+      "name": "HoverCard",
+      "category": "UI",
+      "icon": "message-circle",
+      "description": "Text that reveals a card on hover",
+      "source": "components/mdmx/HoverCard.tsx",
+      "children": {
+        "policy": "rich-text"
+      },
+      "props": [
+        {
+          "name": "title",
+          "required": false,
+          "control": {
+            "type": "text",
+            "placeholder": "Card title"
+          },
+          "description": "Card heading"
+        },
+        {
+          "name": "content",
+          "required": true,
+          "control": {
+            "type": "textarea",
+            "placeholder": "Card body"
+          },
+          "description": "Card body, shown on hover"
+        }
+      ],
+      "constraints": {
+        "allowedParents": null,
+        "allowedChildren": null
+      },
+      "render": {
+        "mode": "live"
+      }
+    },
+    {
       "name": "Html",
       "category": "Advanced",
       "icon": "code",
@@ -342,6 +834,91 @@
             "placeholder": "<div>…</div>"
           },
           "description": "Raw HTML, sanitized before render"
+        }
+      ],
+      "constraints": {
+        "allowedParents": null,
+        "allowedChildren": null
+      },
+      "render": {
+        "mode": "live"
+      }
+    },
+    {
+      "name": "Item",
+      "category": "UI",
+      "icon": "list",
+      "description": "A list row with a title, description, and icon",
+      "source": "components/mdmx/Item.tsx",
+      "children": {
+        "policy": "none"
+      },
+      "props": [
+        {
+          "name": "title",
+          "required": true,
+          "control": {
+            "type": "text",
+            "placeholder": "Item title"
+          }
+        },
+        {
+          "name": "description",
+          "required": false,
+          "control": {
+            "type": "text",
+            "placeholder": "Optional description"
+          }
+        },
+        {
+          "name": "icon",
+          "required": false,
+          "control": {
+            "type": "text",
+            "placeholder": "📦"
+          },
+          "description": "Emoji or short glyph shown on the left"
+        },
+        {
+          "name": "variant",
+          "required": false,
+          "control": {
+            "type": "select",
+            "options": [
+              "default",
+              "outline",
+              "muted"
+            ]
+          },
+          "default": "outline"
+        }
+      ],
+      "constraints": {
+        "allowedParents": null,
+        "allowedChildren": null
+      },
+      "render": {
+        "mode": "live"
+      }
+    },
+    {
+      "name": "Kbd",
+      "category": "UI",
+      "icon": "keyboard",
+      "description": "A keyboard shortcut",
+      "source": "components/mdmx/Kbd.tsx",
+      "children": {
+        "policy": "none"
+      },
+      "props": [
+        {
+          "name": "keys",
+          "required": true,
+          "control": {
+            "type": "text",
+            "placeholder": "⌘ K"
+          },
+          "description": "Keys separated by spaces, e.g. \"⌘ K\""
         }
       ],
       "constraints": {
@@ -528,6 +1105,165 @@
       }
     },
     {
+      "name": "Progress",
+      "category": "UI",
+      "icon": "loader",
+      "description": "A progress bar with an optional label",
+      "source": "components/mdmx/Progress.tsx",
+      "children": {
+        "policy": "none"
+      },
+      "props": [
+        {
+          "name": "value",
+          "required": true,
+          "control": {
+            "type": "number",
+            "min": 0,
+            "max": 100,
+            "step": 1
+          },
+          "description": "0–100",
+          "default": 50
+        },
+        {
+          "name": "label",
+          "required": false,
+          "control": {
+            "type": "text",
+            "placeholder": "Uploading"
+          }
+        },
+        {
+          "name": "showValue",
+          "required": false,
+          "control": {
+            "type": "boolean"
+          },
+          "default": true
+        }
+      ],
+      "constraints": {
+        "allowedParents": null,
+        "allowedChildren": null
+      },
+      "render": {
+        "mode": "live"
+      }
+    },
+    {
+      "name": "Separator",
+      "category": "UI",
+      "icon": "minus",
+      "description": "A horizontal rule, optionally labeled",
+      "source": "components/mdmx/Separator.tsx",
+      "children": {
+        "policy": "none"
+      },
+      "props": [
+        {
+          "name": "label",
+          "required": false,
+          "control": {
+            "type": "text",
+            "placeholder": "or"
+          },
+          "description": "Optional centered label"
+        }
+      ],
+      "constraints": {
+        "allowedParents": null,
+        "allowedChildren": null
+      },
+      "render": {
+        "mode": "live"
+      }
+    },
+    {
+      "name": "Skeleton",
+      "category": "UI",
+      "icon": "loader",
+      "description": "A loading placeholder",
+      "source": "components/mdmx/Skeleton.tsx",
+      "children": {
+        "policy": "none"
+      },
+      "props": [
+        {
+          "name": "shape",
+          "required": false,
+          "control": {
+            "type": "select",
+            "options": [
+              "text",
+              "rect",
+              "circle"
+            ]
+          },
+          "default": "text"
+        },
+        {
+          "name": "lines",
+          "required": false,
+          "control": {
+            "type": "number",
+            "min": 1,
+            "max": 8,
+            "step": 1
+          },
+          "description": "Number of lines when shape is \"text\"",
+          "default": 3
+        }
+      ],
+      "constraints": {
+        "allowedParents": null,
+        "allowedChildren": null
+      },
+      "render": {
+        "mode": "live"
+      }
+    },
+    {
+      "name": "Spinner",
+      "category": "UI",
+      "icon": "loader",
+      "description": "A loading indicator with an optional label",
+      "source": "components/mdmx/Spinner.tsx",
+      "children": {
+        "policy": "none"
+      },
+      "props": [
+        {
+          "name": "label",
+          "required": false,
+          "control": {
+            "type": "text",
+            "placeholder": "Loading…"
+          }
+        },
+        {
+          "name": "size",
+          "required": false,
+          "control": {
+            "type": "select",
+            "options": [
+              "default",
+              "sm",
+              "lg"
+            ]
+          },
+          "default": "default"
+        }
+      ],
+      "constraints": {
+        "allowedParents": null,
+        "allowedChildren": null
+      },
+      "render": {
+        "mode": "live"
+      }
+    },
+    {
       "name": "Stat",
       "category": "Data",
       "icon": "trending-up",
@@ -610,6 +1346,123 @@
       }
     },
     {
+      "name": "Tab",
+      "category": "UI",
+      "icon": "panel-top",
+      "description": "One panel inside Tabs",
+      "source": "components/mdmx/Tab.tsx",
+      "children": {
+        "policy": "blocks"
+      },
+      "props": [
+        {
+          "name": "title",
+          "required": true,
+          "control": {
+            "type": "text",
+            "placeholder": "Overview"
+          },
+          "description": "Must match one of the parent Tabs' titles"
+        }
+      ],
+      "constraints": {
+        "allowedParents": [
+          "Tabs"
+        ],
+        "allowedChildren": null
+      },
+      "render": {
+        "mode": "live"
+      }
+    },
+    {
+      "name": "Table",
+      "category": "UI",
+      "icon": "table",
+      "description": "A simple data table (headings + rows as text)",
+      "source": "components/mdmx/Table.tsx",
+      "children": {
+        "policy": "none"
+      },
+      "props": [
+        {
+          "name": "columns",
+          "required": true,
+          "control": {
+            "type": "text",
+            "placeholder": "Plan, Price, Seats"
+          },
+          "description": "Column headings, comma-separated"
+        },
+        {
+          "name": "rows",
+          "required": true,
+          "control": {
+            "type": "textarea",
+            "placeholder": "Starter | $0 | 1\nTeam | $29 | 10"
+          },
+          "description": "One row per line; cells separated by \"|\""
+        },
+        {
+          "name": "caption",
+          "required": false,
+          "control": {
+            "type": "text",
+            "placeholder": "Optional caption"
+          }
+        }
+      ],
+      "constraints": {
+        "allowedParents": null,
+        "allowedChildren": null
+      },
+      "render": {
+        "mode": "live"
+      }
+    },
+    {
+      "name": "Tabs",
+      "category": "UI",
+      "icon": "panel-top",
+      "description": "Tabbed panels (holds Tab blocks whose titles match)",
+      "source": "components/mdmx/Tabs.tsx",
+      "children": {
+        "policy": "blocks"
+      },
+      "props": [
+        {
+          "name": "tabs",
+          "required": true,
+          "control": {
+            "type": "text",
+            "placeholder": "Overview, Details"
+          },
+          "description": "Tab titles, comma-separated — each matches a Tab block's title"
+        },
+        {
+          "name": "variant",
+          "required": false,
+          "control": {
+            "type": "select",
+            "options": [
+              "default",
+              "line"
+            ]
+          },
+          "default": "default"
+        }
+      ],
+      "constraints": {
+        "allowedParents": null,
+        "allowedChildren": [
+          "Tab"
+        ]
+      },
+      "render": {
+        "mode": "live"
+      }
+    },
+    {
       "name": "Testimonial",
       "category": "Marketing",
       "icon": "message-square",
@@ -641,6 +1494,109 @@
           "control": {
             "type": "image"
           }
+        }
+      ],
+      "constraints": {
+        "allowedParents": null,
+        "allowedChildren": null
+      },
+      "render": {
+        "mode": "live"
+      }
+    },
+    {
+      "name": "Toggle",
+      "category": "UI",
+      "icon": "toggle-left",
+      "description": "A two-state button",
+      "source": "components/mdmx/Toggle.tsx",
+      "children": {
+        "policy": "none"
+      },
+      "props": [
+        {
+          "name": "label",
+          "required": true,
+          "control": {
+            "type": "text",
+            "placeholder": "Bold"
+          }
+        },
+        {
+          "name": "pressed",
+          "required": false,
+          "control": {
+            "type": "boolean"
+          },
+          "description": "Start pressed",
+          "default": false
+        },
+        {
+          "name": "variant",
+          "required": false,
+          "control": {
+            "type": "select",
+            "options": [
+              "default",
+              "outline"
+            ]
+          },
+          "default": "outline"
+        },
+        {
+          "name": "size",
+          "required": false,
+          "control": {
+            "type": "select",
+            "options": [
+              "default",
+              "sm",
+              "lg"
+            ]
+          },
+          "default": "default"
+        }
+      ],
+      "constraints": {
+        "allowedParents": null,
+        "allowedChildren": null
+      },
+      "render": {
+        "mode": "live"
+      }
+    },
+    {
+      "name": "Tooltip",
+      "category": "UI",
+      "icon": "info",
+      "description": "Text with a tooltip on hover",
+      "source": "components/mdmx/Tooltip.tsx",
+      "children": {
+        "policy": "rich-text"
+      },
+      "props": [
+        {
+          "name": "content",
+          "required": true,
+          "control": {
+            "type": "text",
+            "placeholder": "Helpful detail"
+          },
+          "description": "The tooltip text"
+        },
+        {
+          "name": "side",
+          "required": false,
+          "control": {
+            "type": "select",
+            "options": [
+              "left",
+              "top",
+              "bottom",
+              "right"
+            ]
+          },
+          "default": "top"
         }
       ],
       "constraints": {

@@ -1517,9 +1517,14 @@ on the public page versus the canvas in the desktop preview at zoom 1
 rebuilt in M5). The stylesheet move itself diffed at 0 changed elements.
 
 One structural limit remains and is the price of NodeView wrappers: the
-page's sibling-rhythm rule lands on the wrapper, so a root-level margin
-override on the page (`figure { margin: 0 }`) is not mirrored — the canvas
-keeps the rhythm gap the page drops. Everything else about a block —
+page's sibling-rhythm rule lands on the wrapper, not on the block's root.
+Two consequences, both for the content class to accommodate: a root-level
+margin override on the page (`figure { margin: 0 }`) is not mirrored, and an
+`em`-based rhythm computes against the wrapper's inherited font size rather
+than the block's own — so the rhythm rule should use `rem` (the demo's does,
+since M5). Likewise a block root that is `inline-*` behaves as an inline box
+inside its wrapper where a grid or flex page would have blockified it; use
+`flex w-fit` for a shrink-wrapped block. Everything else about a block —
 typography, color, padding, borders, layout, width — is identical.
 
 **Alternatives rejected.** An iframe (ADR-036's reasoning stands). Putting
@@ -1603,3 +1608,65 @@ canvas, the thing ADR-050 just removed). Routing by policy only, no
 per-target default (every component with a button would need config).
 
 **Status.** Shipped — 0.6 M4.
+
+## ADR-053 — shadcn blocks: the rules a component must follow to be a block, and why three shadcn components aren't
+
+**Context.** 0.6 turns demo-next into a Tailwind v4 + shadcn app (M2) and
+makes the canvas render the page's real components (M3/M4). The plan's
+draft block set was ~24 content-shaped shadcn components registered as
+blocks, with the 17 marketing components rebuilt on shadcn primitives. Doing
+it surfaced the constraints that decide what *can* be a block — they are
+properties of the editor's architecture, not of shadcn.
+
+**Decision — the rules.**
+1. **Props are the contract; markup is free.** The marketing components keep
+   their names and props exactly (content round-trips untouched; `mdmx
+   check` on the demo content is the proof) while every one of them is
+   rebuilt on shadcn primitives and utilities. The `mk-*` stylesheet is
+   gone.
+2. **No React context across blocks.** Every nested block is its own React
+   root in the editor (ADR-023), so a parent block cannot provide context to
+   its children. Parent/child pairs are therefore context-free: `Accordion`
+   is a divider list and `AccordionItem` a self-contained collapsible;
+   `Tabs` owns the tab list and broadcasts the active tab as a scoped CSS
+   rule that `Tab` panels (plain `data-tab-panel` divs) obey. Both render
+   identically on the page, where they *are* one tree.
+3. **Containers use grid, and style items by their own class.** A
+   container's child blocks are the editor's wrappers; grid auto-placement
+   treats them as items with nothing to configure per child, whereas a flex
+   container sizing items with `> *` never reaches them. TwoColumn,
+   FeatureGrid, PricingTable, StatsBand are grids; the editor's TwoColumn
+   flex patch (ADR-050 follow-up) is deleted.
+4. **Editable regions stay mounted.** Anything that hides content keeps it
+   in the DOM (`keepMounted` on collapsible panels; Tabs hides with CSS), so
+   ProseMirror's content holes never unmount. Popups (Tooltip, HoverCard)
+   unmount when closed, so their body is a prop and their *trigger* is the
+   rich-text child, rendered as a `<span>` so the editable text is not
+   inside a `<button>`.
+5. **Author components are self-contained for the canvas.** The content
+   class carries its own font/color/background (ADR-050); components
+   respond to width with `@container` variants (the article and the canvas
+   root are both inline-size containers); `"use client"` only where a
+   component has state or handlers (Newsletter, Tabs).
+
+**The set.** Registered (22): Accordion, AccordionItem, Alert, AspectRatio,
+Avatar, Badge, Button, Card, Collapsible, Empty, HoverCard, Item, Kbd,
+Progress, Separator, Skeleton, Spinner, Table, Tabs, Tab, Toggle, Tooltip —
+in a new `UI` palette category. Installed but not registered, beyond the
+plan's interactive/app-chrome list: **Carousel** (Embla sizes slides as
+direct flex children of its viewport — the block wrappers break that
+contract and a selector-based slide list cannot size the wrappers) and
+**ButtonGroup** (styles its buttons through `> *`, rule 3). The demo's
+content gains `posts/blocks.mdx`, one of each.
+
+**Alternatives rejected.** Rendering nested blocks inside the parent's React
+root (would need PM content holes to cross roots — the ADR-023 design point).
+Making wrappers `display: contents` (ProseMirror needs a box for
+coordinates and selection). Keeping `mk-*` CSS beside utilities (two styling
+systems for one demo).
+
+**Status.** Shipped — 0.6 M5. Follow-up: the CLI extractor does not read
+the project's tsconfig `paths`, so prop types that *import* through `@/`
+(e.g. `VariantProps<typeof buttonVariants>`) infer as `json`; every wrapper
+declares JSON-literal props explicitly, which is the convention until the
+extractor honors `paths` (0.7 candidate).
