@@ -1,5 +1,6 @@
 export {
   MDMX_SPEC_VERSION,
+  MDMX_REGISTRY_VERSION,
   MDMX_META,
   Registry,
   collectionForPath,
@@ -20,6 +21,7 @@ export type {
   PropsObject,
   RegistrySpec,
   RenderMode,
+  RenderSpec,
   SourcePosition,
   SourceSpan,
 } from "./types.js";

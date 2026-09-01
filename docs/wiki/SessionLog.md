@@ -11,7 +11,7 @@ initial design-and-build conversation (12 commits).
 
 <!-- APPEND NEW ENTRIES ABOVE THIS LINE -->
 
-### S33 — 0.6.0 release session (release/0.6.0): M1 Next 16, M2 Tailwind + shadcn, M3 canvas parity
+### S33 — 0.6.0 release session (release/0.6.0): M1 Next 16, M2 Tailwind + shadcn, M3 canvas parity, M4 interactivity
 - **M1 — Next 16**: demo-next on `next@16.3.4` (Turbopack by default) with
   React 19.2 types; `@mdmx/dashboard`'s `next` devDependency bumped in step
   so one copy resolves (its `next/link.js`/`next/dynamic.js` shims are typed
@@ -94,6 +94,25 @@ initial design-and-build conversation (12 commits).
 - Verified: 16 surfaces clean, edit→save loop (two saves), `next build` 0
   warnings, playground builds against the shipped stylesheet, `pnpm verify`
   green.
+- **M4 — interactivity** (ADR-052). The React NodeView gained `stopEvent`
+  with routing **by target**: events on `button`/`input`/`select`/`textarea`/
+  `label`/`summary`/media/editable regions/interactive `role`s reach the
+  component; everything else selects the block; the editable hole is always
+  the editor's. `render.interactive: true | false` overrides per component —
+  `defineMDMX` → CLI extraction → registry (schema **v2**; `MDMX_REGISTRY_VERSION`
+  is now its own counter instead of aliasing `MDMX_SPEC_VERSION`, which the
+  0.5 CLI had been writing) → SPEC §5/§8 → editor. `true` keeps Alt-click as
+  the way to select the block. **Links never navigate** in the canvas
+  (`handleDOMEvents.click`; ⌘/Ctrl-click opens a new tab) — the "click
+  navigates *and* selects" bug from the grilling evidence is gone. Both
+  policies are pure (`routeEvent`, `linkClickAction`) and unit-tested; a
+  mounted-editor test covers the live link policy; a round-trip test pins
+  that `render.interactive` never touches content. CLI fixture app gains
+  `Poll` (`render: { interactive: true }`).
+- Verified live on demo-next: the Hero's "Get started" link selects the
+  block without navigating, ⌘-click opens a tab, typing into the
+  Newsletter's input works without selecting the block, and clicking the
+  block's heading selects it; `mdmx generate` writes `mdmxRegistryVersion: 2`.
 - **Housekeeping**: a Next 15 dev server left on :3456 by the grilling
   session was killed. pnpm 11's `minimumReleaseAge` wrote
   `minimumReleaseAgeExclude` entries for `next@16.3.4` into
@@ -111,12 +130,14 @@ initial design-and-build conversation (12 commits).
   pnpm-workspace.yaml.
 - ADRs: ADR-049 (dashboard stylesheet host-independence in `@layer base`),
   ADR-050 (the canvas is the page), ADR-051 (`fit` default + collapsible
-  panels).
-- Tests: 389 → 402 (+11 editor, +2 dashboard), `pnpm verify` green.
+  panels), ADR-052 (event routing, `render.interactive`, canvas link policy).
+- Tests: 389 → 414 (+22 editor, +2 dashboard, +1 cli), `pnpm verify` green.
 - Wiki pages touched: SessionLog, Roadmap (new Phase 2.8 — 0.6.0 milestone
   table), Home (status line), Packages (editor files + stylesheet, dashboard
-  stylesheet), Glossary (Canvas, Content class, Fit mode), DECISIONS, guide
-  04 (theming, `contentClassName`, manual mounts), AGENTS.md.
+  stylesheet, core types), Glossary (Canvas, Content class, Fit mode,
+  Interactive routing), DECISIONS, SPEC (§5 registry v2 + event routing,
+  §8), guide 02 (`render`), guide 04 (theming, `contentClassName`, manual
+  mounts, interactivity), guide 07, AGENTS.md.
 - Follow-ups: examples/demo-next/README.md still describes the 0.4-era
   `lib/components.ts` mount (M7 docs wave); Roadmap has no 0.5.0 phase
   section (M7).

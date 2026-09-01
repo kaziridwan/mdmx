@@ -1559,3 +1559,47 @@ default.
 **Status.** Shipped — 0.6 M3, with the Editor.tsx split it needed
 (`useEditorView`, `useViewport`, `useSnippets`, `EditorToolbar`,
 `MobileFabs`; Editor.tsx 612 → 344 lines).
+
+## ADR-052 — Editor event routing by target; `render.interactive` as the registry-level override; links never navigate in the canvas
+
+**Context.** The React NodeView (ADR-023) had no `stopEvent`, so every DOM
+event inside a live block reached ProseMirror: clicking a Hero button both
+navigated (a `#` landed in the URL) *and* selected the block; typing into a
+component's `<input>` was impossible; a component's tabs could not be
+switched. Now that the canvas renders the page's real components (ADR-050),
+components with real controls are the norm, not the exception.
+
+**Decision.**
+- **Routing by target (the default).** `NodeView.stopEvent` hands an event
+  to the component when its target is an interactive element — `button`,
+  `input`, `select`, `textarea`, `label`, `summary`, media, editable regions,
+  or an element with an interactive `role` (the list is `INTERACTIVE_SELECTOR`
+  and SPEC §5) — and lets ProseMirror handle everything else, which is how a
+  block gets selected. The editable hole of a rich-text/blocks component is
+  always the editor's. This is the policy TipTap converged on, and it makes
+  the common case need no configuration.
+- **`render.interactive` overrides per component**, in the registry and
+  SPEC (registry schema v2; `MDMX_REGISTRY_VERSION` is finally a counter of
+  its own instead of aliasing the grammar version): `true` — every event is
+  the component's (Alt/Option-click still selects the block, the documented
+  escape hatch); `false` — every event selects the block. Authored in
+  `defineMDMX({ render: { interactive } })`, extracted by the CLI, honored by
+  the editor. Absent from the registry when unset, so v1 registries read as
+  v2 unchanged.
+- **Links never navigate in the canvas.** A `handleDOMEvents.click` on the
+  view suppresses clicks on any `<a href>` — in components and link marks —
+  and ⌘/Ctrl-click opens the target in a new tab. Links are deliberately
+  not "interactive": clicking one selects the block, as on the old canvas,
+  minus the navigation.
+
+Both policies are pure functions (`routeEvent`, `linkClickAction`) with unit
+tests; the mounted-editor test covers the live link policy, and a round-trip
+test pins that `render.interactive` never touches content.
+
+**Alternatives rejected.** Making links interactive (a component's CTA would
+then be unselectable by click and would navigate away from the editor).
+Selecting blocks with a drag handle instead of by click (more chrome in the
+canvas, the thing ADR-050 just removed). Routing by policy only, no
+per-target default (every component with a button would need config).
+
+**Status.** Shipped — 0.6 M4.

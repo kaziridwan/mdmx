@@ -70,6 +70,7 @@ metadata under a symbol), so the same export renders on your public site.
 | `preview` | props object | Props (plus optional `children` string) used for palette insertion |
 | `constraints` | `{ allowedParents?, allowedChildren? }` | Slot constraints (below) |
 | `version` | `number` | Bump when a component's contract changes |
+| `render` | `{ mode?, interactive? }` | `mode`: `live` (default) / `placeholder` / `static`. `interactive`: editor event routing — unset routes by target (buttons, inputs, tabs… are the component's; everything else selects the block), `true` gives the component every event (Alt-click selects), `false` gives the editor every event |
 
 ### Children policies
 

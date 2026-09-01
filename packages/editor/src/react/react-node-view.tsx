@@ -30,6 +30,63 @@ export type NodeViewComponent = ComponentType<NodeViewComponentProps>;
 export interface CreateNodeViewOptions {
   /** Whether the node has editable children (needs a contentDOM hole). */
   hasContent: boolean;
+  /** The component's `render.interactive` policy (ADR-052); unset = by target. */
+  interactive?: boolean;
+}
+
+/**
+ * Elements whose DOM events belong to the component rather than the editor
+ * under the default routing policy. Links are deliberately absent: clicking a
+ * link selects the block, and navigation is suppressed canvas-wide (see
+ * link-policy.ts).
+ */
+export const INTERACTIVE_SELECTOR = [
+  "button",
+  "input",
+  "select",
+  "option",
+  "textarea",
+  "label",
+  "summary",
+  "video",
+  "audio",
+  '[contenteditable]:not([contenteditable="false"])',
+  '[role="button"]',
+  '[role="tab"]',
+  '[role="switch"]',
+  '[role="checkbox"]',
+  '[role="radio"]',
+  '[role="slider"]',
+  '[role="menuitem"]',
+  '[role="option"]',
+  '[role="combobox"]',
+  '[role="textbox"]',
+  '[role="spinbutton"]',
+].join(",");
+
+/**
+ * Event routing (ADR-052): should `event` be left to the component (true) or
+ * handled by ProseMirror (false)? `dom` is the NodeView root, `contentDOM`
+ * the editable hole — always the editor's, whatever the policy. Alt/Option
+ * always reaches the editor, which is how a fully interactive block is
+ * selected. Pure; unit-tested.
+ */
+export function routeEvent(
+  event: Event,
+  dom: HTMLElement,
+  contentDOM: HTMLElement | undefined,
+  interactive: boolean | undefined,
+): boolean {
+  const target = event.target;
+  if (!(target instanceof Node) || !dom.contains(target)) return false;
+  if (contentDOM && contentDOM.contains(target)) return false;
+  if ("altKey" in event && (event as MouseEvent).altKey) return false;
+  if (interactive === false) return false;
+  if (interactive === true) return true;
+  const el = target instanceof Element ? target : target.parentElement;
+  const hit = el?.closest(INTERACTIVE_SELECTOR);
+  if (!hit || !dom.contains(hit)) return false;
+  return !(contentDOM && contentDOM.contains(hit));
 }
 
 /**
@@ -50,6 +107,7 @@ class ReactNodeView implements NodeView {
     private readonly getPos: () => number | undefined,
     private readonly Component: NodeViewComponent,
     hasContent: boolean,
+    private readonly interactive: boolean | undefined,
   ) {
     this.node = node;
     this.dom = document.createElement("div");
@@ -100,6 +158,11 @@ class ReactNodeView implements NodeView {
     this.renderReact();
   }
 
+  /** Hand interactive elements' events to the component (ADR-052). */
+  stopEvent(event: Event): boolean {
+    return routeEvent(event, this.dom, this.contentDOM, this.interactive);
+  }
+
   /**
    * ProseMirror observes DOM mutations to detect external edits. React owns the
    * chrome and the contentDOM hole's placement, so ignore everything except
@@ -124,5 +187,5 @@ export function createReactNodeView(
   options: CreateNodeViewOptions,
 ): NodeViewConstructor {
   return (node, view, getPos) =>
-    new ReactNodeView(node, view, getPos, Component, options.hasContent);
+    new ReactNodeView(node, view, getPos, Component, options.hasContent, options.interactive);
 }

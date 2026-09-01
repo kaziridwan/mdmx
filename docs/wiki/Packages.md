@@ -11,7 +11,7 @@ The format. Zero React/Next dependencies (Invariant #9).
 
 | File | Responsibility |
 | --- | --- |
-| `types.ts` | All shared types: `JsonValue`, diagnostics + codes, `ControlSpec` taxonomy, `ComponentSpec`/`RegistrySpec`, `Registry` class, `defineMDMX`. |
+| `types.ts` | All shared types: `JsonValue`, diagnostics + codes, `ControlSpec` taxonomy, `ComponentSpec`/`RegistrySpec` (incl. `RenderSpec` — mode + `interactive` routing, ADR-052), `Registry` class, `defineMDMX`, the `MDMX_SPEC_VERSION` / `MDMX_REGISTRY_VERSION` counters. |
 | `parse.ts` | `parseMDX`/`parseDocument` — the single shared remark processor (frontmatter + GFM + MDX). |
 | `props.ts` | `evaluateAttributes`/`evaluateExpression` — enforces props-are-JSON by walking attribute estrees. |
 | `validate.ts` | `validateTree`/`validateSource` — subset whitelist, registry membership, prop schema, children policies, slot constraints → diagnostics. |
@@ -93,7 +93,7 @@ flat React editor UI behind the `@mdmx/editor/react` subpath.
 | `from-mdast.ts` | `fromMdast` — mdast → PM doc; mark accumulation; component nodes; `mdmx_raw` fallback. |
 | `to-mdast.ts` | `toMdast` + `printPropValue` — PM doc → mdast; priority-ordered mark grouping; canonical prop printing. |
 | `commands.ts` | `slashItems`/`slashItemsFor` (context-aware palette), region-local + `allowedParents`-aware `insertComponent`, `canInsertComponent`, `resolveComponentDrop`, `mdmxInputRules`, mark commands, `initialProps` (ADR-028). |
-| `react/react-node-view.tsx` | Thin React-NodeView adapter (one React root per component node; `contentDOM` placement). Replaces TipTap (ADR-023). |
+| `react/react-node-view.tsx`, `link-policy.ts` | Thin React-NodeView adapter (one React root per component node; `contentDOM` placement; ADR-023) with `stopEvent` routing by target / `render.interactive` (`routeEvent`, pure), and the canvas-wide link policy (`linkClickAction`, pure): links never navigate, ⌘-click opens a tab (ADR-052). |
 | `react/ComponentBlock.tsx` | Generic component renderer: live author component + error boundary → placeholder card; content hole for rich-text/blocks. |
 | `react/Editor.tsx` | `MDMXEditor` — the composition root: wires the hooks below to the chrome, owns save state, the media picker, the sidebar resize, and the canvas click-into-padding behavior. Puts the host's content class (`contentClassName`, default `mdmx-page`) on the ProseMirror root (ADR-050). |
 | `react/use-editor-view.ts`, `use-viewport.ts`, `use-snippets.ts` | `useEditorView` owns the `EditorView` (history, baseKeymap, input rules, drop/gap cursor, slash plugin, per-component NodeViews, paste-image and drag-from-rail handlers); `useViewport` the preview mode + pane width → zoom; `useSnippets` the save-as-snippet flow. |

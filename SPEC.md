@@ -127,7 +127,7 @@ metadata is inferred from TypeScript types and overlaid with explicit config
 
 ```jsonc
 {
-  "mdmxRegistryVersion": 1,
+  "mdmxRegistryVersion": 2,
   "generatedAt": "ISO-8601",
   "hash": "16-hex content hash of the component specs",
   "components": [{
@@ -146,7 +146,10 @@ metadata is inferred from TypeScript types and overlaid with explicit config
       "description": "…"                // optional (JSDoc-derived)
     }],
     "constraints": { "allowedParents": null | ["…"], "allowedChildren": null | ["…"] },
-    "render": { "mode": "live" | "placeholder" | "static" }
+    "render": {
+      "mode": "live" | "placeholder" | "static",
+      "interactive": true | false     // optional; editor event routing (below)
+    }
   }],
   "collections": [{                       // optional; omitted when none configured
     "name": "posts",                      // unique
@@ -184,6 +187,20 @@ file. The record⇄array derivation is canonical in `@mdmx/core`
 (`collectionsFromConfig` / `collectionToConfig`); collection and field names
 match `^[a-z0-9][a-z0-9_-]*$`, and a collection's `dir` must live under the
 configured content dir.
+
+**Event routing in the editor** (`render.interactive`, registry v2): a
+live-rendered block receives DOM events from the editor canvas under one of
+three policies. Unset (the default) routes **by target**: events whose
+target is an interactive element — `button`, `input`, `select`, `textarea`,
+`label`, `summary`, media elements, editable regions, or an element with an
+interactive `role` (`button`, `tab`, `switch`, `checkbox`, `radio`, `slider`,
+`menuitem`, `option`, `combobox`, `textbox`, `spinbutton`) — reach the
+component; every other event selects the block. `true` routes every event to
+the component (Alt/Option-click still selects the block); `false` routes
+every event to the editor. A rich-text/blocks component's editable children
+are always the editor's, whatever the policy. Links are never interactive:
+a click on `<a href>` anywhere in the canvas selects the block and does not
+navigate; ⌘/Ctrl-click opens the target in a new tab.
 
 **Control taxonomy** (discriminated union on `type`): `text` / `textarea`
 (`placeholder?`), `number` (`min?`, `max?`, `step?`), `boolean`, `select` /
@@ -267,8 +284,10 @@ browser-side CSS runtime.
 
 - Documents may declare the spec they target (`mdmx: 1` in frontmatter or a
   repo-level config); absent means "current".
-- `mdmxRegistryVersion` (registry schema) and `MDMX_SPEC_VERSION` (grammar)
-  are distinct counters and must not be conflated.
+- `mdmxRegistryVersion` (registry schema; `MDMX_REGISTRY_VERSION`, currently
+  2 — v2 added `render.interactive`) and `MDMX_SPEC_VERSION` (grammar,
+  currently 1) are distinct counters and must not be conflated. A v1
+  registry reads as v2 with no routing overrides.
 - The registry carries `mdmxRegistryVersion` and a content `hash`; editors
   must detect hash drift between a loaded document's session and the current
   registry. Generated artifacts carry no timestamp, so identical inputs

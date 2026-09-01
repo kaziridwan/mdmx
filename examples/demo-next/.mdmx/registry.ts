@@ -19,7 +19,7 @@ import { Testimonial } from "../components/mdmx/Testimonial";
 import TwoColumn from "../components/mdmx/TwoColumn";
 
 export const spec: RegistrySpec = {
-  "mdmxRegistryVersion": 1,
+  "mdmxRegistryVersion": 2,
   "hash": "059f523d22be4ec1",
   "components": [
     {

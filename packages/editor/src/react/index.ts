@@ -20,7 +20,9 @@ export type { MediaItem, MediaUpload, MediaSource, UploadableFile } from "./medi
  */
 export { MediaPickerContext, useMediaPicker } from "./media-context.js";
 export type { RequestMedia } from "./media-context.js";
-export { createReactNodeView } from "./react-node-view.js";
+export { createReactNodeView, routeEvent, INTERACTIVE_SELECTOR } from "./react-node-view.js";
+export { linkClickAction } from "./link-policy.js";
+export type { LinkClick } from "./link-policy.js";
 export type {
   NodeViewComponent,
   NodeViewComponentProps,

@@ -7,6 +7,11 @@
 
 /** Version of the MDMX grammar implemented by this package. */
 export const MDMX_SPEC_VERSION = 1;
+/**
+ * Registry schema counter (distinct from the grammar's `MDMX_SPEC_VERSION`,
+ * SPEC §8). History: 1 — 0.1; 2 — 0.6, `render.interactive` (ADR-052).
+ */
+export const MDMX_REGISTRY_VERSION = 2;
 
 // ---------------------------------------------------------------------------
 // JSON values (the "props are JSON" rule)
@@ -108,6 +113,20 @@ export interface ComponentConstraints {
 
 export type RenderMode = "live" | "placeholder" | "static";
 
+/** How a component renders in the editor and which DOM events it keeps. */
+export interface RenderSpec {
+  mode: RenderMode;
+  /**
+   * Event routing inside a live block (ADR-052). Unset — the default policy:
+   * events on interactive elements (buttons, inputs, selects, tabs, …) reach
+   * the component; everything else selects the block. `true`: every event
+   * reaches the component (Alt-click still selects the block). `false`:
+   * every event selects the block. The editable hole of a rich-text/blocks
+   * component is always the editor's, whatever the policy.
+   */
+  interactive?: boolean;
+}
+
 export interface ComponentSpec {
   name: string;
   category?: string;
@@ -119,7 +138,7 @@ export interface ComponentSpec {
   children: { policy: ChildrenPolicy };
   props: PropSpec[];
   constraints?: ComponentConstraints;
-  render?: { mode: RenderMode };
+  render?: RenderSpec;
 }
 
 // ---------------------------------------------------------------------------
@@ -244,7 +263,8 @@ export interface DefineMDMXConfig {
   /** Props used to render the component when inserted from the palette. */
   preview?: PropsObject & { children?: string };
   constraints?: Partial<ComponentConstraints>;
-  render?: { mode: RenderMode };
+  /** `mode` defaults to `live`; see `RenderSpec.interactive` for routing. */
+  render?: Partial<RenderSpec>;
 }
 
 export interface MDMXTagged {

@@ -116,6 +116,11 @@ in mind:
 - Components respond to the canvas width with **container queries**, not
   window media queries — the default `fit` preview is the pane's own width,
   and the device previews are zoomed frames.
+- Components are **live** in the canvas: clicking a button, typing into an
+  input, or switching a tab inside a block reaches the component; clicking
+  anywhere else on the block selects it. Links never navigate (⌘/Ctrl-click
+  opens a new tab). Override per component with `render: { interactive:
+  true | false }` in `defineMDMX` (guide 2); Alt-click always selects.
 - Make the content class self-contained: give it its own `color`,
   `background`, and font, not just `body`'s — inside the editor it sits in
   the dashboard, whose body colors differ.

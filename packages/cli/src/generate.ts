@@ -3,7 +3,7 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { glob } from "tinyglobby";
 import {
-  MDMX_SPEC_VERSION,
+  MDMX_REGISTRY_VERSION,
   collectionsFromConfig,
   type RegistrySpec,
 } from "@mdmx/core";
@@ -92,7 +92,7 @@ export async function generate(cwd: string, config: MDMXConfig): Promise<Generat
   // No `generatedAt`: the artifacts are committed (ADR-040), so identical
   // input must produce identical bytes or every dev session dirties the tree.
   const spec: RegistrySpec = {
-    mdmxRegistryVersion: MDMX_SPEC_VERSION,
+    mdmxRegistryVersion: MDMX_REGISTRY_VERSION,
     hash: hashSpec(componentSpecs, collections),
     components: componentSpecs,
     ...(collections.length > 0 ? { collections } : {}),

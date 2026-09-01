@@ -28,7 +28,7 @@ describe("mdmx generate", () => {
 
   it("finds both components and reports no errors", () => {
     expect(result.hasErrors).toBe(false);
-    expect(result.spec.components.map((c) => c.name)).toEqual(["Callout", "Chart"]);
+    expect(result.spec.components.map((c) => c.name)).toEqual(["Callout", "Chart", "Poll"]);
   });
 
   it("infers controls from TypeScript types", () => {
@@ -71,6 +71,16 @@ describe("mdmx generate", () => {
     expect(chart.render).toEqual({ mode: "placeholder" });
   });
 
+  it("carries render.interactive and defaults the mode to live (registry v2)", () => {
+    const poll = result.spec.components.find((c) => c.name === "Poll")!;
+    expect(poll.render).toEqual({ mode: "live", interactive: true });
+    // Components that say nothing about routing get no key — the editor's
+    // default policy applies and the registry stays minimal.
+    const callout = result.spec.components.find((c) => c.name === "Callout")!;
+    expect(callout.render).toEqual({ mode: "live" });
+    expect(result.spec.mdmxRegistryVersion).toBe(2);
+  });
+
   it("excludes function props with a warning", () => {
     const callout = result.spec.components.find((c) => c.name === "Callout")!;
     expect(callout.props.find((p) => p.name === "onDismiss")).toBeUndefined();
@@ -95,7 +105,7 @@ describe("mdmx generate", () => {
     expect(ts).toContain('import Callout from "../components/mdmx/Callout";');
     expect(ts).toContain('import { Chart } from "../components/mdmx/Chart";');
     expect(ts).toContain("export const registry = new Registry(spec);");
-    expect(ts).toContain("export const serverComponents = { Callout, Chart };");
+    expect(ts).toContain("export const serverComponents = { Callout, Chart, Poll };");
     // No "use client": public pages must be able to import this on the server.
     expect(ts).not.toContain('"use client"');
   });
@@ -104,7 +114,7 @@ describe("mdmx generate", () => {
     const ts = readFileSync(join(APP, ".mdmx/components.ts"), "utf8");
     expect(ts.startsWith('"use client";')).toBe(true);
     expect(ts).toContain('import Callout from "../components/mdmx/Callout";');
-    expect(ts).toContain("export const components = { Callout, Chart };");
+    expect(ts).toContain("export const components = { Callout, Chart, Poll };");
   });
 
   it("emits bound server helpers addressed by collection name", async () => {

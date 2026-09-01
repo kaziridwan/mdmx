@@ -16,6 +16,7 @@ import { makeComponentBlock } from "./ComponentBlock.js";
 import { slashPlugin } from "./slash-plugin.js";
 import { MDMX_DRAG_MIME } from "./Rail.js";
 import { insertImage, imageFromClipboard, pastedImageUpload, type MediaSource } from "./media.js";
+import { linkClickAction } from "./link-policy.js";
 
 /** Map of component name → the author's React component, for live rendering. */
 export type ComponentMap = Record<string, ComponentType<any>>;
@@ -55,7 +56,7 @@ function buildNodeViews(
   for (const spec of registry.components) {
     nv[componentNodeName(spec.name)] = createReactNodeView(
       makeComponentBlock(spec, components?.[spec.name]),
-      { hasContent: spec.children.policy !== "none" },
+      { hasContent: spec.children.policy !== "none", interactive: spec.render?.interactive },
     );
   }
   return nv;
@@ -101,6 +102,20 @@ export function useEditorView(options: UseEditorViewOptions): EditorViewHandle {
       state: initial,
       attributes: contentClassName ? { class: contentClassName } : undefined,
       nodeViews: buildNodeViews(registry, components),
+      handleDOMEvents: {
+        // Links never navigate in the canvas; ⌘/Ctrl-click opens a new tab.
+        // Runs before NodeView routing, so it covers links inside components
+        // (with `preventDefault`, ProseMirror then leaves the event alone).
+        click(view, event) {
+          const link = linkClickAction(event, view.dom as HTMLElement);
+          if (!link) return false;
+          event.preventDefault();
+          if (link.action === "open") {
+            window.open(link.anchor.href, "_blank", "noopener,noreferrer");
+          }
+          return true;
+        },
+      },
       dispatchTransaction(tr) {
         const next = editorView.state.apply(tr);
         editorView.updateState(next);

@@ -198,7 +198,12 @@ export function extractComponents(files: string[], cwd: string): ExtractionResul
         allowedParents: config.constraints?.allowedParents ?? null,
         allowedChildren: config.constraints?.allowedChildren ?? null,
       },
-      render: { mode: config.render?.mode ?? "live" },
+      render: {
+        mode: config.render?.mode ?? "live",
+        ...(config.render?.interactive !== undefined
+          ? { interactive: config.render.interactive }
+          : {}),
+      },
     };
 
     components.push({ spec, file: sf.fileName, exportName });

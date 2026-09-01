@@ -67,6 +67,13 @@ loaded, verified at commit time. `null` means "must not exist yet". Mismatch →
 component), `placeholder` (labeled card; for server-only/heavy components),
 `static` (render once, freeze).
 
+**Interactive routing** — which DOM events inside a live block reach the
+component and which select the block. Default: by target (buttons, inputs,
+tabs, … are the component's; everything else selects). `render.interactive`
+overrides per component: `true` = all events are the component's (Alt-click
+selects), `false` = all select. Links never navigate in the canvas;
+⌘/Ctrl-click opens a new tab (ADR-052).
+
 **Collection** — a content grouping with typed frontmatter (e.g. `posts`,
 `pages`), authored in `mdmx.config.json` and emitted into the registry. Drives
 frontmatter validation (MDMX008/009) and the editor's document panel. A path
