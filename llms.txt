@@ -18,7 +18,16 @@ component props must be JSON literals; out-of-subset content is preserved
 byte-for-byte via raw blocks; editing one prop changes one line of output.
 
 Vocabulary: a *document* is any MDMX file (core's concern); an *entry* is a
-document belonging to a collection (project/HTTP/dashboard vocabulary).
+document belonging to a collection (project/HTTP/dashboard vocabulary); the
+*content class* (`mdmx-page`) is the class a site puts on its article and the
+editor puts on its canvas root, so the canvas renders as the page (0.6).
+
+0.6: MIT, first npm publish under `@mdmx`; the demo is a Next 16 + Tailwind v4
++ shadcn app with 22 shadcn components registered as blocks; the editor
+canvas is the page (content class, layered fallbacks, `fit` viewport, event
+routing by target with `render.interactive`, links never navigate); studio
+components in a Tailwind host compile through the host's build from a class
+manifest.
 
 Agents: documentation is part of "done". After each session, follow the
 wiki-upkeep checklist in AGENTS.md (append SessionLog, record ADRs, sync wiki).
@@ -27,8 +36,9 @@ wiki-upkeep checklist in AGENTS.md (append SessionLog, record ADRs, sync wiki).
 
 - [SPEC.md](SPEC.md): normative MDMX v1 grammar, canonical form, registry schema, diagnostics, provider contract
 - [AGENTS.md](AGENTS.md): agent operating guide — architecture map, commands, invariants, wiki-upkeep rule
-- [docs/DECISIONS.md](docs/DECISIONS.md): Architecture Decision Record (ADR-001…048)
-- [docs/guides/next-js/](docs/guides/next-js/): step-by-step integration, install → GitHub-mode production
+- [docs/DECISIONS.md](docs/DECISIONS.md): Architecture Decision Record (ADR-001…055)
+- [docs/guides/next-js/](docs/guides/next-js/): step-by-step integration, install → GitHub-mode production → using mdmx from a checkout (tarballs)
+- [RELEASING.md](RELEASING.md): the lockstep release + npm publish checklist
 - [docs/wiki/Home.md](docs/wiki/Home.md): the documentation hub
 - [README.md](README.md): overview, quick start, package table, roadmap
 

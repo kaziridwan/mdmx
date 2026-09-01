@@ -1,6 +1,6 @@
 # Testing
 
-389 tests across eight packages, all green. The suites aren't just coverage —
+422 tests across eight packages, all green. The suites aren't just coverage —
 several *are* the spec, locking guarantees that define the product.
 
 ## How to run
@@ -54,3 +54,26 @@ deliberate semver-major decision that needs a new ADR and a fixture update).
   see [TwoColumn](TwoColumn.md)).
 - Property-based round-trip tests (fast-check) generating random valid PM docs
   — designed for, not yet implemented.
+
+## 0.6 additions
+
+- **editor**: `viewport.test.ts` (`fit` + device zoom math, persistence),
+  `panels.test.ts` (collapsible rail/sidebar persistence),
+  `interactive.test.ts` (event routing by target and per-policy, the
+  canvas-wide link policy, a mounted-editor ⌘-click check, and a round trip
+  pinning that `render.interactive` never touches content), plus mount tests
+  for the content class, the `fit` default, device switching, and panel
+  toggles.
+- **cli**: `render.interactive` extraction + registry v2 (`Poll` fixture);
+  `studio-handoff.test.ts` — a Tailwind host gets the class manifest and no
+  `studio.css`, a non-Tailwind host the reverse, switching removes the stale
+  sheet, and `check` warns until a stylesheet scans the manifest.
+- **project**: `detectTailwind` (ancestor walk, dependency-list fallback).
+- **dashboard**: `config.test.ts` (`contentClassName` convention + override).
+- **Live verification is part of every milestone**: a playwright driver
+  sweeps 18 surfaces for console errors/failed requests, `parity.mjs`
+  compares every element of every block between the public page and the
+  editor canvas at zoom 1, `interact.mjs` exercises routing, and a
+  computed-style snapshot diff guards the dashboard chrome. They live in the
+  session scratchpad, not the repo — the numbers are recorded in the
+  SessionLog.

@@ -50,10 +50,16 @@ export default async function PostPage({ params }) {
 ```
 
 Nothing above is hand-wired: `mdmx generate` writes `.mdmx/` (registry, both
-component maps, the bound server helpers, and studio CSS), and everything else
-resolves from `mdmx.config.json` plus the environment. Every value stays
-overridable when you need something non-standard — see the
-[guides](docs/guides/next-js/).
+component maps, the bound server helpers, and the studio components' CSS or
+class manifest), and everything else resolves from `mdmx.config.json` plus
+the environment. Every value stays overridable when you need something
+non-standard — see the [guides](docs/guides/next-js/).
+
+**The editor is your page.** The canvas carries your content class
+(`mdmx-page` by convention) and renders your real components at real size,
+with buttons, inputs, and tabs live and links that never navigate — what you
+edit is what the page renders. `examples/demo-next` shows it with Next 16,
+Tailwind v4, and the full shadcn set, 22 of them registered as blocks.
 
 ## Packages
 
@@ -62,8 +68,8 @@ overridable when you need something non-standard — see the
 | `@mdmx/core` | The MDMX spec: parser, validator (`MDMX001`–`MDMX010`), canonical serializer, registry types, provider contract, `defineMDMX()` |
 | `@mdmx/project` | What a project on disk looks like: `mdmx.config.*` schema and loading, environment/mode resolution, registry loading |
 | `@mdmx/studio` | Component Studio: the template-component model, validation, registry integration, TSX eject, and (`/react`) the template→React renderer |
-| `@mdmx/cli` | `mdmx init` (scaffold), `mdmx generate` (registry + bindings + studio CSS), `mdmx check` (content lint, CI-ready), `mdmx dev` (watch) |
-| `@mdmx/editor` | Registry→ProseMirror schema, mdast converters with byte-level round-trip tests, and the React editor (`/react`) |
+| `@mdmx/cli` | `mdmx init` (scaffold), `mdmx generate` (registry + bindings + studio CSS or class manifest), `mdmx check` (content lint, CI-ready), `mdmx dev` (watch) |
+| `@mdmx/editor` | Registry→ProseMirror schema, mdast converters with byte-level round-trip tests, the React editor (`/react`), and its reference chrome (`/styles.css`) |
 | `@mdmx/next` | Route handlers, content providers, entry readers, sessions, and the `AuthStrategy` seam |
 | `@mdmx/dashboard` | The drop-in CMS at `/mdmx`: auth gate, collections, entries, media, settings, embedded editor |
 | `@mdmx/provider-github` | Git Data API provider: atomic multi-file commits, optimistic concurrency, path-safety guards |
@@ -108,17 +114,21 @@ the HTTP API, the dashboard) speaks in entries.
   build gotchas)
 - **docs/DECISIONS.md** — the "why" behind every architectural decision
 - **examples/demo-next** — a complete runnable app using exactly the recipe
-  above (`pnpm dev:next`)
+  above (`pnpm dev:next`): Next 16 + Tailwind v4 + shadcn, 39 author blocks
+- **RELEASING.md** — the lockstep release + npm publish checklist;
+  [guide 8](docs/guides/next-js/08-before-npm.md) covers using the packages
+  from a checkout as tarballs (`pnpm pack:all`)
 - **examples/editor-playground** — Vite harness for editor UI work
 
 ## Development
 
 ```sh
 pnpm install
-pnpm test          # builds all packages, then runs all 389 tests
+pnpm test          # builds all packages, then runs all 422 tests
 pnpm build         # build all packages
 pnpm check         # typecheck all packages
 pnpm verify        # typecheck + test (pre-push gate)
+pnpm pack:all      # tarballs for using mdmx from this checkout (guide 8)
 ```
 
 Key guarantees under test in `@mdmx/core`:
@@ -138,4 +148,14 @@ Key guarantees under test in `@mdmx/core`:
    the UI, Component Studio
 4. **Phase 3 (0.5)** ✅ — convention-over-configuration API, the `project` and
    `studio` packages, provider contract v2, the auth seam, `mdmx init`
-5. **Next** — segment composer, GitLab / generic git providers, collab (Yjs)
+5. **Phase 4 (0.6)** ✅ — MIT + first npm publish; the canvas is the page
+   (content class, `fit` preview, live components, `render.interactive`);
+   the demo on Next 16 + Tailwind v4 + shadcn with shadcn blocks; studio CSS
+   handed off to the host's Tailwind
+6. **Next** — Carousel and ButtonGroup as blocks (wrapper-aware layout
+   contracts), tsconfig `paths` in the extractor, segment composer, GitLab /
+   generic git providers, collab (Yjs)
+
+## License
+
+MIT — see [LICENSE](LICENSE).

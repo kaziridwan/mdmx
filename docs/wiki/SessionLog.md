@@ -11,7 +11,7 @@ initial design-and-build conversation (12 commits).
 
 <!-- APPEND NEW ENTRIES ABOVE THIS LINE -->
 
-### S33 — 0.6.0 release session (release/0.6.0): M1 Next 16, M2 Tailwind + shadcn, M3 canvas parity, M4 interactivity, M5 shadcn blocks, M6 studio handoff
+### S33 — 0.6.0 release session (release/0.6.0): M1–M7, publish-ready
 - **M1 — Next 16**: demo-next on `next@16.3.4` (Turbopack by default) with
   React 19.2 types; `@mdmx/dashboard`'s `next` devDependency bumped in step
   so one copy resolves (its `next/link.js`/`next/dynamic.js` shims are typed
@@ -165,6 +165,19 @@ initial design-and-build conversation (12 commits).
   styled on the public page, in the canvas, and in the studio preview with
   no CDN script anywhere. Sweep 18/18, `next build` 0 warnings, `pnpm
   verify` green.
+- **M7 — distribution, docs, publish prep** (ADR-055). `LICENSE` (MIT,
+  Kazi Ridwan) and `"license": "MIT"` in all nine package.jsons; versions
+  bumped to **0.6.0** in lockstep. `pnpm pack:all` (`scripts/pack.sh`)
+  packs the eight packages and prints the `pnpm.overrides` snippet — guide
+  08 documents using mdmx from a checkout; smoke-tested (deps rewritten,
+  editor tarball ships `dist/styles.css`, `npm pack --dry-run` shows `dist/`
+  only everywhere). `RELEASING.md` is the checklist Kazi runs (create the
+  `mdmx` org, `npm login`, `pnpm -r publish --access public`, tag, merge,
+  GitHub Release with the tarballs); `docs/releases/0.6.0.md` is the release
+  notes. Docs wave: README (0.6 themes, package rows, roadmap, license),
+  guides index (guide 08, Next 15+), llms.txt, Testing (422 + the 0.6
+  suites), Packages counts, Roadmap (the missing 0.5.0 section, M7, next
+  milestone), Home, AGENTS.md (package map now lists all eight).
 - **Housekeeping**: a Next 15 dev server left on :3456 by the grilling
   session was killed. pnpm 11's `minimumReleaseAge` wrote
   `minimumReleaseAgeExclude` entries for `next@16.3.4` into
@@ -184,7 +197,8 @@ initial design-and-build conversation (12 commits).
   ADR-050 (the canvas is the page), ADR-051 (`fit` default + collapsible
   panels), ADR-052 (event routing, `render.interactive`, canvas link policy),
   ADR-053 (shadcn blocks: the rules, and why Carousel/ButtonGroup aren't),
-  ADR-054 (studio Tailwind handoff: manifest + `@source`, runtime off).
+  ADR-054 (studio Tailwind handoff: manifest + `@source`, runtime off),
+  ADR-055 (distribution before/between releases: tarballs + overrides).
 - Tests: 389 → 422 (+22 editor, +2 dashboard, +6 cli, +3 project), `pnpm
   verify` green.
 - Wiki pages touched: SessionLog, Roadmap (new Phase 2.8 — 0.6.0 milestone
@@ -195,10 +209,11 @@ initial design-and-build conversation (12 commits).
   guide 01 (artifacts table), guide 02 (`render`), guide 04 (theming,
   `contentClassName`, manual mounts, interactivity), guide 05 (studio CSS
   handoff), guide 07, AGENTS.md.
-- Follow-ups: Roadmap has no 0.5.0 phase section (M7); the CLI extractor
-  should honor tsconfig `paths` so prop types imported through `@/` infer
-  (0.7 candidate, ADR-053); Carousel as a block needs a wrapper-aware slide
-  contract (0.7 candidate).
+- Follow-ups: **the publish itself** (RELEASING.md — Kazi's step); the CLI
+  extractor should honor tsconfig `paths` so prop types imported through
+  `@/` infer (0.7 candidate, ADR-053); Carousel/ButtonGroup as blocks need a
+  wrapper-aware layout contract (0.7); a from-npm smoke app in CI (guide 08
+  against a fresh `create-next-app`).
 
 ### S32 — repo hygiene: attribution scrub, root `start` script
 - **History rewrite**: every `Co-Authored-By: Claude …` trailer removed from

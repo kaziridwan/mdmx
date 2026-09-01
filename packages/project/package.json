@@ -1,7 +1,8 @@
 {
   "name": "@mdmx/project",
-  "version": "0.5.0",
-  "description": "Project layer: mdmx.config resolution, environment/mode detection, registry loading — shared by the CLI, the Next.js runtime, and the dashboard",
+  "version": "0.6.0",
+  "description": "Project layer: mdmx.config resolution, environment/mode detection, registry loading \u2014 shared by the CLI, the Next.js runtime, and the dashboard",
+  "license": "MIT",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/kaziridwan/mdmx.git",

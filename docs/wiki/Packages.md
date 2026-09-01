@@ -28,7 +28,7 @@ Key exports: `parseMDX`, `parseDocument`, `validateTree`, `validateSource`,
 
 ---
 
-## @mdmx/project — 13 tests
+## @mdmx/project — 16 tests
 
 What a project on disk looks like: the layer between the spec and the runtimes
 (ADR-043). Node-only, framework-free.
@@ -55,7 +55,7 @@ one package. Depends only on core; core never imports it.
 
 ---
 
-## @mdmx/cli — 34 tests
+## @mdmx/cli — 40 tests
 
 Tooling. Binary: `mdmx`. Config loading now lives in `@mdmx/project`; the CLI
 owns codegen, linting, scaffolding, and watch mode.
@@ -83,7 +83,7 @@ registry on change; reports `unchanged` when the content hash is identical).
 
 ---
 
-## @mdmx/editor — 113 tests
+## @mdmx/editor — 135 tests
 
 Registry→ProseMirror, converters, commands (main entry, React-free), plus the
 flat React editor UI behind the `@mdmx/editor/react` subpath.
@@ -139,7 +139,7 @@ re-verification, conflict 409s, media type/size limits + no-clobber.
 
 ---
 
-## @mdmx/dashboard — 41 tests
+## @mdmx/dashboard — 43 tests
 
 The app layer (ADR-034): the drop-in CMS mounted with two ~3-line files
 (`app/mdmx/[[...slug]]/page.tsx` + `app/api/mdmx/[...route]/route.ts`).

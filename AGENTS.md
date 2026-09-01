@@ -23,8 +23,14 @@ the package READMEs and commit messages.
 | `@mdmx/editor` | `packages/editor` | done | `buildSchema(registry)` (registry → ProseMirror schema), `fromMdast`/`toMdast` converters, mark canonicalization, `mdmx_raw` fallback, `printPropValue`. React editor under `@mdmx/editor/react` — React NodeViews on **raw ProseMirror** (ADR-023, supersedes ADR-019's TipTap), rail/slash menu/prop panel/live-source pane, nested editing (TwoColumn, ADR-021), and a media library (`MediaSource` adapter + `MediaLibrary`, ADR-027). Main entry stays React-free. Drop-indicator polish pending. |
 | `@mdmx/next` | `packages/next` | done | `LocalProvider`, content readers, sealed sessions (`session.ts`), GitHub OAuth + push-permission authz (`auth.ts`), `createMDMXHandlers` content/media API (`api.ts`) with an opt-in `localMode` (no OAuth; ADR-024). The editor mount page + a runnable app are in `examples/demo-next`. |
 | `@mdmx/provider-github` | `packages/provider-github` | done | `GitHubProvider` over the Git Data API: atomic multi-file commits (blobs→tree→commit→ref), optimistic concurrency, fast-forward-only ref updates. Tested against `tests/fake-github.ts`. |
+| `@mdmx/project` | `packages/project` | done | What a project on disk looks like (ADR-043): `mdmx.config.*` schema + loading, env/mode resolution, registry loading, `detectTailwind`. Node-only, framework-free. |
+| `@mdmx/studio` | `packages/studio` | done | Component Studio: the template-component model, validation, registry merge, TSX eject, the template→React renderer (`/react`), and the studio screens (`/ui`) behind an injected client/host. |
+| `@mdmx/dashboard` | `packages/dashboard` | done | The drop-in CMS: `createDashboardPage` + the client app (shell, collections, entries, embedded editor, media, studio, settings, ⌘K). Ships its stylesheet; the editor's chrome comes from `@mdmx/editor/styles.css`. Composes the others; nothing depends on it. |
 
-`examples/demo` is a miniature consumer project used for end-to-end CLI runs.
+All eight version in lockstep (`0.6.0`); release flow in `RELEASING.md`.
+`examples/demo` is a miniature consumer project used for end-to-end CLI runs;
+`examples/demo-next` is the full app (Next 16 + Tailwind v4 + shadcn) every
+milestone is verified against live.
 
 ## Commands
 

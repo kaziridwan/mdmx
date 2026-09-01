@@ -30,8 +30,9 @@ registry that drives validation, the editor palette, and prop panels.
 
 ## Status at a glance
 
-- **8 packages** at **v0.5.0** on `main`; 0.6.0 in progress on
-  `release/0.6.0` (see [Roadmap](Roadmap.md#phase-28--060-shadcn-example-canvas-fidelity-first-npm-publish)).
+- **8 packages** at **v0.6.0** on `release/0.6.0`, MIT, prepared for the
+  first npm publish (RELEASING.md; see
+  [Roadmap](Roadmap.md#phase-28--060-shadcn-example-canvas-fidelity-first-npm-publish)).
   422 tests, all green; strict TypeScript throughout; Next 16 (Turbopack) +
   React 19.2; demo-next is a Tailwind v4 + shadcn app with 39 author blocks, 22 of them shadcn components (0.6 M2/M5) and the
   dashboard stylesheet is host-independent (ADR-049).

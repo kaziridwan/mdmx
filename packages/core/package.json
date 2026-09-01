@@ -1,7 +1,8 @@
 {
   "name": "@mdmx/core",
-  "version": "0.5.0",
+  "version": "0.6.0",
   "description": "MDMX spec: parser, validator, and canonical serializer for the interactive MDX subset",
+  "license": "MIT",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/kaziridwan/mdmx.git",

@@ -1717,3 +1717,30 @@ reasoning as `next.config`: config-as-code is not ours to rewrite).
 
 **Status.** Shipped — 0.6 M6. The M5 parity residue is gone: canvas and page
 agree on every measured property.
+
+## ADR-055 — Distribution before (and between) npm releases: pack tarballs + `pnpm.overrides`
+
+**Context.** 0.6.0 is the first npm publish, but the packages had to be
+usable in the maintainer's own apps before it — and will be again between
+releases. `pnpm link`/workspace protocols drag the monorepo's `node_modules`
+into the app and skip everything publishing checks (`exports` maps, `files`,
+the shipped stylesheet, the CLI bin).
+
+**Decision.** `pnpm pack:all` (`scripts/pack.sh`) builds and packs all
+eight packages into `tarballs/` with `pnpm pack` — the artifact `publish`
+uploads, with `workspace:*` rewritten to real versions — and prints a
+`pnpm.overrides` block with absolute `file:` paths. An app keeps normal
+version ranges in `dependencies` and adds the overrides; because overrides
+apply to the whole graph, `@mdmx/dashboard`'s own `@mdmx/editor` resolves
+to the tarball too, so one copy of each package. Iterating is re-pack +
+`pnpm install`; going to npm is deleting the block. Documented as guide 08;
+the tarballs are also attached to each GitHub Release so the workflow has a
+download that matches the published bits.
+
+**Alternatives rejected.** A private registry (Verdaccio) — more moving
+parts than the problem deserves. Committing tarballs — binary churn in git.
+`pnpm link` — tests the wrong thing.
+
+**Status.** Shipped — 0.6 M7. Smoke-tested: 8 tarballs, deps rewritten to
+`0.6.0`, the editor tarball carries `dist/styles.css`, every package packs
+`dist/` only.

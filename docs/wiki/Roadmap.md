@@ -63,6 +63,16 @@ content; GitHub-mode deploy is wired but undocumented as a guide.
 | Studio defs with children regions | ⬜ | v1 studio components are leaf components |
 | `mdmx dev` HMR into a running editor | ⬜ | Carried over from Phase 2 |
 
+## Phase 2.7 — 0.5.0: convention over configuration (reconstructed from S25–S31)
+
+| Item | Status | Notes |
+| --- | --- | --- |
+| Pre-release review + grilling | ✅ | S25/S26: architecture/API/DX review, decisions locked |
+| Correctness blockers | ✅ | S27 (M1): the 0.5 bug list |
+| The breaking wave | ✅ | S28 (M2): provider contract v2 (deletions, binary reads), auth as an injectable strategy (ADR-044/046), dashboard surface shrink (ADR-048) |
+| The convention layer | ✅ | S29 (M3): three-tier config, env-detected mode, codegen-owned `.mdmx/` (component maps, bound `server.ts`), `mdmx init nextjs`, `@mdmx/project` (ADR-039–043) |
+| Studio as a package + docs wave | ✅ | S30/S31: `@mdmx/studio` (model, renderer, UI), studio CSS compiled at generate time (ADR-042/045), typechecked tests, README + guides 01–07 rewritten |
+
 ## Phase 2.8 — 0.6.0: shadcn example, canvas fidelity, first npm publish
 
 Plan and decision table (Q1–Q15): `.dev-context/plans/2026-09-01-0.6-plan.md`
@@ -76,7 +86,7 @@ Plan and decision table (Q1–Q15): `.dev-context/plans/2026-09-01-0.6-plan.md`
 | M4 — interactivity | ✅ | NodeView `stopEvent` routes by target (buttons/inputs/tabs → component, else select); `render.interactive` override through core → CLI → registry v2 → SPEC → editor; links never navigate in the canvas, ⌘-click opens a tab (ADR-052). Pure routing helpers + mount/round-trip tests. |
 | M5 — shadcn blocks + content | ✅ | 22 shadcn components registered as blocks (`UI` category); 17 marketing components rebuilt on shadcn primitives with names/props unchanged (content untouched, `mdmx check` clean); `mk-*` CSS gone; `posts/blocks.mdx` showcase. Block rules in ADR-053 (no context across blocks, grid containers, `keepMounted`, popup bodies as props); Carousel/ButtonGroup unregistered. Parity now differs only where the studio's CDN Tailwind runtime overrides the app's theme — M6's job. |
 | M6 — studio Tailwind handoff | ✅ | `detectTailwind` (project) → `mdmx generate` writes `.mdmx/studio-classes.txt` and drops `studio.css`; host adds `@source`; `mdmx check` warns when it's missing; dashboard skips the CDN runtime (ADR-054). Canvas/page parity now exact. |
-| M7 — distribution, docs, publish prep | ⬜ | MIT, `pack:all` + overrides (guide 08), RELEASING.md, docs wave |
+| M7 — distribution, docs, publish prep | ✅ | LICENSE (MIT) + `license` in all packages; versions 0.6.0 in lockstep; `pnpm pack:all` + `pnpm.overrides` for using mdmx from a checkout (guide 08, ADR-055); RELEASING.md + release notes; docs wave (README, guides index, llms.txt, wiki counts, AGENTS.md package map). Publish itself is the maintainer's step. |
 
 ## Phase 3 — the moat
 
@@ -90,8 +100,9 @@ Plan and decision table (Q1–Q15): `.dev-context/plans/2026-09-01-0.6-plan.md`
 
 ## The immediate next milestone
 
-0.4.0 (the drop-in dashboard) is feature-complete on `release/0.4.0`.
-Remaining polish candidates before Phase 3: nested drop indicators in the
-editor, HMR registry push to a running editor, collection deletion/dir
-renames (currently git-side operations by design), and a GitHub-mode
-deployment guide walkthrough with the dashboard mount.
+0.6.0 is prepared on `release/0.6.0` and waits on the maintainer's publish
+(RELEASING.md). Candidates after it: Carousel and ButtonGroup as blocks
+(needs a wrapper-aware layout contract, ADR-053), tsconfig `paths` in the
+CLI extractor, a from-npm smoke app in CI (guide 08's tarball flow against
+a fresh `create-next-app`), nested drop indicators, and the Phase 3 items
+below.

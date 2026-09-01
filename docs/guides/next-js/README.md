@@ -20,6 +20,7 @@ project to a deployed CMS backed by GitHub OAuth.
 | 5 | [Rendering content](05-rendering-content.md) | `<MDMXEntry>` and the generated `.mdmx/server.ts`, draft/publish, Layer-2 readers |
 | 6 | [Production: GitHub mode](06-production-github.md) | GitHub OAuth app, sealed sessions, `GitHubProvider`, deployment |
 | 7 | [Troubleshooting](07-troubleshooting.md) | Common errors, HTTP status meanings, diagnostic codes |
+| 8 | [Before (or between) npm releases](08-before-npm.md) | Consume the packages as `pnpm pack` tarballs from a checkout, via `pnpm.overrides` |
 
 ## How the pieces fit
 
@@ -41,7 +42,8 @@ Five packages participate in a Next.js integration:
 - **`@mdmx/cli`** — `mdmx generate` (components → registry), `mdmx check`
   (content lint for CI), `mdmx dev` (watch mode).
 - **`@mdmx/editor`** — the block editor. The React UI lives at
-  `@mdmx/editor/react`. Headless — it ships no CSS.
+  `@mdmx/editor/react`; its reference chrome at `@mdmx/editor/styles.css`
+  (the dashboard imports it; a manual mount can, or stay headless).
 - **`@mdmx/next`** — the glue: API route handlers (content, media,
   collections), content readers, sessions/OAuth, and `LocalProvider` for
   local authoring.
@@ -79,7 +81,7 @@ pnpm dev:next        # builds deps, generates the registry, runs next dev
 
 ## Prerequisites
 
-- Next.js 14+ with the **App Router** (the API handlers are web-standard
+- Next.js 15+ with the **App Router** — the demo runs Next 16 (Turbopack) — (the API handlers are web-standard
   `Request → Response` functions, which the Pages Router's API routes don't
   accept).
 - React 18+.
