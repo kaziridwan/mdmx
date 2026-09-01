@@ -20,9 +20,11 @@ Add `"@mdmx/core", "@mdmx/editor", "@mdmx/next", "@mdmx/dashboard"` to
 packages are built (`pnpm build`) — the apps consume `dist/`.
 
 **The dashboard renders unstyled**
-The stylesheet ships inside `@mdmx/dashboard` and flows through
-`transpilePackages` — if `@mdmx/dashboard` is missing from that list, the CSS
-import inside the package is not processed.
+Two stylesheets flow through `transpilePackages`: the dashboard's own
+(inside `@mdmx/dashboard`) and the editor chrome (`@mdmx/editor/styles.css`,
+imported by the dashboard). If either package is missing from that list, its
+CSS import is not processed — an unstyled editor with a styled dashboard
+means `@mdmx/editor` is the one missing.
 
 **"Could not reach the MDMX API" on the dashboard gate**
 The dashboard's `basePath` (default `/api/mdmx`) doesn't line up with where

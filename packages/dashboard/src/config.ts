@@ -24,6 +24,13 @@ export interface DashboardConfig {
    * components render. Point it at a self-hosted copy to avoid the CDN.
    */
   tailwindSrc?: string;
+  /**
+   * Class the editor puts on its canvas content root so the site's own
+   * content styles apply while editing (ADR-050). Default `mdmx-page` — the
+   * class the scaffolded public pages give their article wrapper. Set it to
+   * whatever your pages use (e.g. `prose`); `""` opts out.
+   */
+  contentClassName?: string;
 }
 
 export type ResolvedDashboardConfig = Required<DashboardConfig>;
@@ -37,6 +44,7 @@ export function resolveConfig(config: DashboardConfig = {}): ResolvedDashboardCo
     registryPath: ".mdmx/registry.json",
     title: "MDMX",
     tailwindSrc: "https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4",
+    contentClassName: "mdmx-page",
     ...config,
   };
 }

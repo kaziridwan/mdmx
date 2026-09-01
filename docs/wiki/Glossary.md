@@ -79,3 +79,18 @@ untouched frontmatter still round-trips verbatim.
 
 **Draft/publish** — modeled as a `status` frontmatter field (`select` over
 `draft`/`published`). Readers filter by it; the demo groups its list by it.
+
+**Canvas** — the editing surface: the `.mdmx-canvas` element (preview width,
+zoom, an inline-size container) around the ProseMirror root that holds the
+blocks. The editor styles nothing inside it that changes geometry; content
+looks the way the host page's styles make it look (ADR-050).
+
+**Content class** — the class a site puts on its article wrapper
+(`mdmx-page` by convention, from `mdmx init nextjs`). The editor puts the
+same class on the ProseMirror root (`contentClassName`) so the site's
+content styles apply while editing; the editor's own prose rules are only
+zero-specificity fallbacks in `@layer base` (ADR-050).
+
+**Fit mode** — the default preview viewport: the canvas takes the pane's own
+width at zoom 1. The device modes (mobile/tablet/desktop) render at a fixed
+width and are zoomed down to fit the pane (ADR-036, ADR-051).

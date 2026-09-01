@@ -103,6 +103,7 @@ afterEach(() => {
 async function mountEditor(
   source: string,
   withCollection?: CollectionSpec,
+  extra: Partial<Parameters<typeof MDMXEditor>[0]> = {},
 ): Promise<HTMLElement> {
   host = document.createElement("div");
   document.body.appendChild(host);
@@ -113,6 +114,7 @@ async function mountEditor(
       components: { Note, Stat, TwoColumn, Column },
       source,
       collection: withCollection,
+      ...extra,
     }),
   );
   // Let React effects (EditorView creation) and the per-node React roots settle.
@@ -343,5 +345,84 @@ describe("nested editing (TwoColumn)", () => {
     expect(source).toContain("<Column>");
     expect(source).toContain("Left text.");
     expect(source).toContain("Right text.");
+  });
+});
+
+describe("canvas root: content class + fit viewport (ADR-050 / ADR-051)", () => {
+  it("the ProseMirror root carries the host's content class by convention", async () => {
+    const el = await mountEditor(SRC);
+    const pm = el.querySelector(".ProseMirror") as HTMLElement;
+    expect(pm.classList.contains("mdmx-page")).toBe(true);
+  });
+
+  it("contentClassName overrides the convention, and \"\" opts out", async () => {
+    let el = await mountEditor(SRC, undefined, { contentClassName: "prose" });
+    let pm = el.querySelector(".ProseMirror") as HTMLElement;
+    expect(pm.classList.contains("prose")).toBe(true);
+    expect(pm.classList.contains("mdmx-page")).toBe(false);
+    root?.unmount();
+    host?.remove();
+    el = await mountEditor(SRC, undefined, { contentClassName: "" });
+    pm = el.querySelector(".ProseMirror") as HTMLElement;
+    expect(pm.className.trim()).toBe("ProseMirror");
+  });
+
+  it("defaults to the fit viewport: the pane's width at zoom 1", async () => {
+    localStorage.clear();
+    const el = await mountEditor(SRC);
+    const canvas = el.querySelector(".mdmx-canvas") as HTMLElement;
+    expect(canvas.getAttribute("data-viewport")).toBe("fit");
+    expect(canvas.style.getPropertyValue("--mdmx-canvas-w")).toBe("100%");
+    expect(canvas.style.getPropertyValue("--mdmx-canvas-zoom")).toBe("1");
+    const pressed = el.querySelector('.mdmx-viewport-btn[aria-pressed="true"]');
+    expect(pressed?.getAttribute("aria-label")).toBe("fit preview");
+  });
+
+  it("switching to a device preview sets its width and remembers it", async () => {
+    localStorage.clear();
+    const el = await mountEditor(SRC);
+    (el.querySelector('.mdmx-viewport-btn[aria-label="tablet preview"]') as HTMLButtonElement).click();
+    for (let i = 0; i < 2; i++) await flush();
+    const canvas = el.querySelector(".mdmx-canvas") as HTMLElement;
+    expect(canvas.getAttribute("data-viewport")).toBe("tablet");
+    expect(canvas.style.getPropertyValue("--mdmx-canvas-w")).toBe("768px");
+    expect(localStorage.getItem("mdmx:viewport")).toBe("tablet");
+    localStorage.clear();
+  });
+});
+
+describe("collapsible panels (desktop; ADR-051)", () => {
+  it("toggles the rail and the sidebar, and persists both", async () => {
+    localStorage.clear();
+    const el = await mountEditor(SRC);
+    const rootEl = el.querySelector(".mdmx-editor") as HTMLElement;
+    const rail = el.querySelector('[aria-label="Toggle components panel"]') as HTMLButtonElement;
+    const side = el.querySelector('[aria-label="Toggle sidebar"]') as HTMLButtonElement;
+    expect(rail.getAttribute("aria-pressed")).toBe("true");
+    expect(rootEl.classList.contains("is-rail-collapsed")).toBe(false);
+
+    rail.click();
+    for (let i = 0; i < 2; i++) await flush();
+    expect(rootEl.classList.contains("is-rail-collapsed")).toBe(true);
+    expect(rail.getAttribute("aria-pressed")).toBe("false");
+    expect(localStorage.getItem("mdmx:rail-collapsed")).toBe("true");
+
+    side.click();
+    for (let i = 0; i < 2; i++) await flush();
+    expect(rootEl.classList.contains("is-sidebar-collapsed")).toBe(true);
+    expect(localStorage.getItem("mdmx:sidebar-collapsed")).toBe("true");
+
+    rail.click();
+    for (let i = 0; i < 2; i++) await flush();
+    expect(rootEl.classList.contains("is-rail-collapsed")).toBe(false);
+    expect(localStorage.getItem("mdmx:rail-collapsed")).toBe("false");
+    localStorage.clear();
+  });
+
+  it("a persisted collapsed state is restored on mount", async () => {
+    localStorage.setItem("mdmx:sidebar-collapsed", "true");
+    const el = await mountEditor(SRC);
+    expect((el.querySelector(".mdmx-editor") as HTMLElement).classList.contains("is-sidebar-collapsed")).toBe(true);
+    localStorage.clear();
   });
 });

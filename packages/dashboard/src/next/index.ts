@@ -12,6 +12,7 @@
 //   import { createMDMXHandlers, LocalProvider } from "@mdmx/dashboard/next";
 //   export const { GET, POST, PUT, DELETE } = createMDMXHandlers({ ... });
 //   export const dynamic = "force-dynamic";
+import "@mdmx/editor/styles.css";
 import "../styles.css";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";

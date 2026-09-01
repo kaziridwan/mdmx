@@ -1470,3 +1470,92 @@ remainder are the pins themselves and accepted improvements (controls
 inheriting the page font, the canvas `figure` now matching the public page).
 Method kept for later milestones: `snapshot.mjs` + `snapdiff.mjs` in the
 session scratchpad — snapshot every surface, change the stylesheet, diff.
+
+## ADR-050 — The canvas is the page: content class on the ProseMirror root, layered fallbacks, and the editor owns its stylesheet (amends ADR-036)
+
+**Context.** ADR-036 made the canvas a device-width, container-query-aware
+column, but its prose came from the dashboard: `.mdmx-dash-editor
+.mdmx-canvas h1 / a / code …` at (0,3,1) out-specified every author
+component's own styles. Measured live (2026-08-26): the Hero title rendered
+in the UI font at 36/600 instead of Space Grotesk 46/700; button labels were
+invisible (accent on accent); every block sat in a 1px border + 4px padding
+wrapper; the editable hole forced the content font onto component children.
+The chrome itself was a copy of the playground's reference stylesheet ported
+into the dashboard, so a manual `MDMXEditor` mount was unstyled and the
+canvas rules could not be reasoned about on their own.
+
+**Decision.** Four parts, one principle — the editor adds nothing inside the
+canvas that the page doesn't have:
+
+1. **The ProseMirror root carries the host's content class.** `MDMXEditor`
+   takes `contentClassName` (default `mdmx-page`, the class the scaffolded
+   public pages give their article; the dashboard passes its config's value
+   through). It goes on the ProseMirror element — the same role the
+   article has, the direct parent of the blocks — so the page's padding,
+   max-width, typography, and `> * + *` rhythm apply verbatim, and container
+   queries measure the same inline size as on the page.
+2. **The canvas element is layout only**: preview width and zoom
+   (viewport.ts), the `mdmx-canvas` inline-size container, room below the
+   page to click into. Block wrappers have no margin, border, or padding;
+   selection and hover are outlines; the content hole sets no font.
+3. **Every bare-element canvas rule is a layered, zero-specificity
+   fallback** — `@layer base { :where(.mdmx-editor .mdmx-canvas) :where(h1)
+   … }` — for hosts with no content styles at all. It loses to any host rule,
+   a reset included: the canvas can only ever look like the page would.
+4. **`@mdmx/editor` ships `styles.css`.** Tokens default at
+   `:where(:root)` (the dashboard's `.mdmx-dash` values win by inheritance);
+   chrome is unlayered and rooted at `.mdmx-editor`; its own
+   host-independence pins (ADR-049) exclude the canvas, as the dashboard's
+   now do. The dashboard imports it and keeps only its mount wrapper; the
+   playground imports it and drops its 600-line copy.
+
+Verified with a computed-style comparison of every element of every block
+on the public page versus the canvas in the desktop preview at zoom 1
+(`parity.mjs`, panels collapsed): `layout` 0 of 9 elements differ,
+`welcome` 1 of 16, `marketing` 4 of 101 — all four being the demo's
+`Stat` figure (`.mdmx-page figure { display: inline-block; margin: 0 }`,
+rebuilt in M5). The stylesheet move itself diffed at 0 changed elements.
+
+One structural limit remains and is the price of NodeView wrappers: the
+page's sibling-rhythm rule lands on the wrapper, so a root-level margin
+override on the page (`figure { margin: 0 }`) is not mirrored — the canvas
+keeps the rhythm gap the page drops. Everything else about a block —
+typography, color, padding, borders, layout, width — is identical.
+
+**Alternatives rejected.** An iframe (ADR-036's reasoning stands). Putting
+the content class on the canvas element instead of the ProseMirror root —
+the page's rhythm rule and padding would not reach the blocks and the
+container would include the page padding. Keeping the chrome scoped under
+`.mdmx-dash-editor` — manual mounts stay unstyled and the file stays at 2k
+lines. Zero-specificity fallbacks left unlayered — they beat utilities
+(measured in M2).
+
+**Status.** Shipped — 0.6 M3. Follow-up: M5 removes the `.twocol` flex
+patch that still lives in the editor stylesheet for the demo's TwoColumn.
+
+## ADR-051 — `fit` is the default preview; the rail and sidebar collapse (amends ADR-036)
+
+**Context.** ADR-036 defaulted the canvas to the 1280px desktop preview.
+In a 1400px window the canvas pane is ~536px, so the default editing
+surface was drawn at `zoom: 0.419`: 18px body text at ~7.5px, the caret,
+selection handles, and buttons at 42%. The zoom exists so a narrow pane can
+show a desktop layout — it should be something an author asks for, not the
+state they type in.
+
+**Decision.** A `fit` mode — canvas width = pane width, zoom 1 — is added
+first in the switch and made the default. Mobile/tablet/desktop stay as
+explicit device previews, now framed by dashed edges so a zoomed frame reads
+as a frame. To give device previews room, the rail and the sidebar collapse
+on desktop from two toolbar toggles, persisted per browser
+(`mdmx:rail-collapsed`, `mdmx:sidebar-collapsed`); mobile keeps its
+off-canvas sheets. Persisted `mdmx:viewport` choices are honored — only an
+explicit click was ever stored, so nobody is silently kept on the old
+default.
+
+**Alternatives rejected.** A focus mode that hides panels while writing
+(fixes size by hiding the palette). Leaving desktop as the default
+(miniature text stays the first impression).
+
+**Status.** Shipped — 0.6 M3, with the Editor.tsx split it needed
+(`useEditorView`, `useViewport`, `useSnippets`, `EditorToolbar`,
+`MobileFabs`; Editor.tsx 612 → 344 lines).

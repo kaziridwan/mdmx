@@ -1,0 +1,1065 @@
+/* ==========================================================================
+   @mdmx/editor — the editor's stylesheet (`@mdmx/editor/styles.css`).
+
+   The reference chrome for `MDMXEditor`: rail, canvas, toolbar, sidebar,
+   slash menu, prop panel, source pane, media library. Every color, radius,
+   and font routes through a `--mdmx-*` token; the defaults below sit on
+   `:where(:root)` at zero specificity, so any host declaration wins — the
+   dashboard themes the editor simply by setting the same tokens on
+   `.mdmx-dash`, and a manual mount is themed the same way.
+
+   Cascade contract (ADR-049/050): chrome rules are unlayered and rooted at
+   `.mdmx-editor`; only the canvas fallbacks and the host-independence pins
+   live in `@layer base`, where they beat a reset (same layer, higher
+   specificity) but lose to utilities and to the host's own content-class
+   rules — the canvas is the host's page, not the editor's.
+   ========================================================================== */
+
+:where(:root) {
+  --mdmx-bg: #fafafa;
+  --mdmx-surface: #ffffff;
+  --mdmx-surface-2: #f2f2f0;
+  --mdmx-border: #e4e4e2;
+  --mdmx-fg: #1c1c1a;
+  --mdmx-fg-muted: #6f6f6a;
+  --mdmx-accent: #4664e4;
+  --mdmx-accent-fg: #ffffff;
+  --mdmx-danger: #c4372e;
+  --mdmx-warn: #9a6700;
+  --mdmx-ok: #2c7a3d;
+  --mdmx-accent-wash: rgba(70, 100, 228, 0.09);
+  --mdmx-code-bg: #14151c;
+  --mdmx-code-fg: #d7d9e3;
+  --mdmx-code-muted: #6f748a;
+  --mdmx-code-active: rgba(154, 103, 0, 0.16);
+  --mdmx-shadow: 0 1px 2px rgba(0, 0, 0, 0.05), 0 4px 16px rgba(0, 0, 0, 0.06);
+  --mdmx-radius: 8px;
+  --mdmx-radius-sm: 5px;
+  --mdmx-font:
+    ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --mdmx-mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  --mdmx-content-font: "Iowan Old Style", Georgia, "Times New Roman", serif;
+}
+
+@media (prefers-color-scheme: dark) {
+  :where(:root) {
+  --mdmx-bg: #161615;
+  --mdmx-surface: #1f1f1e;
+  --mdmx-surface-2: #292927;
+  --mdmx-border: #373734;
+  --mdmx-fg: #ebebe6;
+  --mdmx-fg-muted: #9c9c94;
+  --mdmx-accent: #7a92ff;
+  --mdmx-accent-fg: #10122b;
+  --mdmx-danger: #ff7369;
+  --mdmx-warn: #d9a439;
+  --mdmx-ok: #63c476;
+  --mdmx-accent-wash: rgba(122, 146, 255, 0.14);
+  --mdmx-code-bg: #101116;
+  --mdmx-code-fg: #d7d9e3;
+  --mdmx-code-muted: #6f748a;
+  --mdmx-code-active: rgba(217, 164, 57, 0.16);
+  --mdmx-shadow: 0 1px 2px rgba(0, 0, 0, 0.4), 0 6px 20px rgba(0, 0, 0, 0.35);
+  }
+}
+
+:where([data-mdmx-theme="light"]) {
+  --mdmx-bg: #fafafa;
+  --mdmx-surface: #ffffff;
+  --mdmx-surface-2: #f2f2f0;
+  --mdmx-border: #e4e4e2;
+  --mdmx-fg: #1c1c1a;
+  --mdmx-fg-muted: #6f6f6a;
+  --mdmx-accent: #4664e4;
+  --mdmx-accent-fg: #ffffff;
+  --mdmx-danger: #c4372e;
+  --mdmx-warn: #9a6700;
+  --mdmx-ok: #2c7a3d;
+  --mdmx-accent-wash: rgba(70, 100, 228, 0.09);
+  --mdmx-code-bg: #14151c;
+  --mdmx-code-fg: #d7d9e3;
+  --mdmx-code-muted: #6f748a;
+  --mdmx-code-active: rgba(154, 103, 0, 0.16);
+  --mdmx-shadow: 0 1px 2px rgba(0, 0, 0, 0.05), 0 4px 16px rgba(0, 0, 0, 0.06);
+}
+
+:where([data-mdmx-theme="dark"]) {
+  --mdmx-bg: #161615;
+  --mdmx-surface: #1f1f1e;
+  --mdmx-surface-2: #292927;
+  --mdmx-border: #373734;
+  --mdmx-fg: #ebebe6;
+  --mdmx-fg-muted: #9c9c94;
+  --mdmx-accent: #7a92ff;
+  --mdmx-accent-fg: #10122b;
+  --mdmx-danger: #ff7369;
+  --mdmx-warn: #d9a439;
+  --mdmx-ok: #63c476;
+  --mdmx-accent-wash: rgba(122, 146, 255, 0.14);
+  --mdmx-code-bg: #101116;
+  --mdmx-code-fg: #d7d9e3;
+  --mdmx-code-muted: #6f748a;
+  --mdmx-code-active: rgba(217, 164, 57, 0.16);
+  --mdmx-shadow: 0 1px 2px rgba(0, 0, 0, 0.4), 0 6px 20px rgba(0, 0, 0, 0.35);
+}
+
+/* -- host independence (editor chrome; the canvas is the host's) ------------
+   Everything the chrome used to take from UA defaults, pinned so it renders
+   the same under Tailwind's preflight, another reset, or no global CSS. See
+   ADR-049 for the layer reasoning. Nothing here reaches into `.mdmx-canvas`:
+   content must look exactly as the host's page styles make it look. */
+@layer base {
+  .mdmx-editor {
+    line-height: normal;
+    font-family: var(--mdmx-font);
+  }
+  .mdmx-editor button:not(.mdmx-canvas *),
+  .mdmx-editor input:not(.mdmx-canvas *),
+  .mdmx-editor select:not(.mdmx-canvas *),
+  .mdmx-editor textarea:not(.mdmx-canvas *) {
+    font: inherit;
+    font-weight: 400;
+    color: inherit;
+    margin: 0;
+  }
+  .mdmx-editor button:not(.mdmx-canvas *) {
+    padding: 0;
+    border: 0;
+    background: transparent;
+  }
+  .mdmx-editor a:not(.mdmx-canvas *) {
+    color: inherit;
+    text-decoration: none;
+  }
+  .mdmx-editor code:not(.mdmx-canvas *),
+  .mdmx-editor kbd:not(.mdmx-canvas *),
+  .mdmx-editor pre:not(.mdmx-canvas *) {
+    font-family: var(--mdmx-mono);
+  }
+  .mdmx-editor img:not(.mdmx-canvas *),
+  .mdmx-editor svg:not(.mdmx-canvas *) {
+    display: block;
+    vertical-align: middle;
+    max-width: 100%;
+  }
+  .mdmx-editor p:not(.mdmx-canvas *),
+  .mdmx-editor ul:not(.mdmx-canvas *),
+  .mdmx-editor ol:not(.mdmx-canvas *) {
+    margin: 0;
+  }
+}
+
+/* -- layout -------------------------------------------------------------- */
+.mdmx-editor {
+  display: grid;
+  grid-template-columns: 220px minmax(0, 1fr) var(--mdmx-sidebar-width, 380px);
+  height: 100%;
+  background: var(--mdmx-bg);
+  color: var(--mdmx-fg);
+}
+
+/* -- unified right sidebar (Source ⇄ Properties) -- */
+.mdmx-editor .mdmx-sidebar {
+  grid-column: 3;
+  position: relative;
+  border-left: 1px solid var(--mdmx-border);
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+}
+.mdmx-editor .mdmx-sidebar-resize {
+  position: absolute;
+  left: -3px;
+  top: 0;
+  bottom: 0;
+  width: 7px;
+  cursor: col-resize;
+  z-index: 5;
+}
+.mdmx-editor .mdmx-sidebar-resize:hover,
+body.mdmx-resizing .mdmx-editor .mdmx-sidebar-resize {
+  background: linear-gradient(
+    to right,
+    transparent 2px,
+    var(--mdmx-accent) 2px,
+    var(--mdmx-accent) 5px,
+    transparent 5px
+  );
+}
+body.mdmx-resizing {
+  cursor: col-resize;
+  user-select: none;
+}
+.mdmx-editor .mdmx-sidebar-tabs {
+  display: flex;
+  border-bottom: 1px solid var(--mdmx-border);
+  background: var(--mdmx-surface);
+}
+.mdmx-editor .mdmx-sidebar-tab {
+  flex: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  font: inherit;
+  font-size: 13px;
+  padding: 10px 8px;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  background: transparent;
+  color: var(--mdmx-fg-muted);
+  cursor: pointer;
+}
+.mdmx-editor .mdmx-sidebar-tab[aria-selected="true"] {
+  color: var(--mdmx-fg);
+  border-bottom-color: var(--mdmx-accent);
+}
+.mdmx-editor .mdmx-sidebar-body {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  display: flex;
+  flex-direction: column;
+}
+.mdmx-editor .mdmx-sidebar-body > .mdmx-source,
+.mdmx-editor .mdmx-sidebar-body > .mdmx-props {
+  flex: 1;
+  min-height: 100%;
+}
+
+/* -- collapsible panels (desktop; ADR-051) -- */
+@media (min-width: 861px) {
+  .mdmx-editor.is-rail-collapsed {
+    grid-template-columns: 0 minmax(0, 1fr) var(--mdmx-sidebar-width, 380px);
+  }
+  .mdmx-editor.is-sidebar-collapsed {
+    grid-template-columns: 220px minmax(0, 1fr) 0;
+  }
+  .mdmx-editor.is-rail-collapsed.is-sidebar-collapsed {
+    grid-template-columns: 0 minmax(0, 1fr) 0;
+  }
+  .mdmx-editor.is-rail-collapsed .mdmx-rail,
+  .mdmx-editor.is-sidebar-collapsed .mdmx-sidebar {
+    display: none;
+  }
+}
+
+/* -- mobile: floating controls + off-canvas sheets -- */
+.mdmx-editor .mdmx-mobile-fabs {
+  display: none;
+}
+.mdmx-editor .mdmx-mobile-backdrop {
+  display: none;
+}
+@media (max-width: 860px) {
+  .mdmx-editor {
+    grid-template-columns: 1fr;
+  }
+  .mdmx-editor .mdmx-toolbar-panel {
+    display: none;
+  }
+  .mdmx-editor .mdmx-canvas-wrap {
+    grid-column: 1;
+  }
+  .mdmx-editor .mdmx-rail {
+    position: fixed;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    width: min(360px, 86vw);
+    transform: translateX(-100%);
+    transition: transform 0.22s ease;
+    z-index: 40;
+    background: var(--mdmx-bg);
+    overflow-y: auto;
+    box-shadow: 0 0 40px rgba(0, 0, 0, 0.18);
+  }
+  .mdmx-editor.is-palette-open .mdmx-rail {
+    transform: none;
+  }
+  .mdmx-editor .mdmx-sidebar {
+    position: fixed;
+    top: 0;
+    bottom: 0;
+    right: 0;
+    left: auto;
+    width: min(440px, 92vw);
+    transform: translateX(100%);
+    transition: transform 0.22s ease;
+    z-index: 40;
+    background: var(--mdmx-bg);
+    box-shadow: 0 0 40px rgba(0, 0, 0, 0.18);
+  }
+  .mdmx-editor.is-sidebar-open .mdmx-sidebar {
+    transform: none;
+  }
+  .mdmx-editor .mdmx-sidebar-resize {
+    display: none;
+  }
+  .mdmx-editor .mdmx-mobile-backdrop {
+    display: block;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.32);
+    z-index: 35;
+  }
+  .mdmx-editor .mdmx-mobile-fabs {
+    display: flex;
+    position: fixed;
+    bottom: 16px;
+    z-index: 45;
+    gap: 10px;
+  }
+  .mdmx-editor .mdmx-fabs-left {
+    left: 16px;
+  }
+  .mdmx-editor .mdmx-fabs-right {
+    right: 16px;
+    flex-direction: column;
+  }
+  .mdmx-editor.is-palette-open .mdmx-mobile-fabs,
+  .mdmx-editor.is-sidebar-open .mdmx-mobile-fabs {
+    display: none;
+  }
+  .mdmx-editor .mdmx-fab {
+    width: 48px;
+    height: 48px;
+    border-radius: 999px;
+    border: 1px solid var(--mdmx-border);
+    background: var(--mdmx-surface);
+    color: var(--mdmx-fg);
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.16);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+  }
+}
+
+/* -- rail -- */
+.mdmx-editor .mdmx-rail {
+  border-right: 1px solid var(--mdmx-border);
+  padding: 18px 14px;
+  overflow-y: auto;
+  grid-column: 1;
+}
+.mdmx-editor .mdmx-rail-title {
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--mdmx-fg-muted);
+  margin-bottom: 14px;
+}
+.mdmx-editor .mdmx-rail-filter {
+  width: 100%;
+  font: inherit;
+  font-size: 13px;
+  padding: 7px 10px;
+  margin-bottom: 8px;
+  border: 1px solid var(--mdmx-border);
+  border-radius: var(--mdmx-radius);
+  background: var(--mdmx-surface);
+  color: var(--mdmx-fg);
+}
+.mdmx-editor .mdmx-rail-empty {
+  color: var(--mdmx-fg-muted);
+  font-size: 13px;
+  padding: 8px 4px;
+}
+.mdmx-editor .mdmx-rail-group-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  font: inherit;
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--mdmx-fg-muted);
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+  margin: 14px 0 6px;
+  padding: 0 4px;
+}
+.mdmx-editor .mdmx-rail-group-static {
+  cursor: default;
+}
+.mdmx-editor .mdmx-rail-group-chevron {
+  font-size: 9px;
+  width: 10px;
+}
+.mdmx-editor .mdmx-rail-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid var(--mdmx-border);
+  border-radius: var(--mdmx-radius);
+  background: var(--mdmx-surface);
+  color: var(--mdmx-fg);
+  font: inherit;
+  font-size: 14px;
+  text-align: left;
+  cursor: grab;
+  margin-bottom: 6px;
+}
+.mdmx-editor .mdmx-rail-item:hover {
+  border-color: var(--mdmx-accent);
+  background: var(--mdmx-accent-wash);
+}
+.mdmx-editor .mdmx-rail-icon {
+  width: 16px;
+  height: 16px;
+  border-radius: 4px;
+  background: var(--mdmx-accent);
+  opacity: 0.5;
+  flex: none;
+}
+
+/* -- canvas -- */
+.mdmx-editor .mdmx-canvas-wrap {
+  grid-column: 2;
+  position: relative;
+  overflow-y: auto;
+}
+/* The canvas is layout only: the preview width and zoom (viewport.ts — `fit`
+   is the pane's own width at zoom 1, the device modes a fixed width zoomed to
+   fit) and the inline-size container author components may query. Everything
+   inside it — the ProseMirror root, which carries the host's content class,
+   and the blocks — is the host page's to style. The editor adds nothing that
+   changes geometry, so what the author sees is what the page renders
+   (ADR-050); the layered fallbacks below only serve hosts with no content
+   styles at all. */
+.mdmx-editor .mdmx-canvas {
+  box-sizing: border-box;
+  width: var(--mdmx-canvas-w, 100%);
+  max-width: none;
+  margin: 0 auto;
+  /* Room below the page to click into (see handleCanvasPointerDown). */
+  padding: 0 0 200px;
+  zoom: var(--mdmx-canvas-zoom, 1);
+  container: mdmx-canvas / inline-size;
+}
+/* Device previews get a dashed frame; an outline, so the frame takes no
+   width away from the page. */
+.mdmx-editor .mdmx-canvas[data-viewport="mobile"],
+.mdmx-editor .mdmx-canvas[data-viewport="tablet"],
+.mdmx-editor .mdmx-canvas[data-viewport="desktop"] {
+  outline: 1px dashed var(--mdmx-border);
+  outline-offset: -1px;
+}
+/* ProseMirror's own requirements — not styling. */
+.mdmx-editor .mdmx-canvas .ProseMirror {
+  outline: none;
+  position: relative;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+}
+
+/* Fallback prose for a canvas whose host has no content-class styles. Zero
+   specificity inside `base`: any host rule — `.mdmx-page h1`, a `.prose`
+   plugin, a utility, even a reset — wins, exactly as it does on the page. */
+@layer base {
+  :where(.mdmx-editor .mdmx-canvas .ProseMirror) {
+    padding: 48px 40px 96px;
+    font-family: var(--mdmx-content-font);
+    font-size: 18px;
+    line-height: 1.7;
+    color: var(--mdmx-fg);
+  }
+  :where(.mdmx-editor .mdmx-canvas .ProseMirror) > :where(* + *) {
+    margin-top: 0.85em;
+  }
+  :where(.mdmx-editor .mdmx-canvas) :where(h1, h2, h3, h4, h5, h6) {
+    font-family: var(--mdmx-font);
+    font-weight: 600;
+    line-height: 1.2;
+    margin: 0;
+  }
+  :where(.mdmx-editor .mdmx-canvas) :where(h1) {
+    font-size: 2em;
+  }
+  :where(.mdmx-editor .mdmx-canvas) :where(h2) {
+    font-size: 1.5em;
+  }
+  :where(.mdmx-editor .mdmx-canvas) :where(h3) {
+    font-size: 1.2em;
+  }
+  :where(.mdmx-editor .mdmx-canvas) :where(p, figure) {
+    margin: 0;
+  }
+  :where(.mdmx-editor .mdmx-canvas) :where(ul, ol) {
+    margin: 0;
+    padding-left: 1.5em;
+  }
+  :where(.mdmx-editor .mdmx-canvas) :where(ul) {
+    list-style: disc;
+  }
+  :where(.mdmx-editor .mdmx-canvas) :where(ol) {
+    list-style: decimal;
+  }
+  :where(.mdmx-editor .mdmx-canvas) :where(blockquote) {
+    border-left: 3px solid var(--mdmx-accent);
+    margin: 0;
+    padding-left: 16px;
+    color: var(--mdmx-fg-muted);
+  }
+  :where(.mdmx-editor .mdmx-canvas) :where(pre) {
+    margin: 0;
+    padding: 16px 20px;
+    border-radius: 10px;
+    overflow-x: auto;
+    font-size: 15px;
+    background: var(--mdmx-code-bg);
+    color: var(--mdmx-code-fg);
+  }
+  :where(.mdmx-editor .mdmx-canvas) :where(code) {
+    font-family: var(--mdmx-mono);
+    font-size: 0.86em;
+  }
+  :where(.mdmx-editor .mdmx-canvas) :where(:not(pre) > code) {
+    background: var(--mdmx-accent-wash);
+    padding: 1px 5px;
+    border-radius: 4px;
+  }
+  :where(.mdmx-editor .mdmx-canvas) :where(a) {
+    color: var(--mdmx-accent);
+  }
+  :where(.mdmx-editor .mdmx-canvas) :where(img) {
+    max-width: 100%;
+    height: auto;
+  }
+}
+
+/* -- component NodeViews -- */
+/* A block's wrapper (`.mdmx-nodeview`) has no rule of its own: it is a plain
+   block, so the page's sibling rhythm rule (`.mdmx-page > * + *`, or the
+   fallback above) lands on it exactly as it lands on the block on the page,
+   and it adds no border or padding. Selection and hover are outlines, which
+   don't take part in layout. */
+.mdmx-editor .mdmx-component {
+  border-radius: 10px;
+  outline: 1px dashed transparent;
+  outline-offset: 3px;
+  transition: outline-color 0.12s;
+}
+.mdmx-editor .mdmx-component:hover {
+  outline-color: var(--mdmx-border);
+}
+.mdmx-editor .mdmx-component.is-selected,
+.mdmx-editor .mdmx-nodeview.mdmx-selected .mdmx-component {
+  outline: 2px solid var(--mdmx-accent);
+  outline-offset: 3px;
+}
+.mdmx-editor .mdmx-content {
+  /* Layout-transparent editable hole: a container component's flex/grid must
+     see the child blocks as direct items (FeatureGrid, PricingTable, …), not
+     one wrapper that swallows the whole layout into a single cell. Both the
+     React hole and the PM-managed contentDOM inside it must be transparent.
+     No font here either: children inherit the component's, as on the page. */
+  display: contents;
+}
+.mdmx-editor .mdmx-contentdom {
+  display: contents;
+}
+.mdmx-editor .mdmx-placeholder {
+  border: 1px dashed var(--mdmx-border);
+  border-radius: var(--mdmx-radius);
+  padding: 12px 16px;
+  background: var(--mdmx-bg);
+}
+.mdmx-editor .mdmx-placeholder-head {
+  display: flex;
+  gap: 10px;
+  align-items: baseline;
+  font-family: var(--mdmx-font);
+}
+.mdmx-editor .mdmx-placeholder-name {
+  font-weight: 600;
+  color: var(--mdmx-accent);
+}
+.mdmx-editor .mdmx-placeholder-props {
+  font-family: var(--mdmx-mono);
+  font-size: 12px;
+  color: var(--mdmx-fg-muted);
+}
+/* Demo TwoColumn integration (removed in 0.6 M5 when TwoColumn is rebuilt):
+   the page's `.twocol > *` cannot reach through the display:contents
+   wrappers, so the flex-item rule is repeated one level down. The page's own
+   `.twocol` layout, gap, and container query apply in the canvas as-is. */
+.mdmx-editor .mdmx-component .twocol > .mdmx-content > .mdmx-contentdom > * {
+  flex: 1;
+  min-width: 0;
+}
+
+/* -- slash menu -- */
+.mdmx-editor .mdmx-slash {
+  position: absolute;
+  z-index: 20;
+  min-width: 240px;
+  max-height: 320px;
+  overflow-y: auto;
+  background: var(--mdmx-surface);
+  border: 1px solid var(--mdmx-border);
+  border-radius: 10px;
+  box-shadow: var(--mdmx-shadow);
+  padding: 6px;
+}
+.mdmx-editor .mdmx-slash-group-label {
+  font-size: 10px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--mdmx-fg-muted);
+  padding: 8px 12px 2px;
+}
+.mdmx-editor .mdmx-slash-item {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  border: 0;
+  background: none;
+  text-align: left;
+  font: inherit;
+  padding: 7px 10px;
+  border-radius: 7px;
+  cursor: pointer;
+  color: var(--mdmx-fg);
+}
+.mdmx-editor .mdmx-slash-item.is-active {
+  background: var(--mdmx-accent-wash);
+}
+.mdmx-editor .mdmx-slash-item-label {
+  font-size: 14px;
+}
+.mdmx-editor .mdmx-slash-item-desc {
+  font-size: 12px;
+  color: var(--mdmx-fg-muted);
+}
+
+/* -- prop panel -- */
+.mdmx-editor .mdmx-props {
+  padding: 18px 16px;
+}
+.mdmx-editor .mdmx-props-label {
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--mdmx-fg-muted);
+  margin-bottom: 14px;
+}
+.mdmx-editor .mdmx-props-empty {
+  color: var(--mdmx-fg-muted);
+  font-size: 14px;
+}
+.mdmx-editor .mdmx-prop-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 14px;
+}
+.mdmx-editor .mdmx-prop-name {
+  font-size: 13px;
+  font-weight: 500;
+}
+.mdmx-editor .mdmx-prop-req {
+  color: var(--mdmx-accent);
+}
+.mdmx-editor .mdmx-prop-desc {
+  font-size: 12px;
+  color: var(--mdmx-fg-muted);
+}
+.mdmx-editor .mdmx-control {
+  font-family: var(--mdmx-mono);
+  font-size: 13px;
+  padding: 6px 8px;
+  border: 1px solid var(--mdmx-border);
+  border-radius: 6px;
+  background: var(--mdmx-surface);
+  color: var(--mdmx-fg);
+}
+.mdmx-editor .mdmx-control:focus {
+  outline: none;
+  border-color: var(--mdmx-accent);
+}
+.mdmx-editor .mdmx-control-checkbox {
+  width: 16px;
+  height: 16px;
+}
+.mdmx-editor .mdmx-control-textarea {
+  resize: vertical;
+}
+.mdmx-editor .mdmx-control-image {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+.mdmx-editor .mdmx-control-image .mdmx-control {
+  flex: 1;
+  min-width: 120px;
+}
+.mdmx-editor .mdmx-control-browse {
+  font: inherit;
+  font-size: 13px;
+  padding: 6px 12px;
+  border: 1px solid var(--mdmx-border);
+  border-radius: var(--mdmx-radius);
+  background: var(--mdmx-surface);
+  color: var(--mdmx-fg);
+  cursor: pointer;
+}
+.mdmx-editor .mdmx-control-preview {
+  width: 100%;
+  max-height: 120px;
+  object-fit: contain;
+  background: var(--mdmx-surface-2);
+  border-radius: var(--mdmx-radius);
+}
+
+/* -- source pane -- */
+.mdmx-editor .mdmx-source {
+  background: var(--mdmx-code-bg);
+  color: var(--mdmx-code-fg);
+}
+.mdmx-editor .mdmx-source-label {
+  position: sticky;
+  top: 0;
+  background: var(--mdmx-code-bg);
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--mdmx-code-muted);
+  padding: 14px 18px 8px;
+}
+.mdmx-editor .mdmx-source-pre {
+  margin: 0;
+  padding: 0 0 200px;
+}
+.mdmx-editor .mdmx-source-pre code {
+  font-family: var(--mdmx-mono);
+  font-size: 13px;
+  line-height: 1.6;
+}
+.mdmx-editor .mdmx-source-line {
+  padding: 0 18px;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+.mdmx-editor .mdmx-source-line.is-active {
+  background: var(--mdmx-code-active);
+  box-shadow: inset 2px 0 0 var(--mdmx-warn);
+}
+
+/* -- ProseMirror cursors -- */
+.mdmx-editor .mdmx-dropcursor {
+  background: var(--mdmx-accent);
+}
+.mdmx-editor .ProseMirror-gapcursor {
+  display: none;
+  pointer-events: none;
+  position: absolute;
+}
+.mdmx-editor .ProseMirror-gapcursor::after {
+  content: "";
+  display: block;
+  position: absolute;
+  top: -2px;
+  width: 20px;
+  border-top: 1px solid var(--mdmx-fg);
+  animation: mdmx-pm-blink 1.1s steps(2, start) infinite;
+}
+@keyframes mdmx-pm-blink {
+  to {
+    visibility: hidden;
+  }
+}
+.mdmx-editor .ProseMirror-focused .ProseMirror-gapcursor {
+  display: block;
+}
+
+/* -- editor toolbar -- */
+.mdmx-editor .mdmx-toolbar {
+  position: sticky;
+  top: 0;
+  z-index: 15;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 40px;
+  background: color-mix(in srgb, var(--mdmx-bg) 90%, transparent);
+  backdrop-filter: blur(6px);
+  border-bottom: 1px solid var(--mdmx-border);
+}
+.mdmx-editor .mdmx-toolbar-back {
+  font-family: var(--mdmx-font);
+  font-size: 13px;
+  color: var(--mdmx-accent);
+  text-decoration: none;
+  white-space: nowrap;
+}
+.mdmx-editor .mdmx-toolbar-title {
+  font-family: var(--mdmx-mono);
+  font-size: 13px;
+  color: var(--mdmx-fg-muted);
+}
+.mdmx-editor .mdmx-toolbar-panel {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 26px;
+  border: 1px solid var(--mdmx-border);
+  border-radius: var(--mdmx-radius);
+  background: var(--mdmx-surface);
+  color: var(--mdmx-fg-muted);
+  cursor: pointer;
+}
+.mdmx-editor .mdmx-toolbar-panel:hover {
+  color: var(--mdmx-fg);
+}
+.mdmx-editor .mdmx-toolbar-panel[aria-pressed="true"] {
+  color: var(--mdmx-accent);
+}
+.mdmx-editor .mdmx-viewport-switch {
+  display: inline-flex;
+  border: 1px solid var(--mdmx-border);
+  border-radius: var(--mdmx-radius);
+  overflow: hidden;
+}
+.mdmx-editor .mdmx-viewport-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 26px;
+  border: 0;
+  background: var(--mdmx-surface);
+  color: var(--mdmx-fg-muted);
+  cursor: pointer;
+}
+.mdmx-editor .mdmx-viewport-btn + .mdmx-viewport-btn {
+  border-left: 1px solid var(--mdmx-border);
+}
+.mdmx-editor .mdmx-viewport-btn:hover {
+  color: var(--mdmx-fg);
+}
+.mdmx-editor .mdmx-viewport-btn[aria-pressed="true"] {
+  background: var(--mdmx-accent-wash);
+  color: var(--mdmx-accent);
+}
+.mdmx-editor .mdmx-toolbar-status {
+  margin-left: auto;
+  font-size: 13px;
+  color: var(--mdmx-fg-muted);
+}
+.mdmx-editor .mdmx-toolbar-status[data-status="error"] {
+  color: var(--mdmx-danger);
+}
+.mdmx-editor .mdmx-toolbar-save {
+  font: inherit;
+  font-size: 14px;
+  font-weight: 500;
+  padding: 7px 18px;
+  border: 0;
+  border-radius: var(--mdmx-radius);
+  background: var(--mdmx-accent);
+  color: var(--mdmx-accent-fg);
+  cursor: pointer;
+}
+.mdmx-editor .mdmx-toolbar-save:disabled {
+  background: var(--mdmx-border);
+  color: var(--mdmx-fg-muted);
+  cursor: default;
+}
+.mdmx-editor .mdmx-toolbar-image,
+.mdmx-editor .mdmx-toolbar-snippet {
+  margin-left: auto;
+  font: inherit;
+  font-size: 14px;
+  padding: 7px 14px;
+  border: 1px solid var(--mdmx-border);
+  border-radius: var(--mdmx-radius);
+  background: var(--mdmx-surface);
+  color: var(--mdmx-fg);
+  cursor: pointer;
+}
+.mdmx-editor .mdmx-toolbar-image:disabled {
+  color: var(--mdmx-fg-muted);
+  cursor: default;
+}
+.mdmx-editor .mdmx-toolbar-image + .mdmx-toolbar-status,
+.mdmx-editor .mdmx-toolbar-snippet + .mdmx-toolbar-status {
+  margin-left: 0;
+}
+.mdmx-editor .mdmx-snippet-save {
+  margin-left: auto;
+  display: inline-flex;
+  gap: 6px;
+}
+.mdmx-editor .mdmx-snippet-input {
+  font: inherit;
+  font-size: 14px;
+  padding: 6px 10px;
+  border: 1px solid var(--mdmx-border);
+  border-radius: var(--mdmx-radius);
+  background: var(--mdmx-surface);
+  color: var(--mdmx-fg);
+}
+.mdmx-editor .mdmx-snippet-confirm {
+  font: inherit;
+  font-size: 14px;
+  padding: 6px 12px;
+  border: 0;
+  border-radius: var(--mdmx-radius);
+  background: var(--mdmx-accent);
+  color: var(--mdmx-accent-fg);
+  cursor: pointer;
+}
+.mdmx-editor .mdmx-snippet-confirm:disabled {
+  background: var(--mdmx-border);
+  color: var(--mdmx-fg-muted);
+}
+
+/* -- media library modal -- */
+.mdmx-editor .mdmx-media-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.35);
+}
+.mdmx-editor .mdmx-media-modal {
+  width: min(720px, 92vw);
+  max-height: 80vh;
+  display: flex;
+  flex-direction: column;
+  background: var(--mdmx-surface);
+  border-radius: 14px;
+  box-shadow: var(--mdmx-shadow);
+  overflow: hidden;
+}
+.mdmx-editor .mdmx-media-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--mdmx-border);
+}
+.mdmx-editor .mdmx-media-search {
+  flex: 1;
+  font: inherit;
+  font-size: 14px;
+  padding: 7px 12px;
+  border: 1px solid var(--mdmx-border);
+  border-radius: var(--mdmx-radius);
+  background: var(--mdmx-surface);
+  color: var(--mdmx-fg);
+}
+.mdmx-editor .mdmx-media-upload {
+  font: inherit;
+  font-size: 14px;
+  padding: 7px 14px;
+  border: 0;
+  border-radius: var(--mdmx-radius);
+  background: var(--mdmx-accent);
+  color: var(--mdmx-accent-fg);
+  cursor: pointer;
+}
+.mdmx-editor .mdmx-media-close {
+  font-size: 22px;
+  line-height: 1;
+  width: 32px;
+  height: 32px;
+  border: 0;
+  border-radius: var(--mdmx-radius);
+  background: transparent;
+  color: var(--mdmx-fg-muted);
+  cursor: pointer;
+}
+.mdmx-editor .mdmx-media-body {
+  overflow: auto;
+  padding: 16px;
+}
+.mdmx-editor .mdmx-media-empty {
+  padding: 36px;
+  text-align: center;
+  color: var(--mdmx-fg-muted);
+}
+.mdmx-editor .mdmx-media-error {
+  padding: 12px 16px;
+  color: var(--mdmx-danger);
+  font-size: 14px;
+}
+.mdmx-editor .mdmx-media-grid {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  gap: 12px;
+}
+.mdmx-editor .mdmx-media-item {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: 100%;
+  padding: 8px;
+  border: 1px solid var(--mdmx-border);
+  border-radius: 10px;
+  background: var(--mdmx-surface);
+  cursor: pointer;
+}
+.mdmx-editor .mdmx-media-item:hover {
+  border-color: var(--mdmx-accent);
+}
+.mdmx-editor .mdmx-media-thumb {
+  width: 100%;
+  height: 88px;
+  object-fit: contain;
+  background: var(--mdmx-surface-2);
+  border-radius: 6px;
+}
+.mdmx-editor .mdmx-media-fileicon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 88px;
+  font-size: 28px;
+  color: var(--mdmx-fg-muted);
+  background: var(--mdmx-surface-2);
+  border-radius: 6px;
+}
+.mdmx-editor .mdmx-media-name {
+  font-size: 12px;
+  color: var(--mdmx-fg-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.mdmx-editor .mdmx-loading {
+  padding: 48px 40px;
+  color: var(--mdmx-fg-muted);
+  font-family: var(--mdmx-font);
+}
+
+/* -- reduced motion -- */
+@media (prefers-reduced-motion: reduce) {
+  .mdmx-editor .mdmx-rail,
+  .mdmx-editor .mdmx-sidebar {
+    transition: none;
+  }
+}
+
+/* -- focus visibility (a11y) -- */
+.mdmx-editor a:focus-visible,
+.mdmx-editor button:focus-visible {
+  outline: 2px solid var(--mdmx-accent);
+  outline-offset: 2px;
+  border-radius: var(--mdmx-radius-sm);
+}

@@ -78,6 +78,7 @@ standard layout from [guide 1](01-installation.md).
 | `mediaDir` | `"public/media"` | Media directory, repo-relative |
 | `registryPath` | `".mdmx/registry.json"` | Registry JSON, project-root-relative |
 | `title` | `"MDMX"` | Product name in the navbar |
+| `contentClassName` | `"mdmx-page"` | Class the editor puts on its canvas content root so your site's content styles apply while editing; `""` opts out |
 
 ## Theming
 
@@ -98,13 +99,30 @@ restyling is a token override:
 }
 ```
 
-The embedded editor is themed by the same stylesheet, **scoped under
-`.mdmx-dash-editor`** — an editor you mount yourself elsewhere (below) stays
-headless, as `@mdmx/editor` always has been.
+The embedded editor's chrome is `@mdmx/editor/styles.css` (the dashboard
+imports it for you). It reads the same `--mdmx-*` tokens, so the override
+above themes the rail, toolbar, and sidebar too.
 
-Your own block components are yours to style: global CSS (like the demo's
-`mk-*` classes) applies inside the editor canvas and on your public pages
-alike — that's what makes the editing experience WYSIWYG.
+**The canvas is your page.** The editor puts your content class on its
+content root — `mdmx-page` by convention, the class the scaffolded
+`app/posts/[slug]/page.tsx` gives its `<article>`; set `contentClassName`
+if yours differs — so your global CSS (the demo's `mk-*` classes, your
+`.mdmx-page` typography, Tailwind utilities on your components) applies
+inside the editor exactly as on the public page. The editor adds nothing
+inside the canvas that changes geometry; its own prose rules are
+zero-specificity fallbacks that any rule of yours beats. Two things to keep
+in mind:
+
+- Components respond to the canvas width with **container queries**, not
+  window media queries — the default `fit` preview is the pane's own width,
+  and the device previews are zoomed frames.
+- Make the content class self-contained: give it its own `color`,
+  `background`, and font, not just `body`'s — inside the editor it sits in
+  the dashboard, whose body colors differ.
+- Bare-element rules for your content belong on your content class (`.mdmx-page
+  h2 { … }`), not on `body`/`h2` globally, or they'll style the dashboard
+  too. If you use Tailwind, keep them in `@layer base` so utilities on your
+  components still win (the demo's `globals.css` shows the pattern).
 
 ## Advanced: mounting the editor manually
 
@@ -171,9 +189,10 @@ export function MyEditor({
 ```
 
 Rejecting the `onSave` promise surfaces the error in the editor's save
-toolbar. Note that a manual mount is **unstyled** — the editor renders
-class-named markup (`.mdmx-editor`, `.mdmx-rail`, …) and leaves appearance to
-you; the dashboard's scoped chrome deliberately doesn't apply outside it.
+toolbar. A manual mount gets the reference chrome by importing the editor's
+stylesheet (`import "@mdmx/editor/styles.css"`) and is themed through the
+same `--mdmx-*` tokens; leave the import out and the editor stays headless
+class-named markup (`.mdmx-editor`, `.mdmx-rail`, …) for you to style.
 
 ### `MDMXEditorProps` reference
 
@@ -188,6 +207,7 @@ you; the dashboard's scoped chrome deliberately doesn't apply outside it.
 | `backHref` / `backLabel` | `string` | Optional back link at the start of the toolbar |
 | `media` | `MediaSource` | Media adapter (`{ list, upload }`); presence enables the image button + library |
 | `mediaDir` | `string` | Where uploads land (default `public/media`) |
+| `contentClassName` | `string` | Class on the canvas content root so your site's content styles apply while editing (default `mdmx-page`; `""` opts out) |
 
 A `MediaSource` backed by the MDMX API is ~20 lines — list via
 `GET /files?dir=<mediaDir>`, upload via `POST /media`, map repo paths under

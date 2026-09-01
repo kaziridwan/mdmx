@@ -11,7 +11,7 @@ initial design-and-build conversation (12 commits).
 
 <!-- APPEND NEW ENTRIES ABOVE THIS LINE -->
 
-### S33 — 0.6.0 release session (release/0.6.0): M1 Next 16, M2 Tailwind + shadcn
+### S33 — 0.6.0 release session (release/0.6.0): M1 Next 16, M2 Tailwind + shadcn, M3 canvas parity
 - **M1 — Next 16**: demo-next on `next@16.3.4` (Turbopack by default) with
   React 19.2 types; `@mdmx/dashboard`'s `next` devDependency bumped in step
   so one copy resolves (its `next/link.js`/`next/dynamic.js` shims are typed
@@ -62,6 +62,38 @@ initial design-and-build conversation (12 commits).
 - Verified: 16 surfaces clean, `next build` 0 warnings (Tailwind through
   PostCSS), demo-next typechecks with all 61 components under TS 5.5.4,
   `pnpm verify` green.
+- **M3 — canvas parity + editor structure** (ADR-050, ADR-051). The editor
+  now owns its chrome: `@mdmx/editor/styles.css` (tokens at
+  `:where(:root)`, chrome rooted at `.mdmx-editor`, host-independence pins
+  and canvas fallbacks in `@layer base`); the dashboard imports it and its
+  stylesheet went 2094 → 1266 lines, the playground's 659 → 63. The move
+  was verified as a pure refactor: the snapshot diff of all 15 screens was
+  **0 changed elements**. Then the canvas became the page: the ProseMirror
+  root carries the host's content class (`contentClassName`, default
+  `mdmx-page`, through `DashboardConfig`), the canvas element is layout only,
+  block wrappers add no geometry (selection/hover are outlines), the content
+  hole no longer forces a font, and every bare-element canvas rule is a
+  zero-specificity layered fallback. The 0.5 corruption rules
+  (`.mdmx-dash-editor .mdmx-canvas h1/a/code …`) are gone with it.
+- **Measured parity** (`parity.mjs`: every element of every block, public
+  page vs. desktop preview at zoom 1, panels collapsed): `layout` 0/9
+  differ, `welcome` 1/16, `marketing` 4/101 — the four are the demo's
+  `Stat` figure styling (M5). Along the way the script caught two things
+  worth knowing: the demo's `.mdmx-page` relied on `body` for its color, so
+  the canvas inherited the dashboard's — the content class now carries its
+  own color/background (guide 04 says why); and a `.mdmx-nodeview { margin:
+  0 }` I had added out-ranked the page's `> * + *` rhythm rule — the wrapper
+  now has no rule at all.
+- **`fit` is the default viewport** (real size, zoom 1); mobile/tablet/
+  desktop are framed device previews. **Rail and sidebar collapse** on
+  desktop from toolbar toggles (persisted). **Editor.tsx split**: 612 → 344
+  lines; `useEditorView`, `useViewport`, `useSnippets`, `EditorToolbar`,
+  `MobileFabs`, `panels.ts`. Tests: viewport (fit/zoom/persistence),
+  panels, dashboard `resolveConfig`, and mount tests for the content class,
+  fit default, device switch, panel toggles + restore.
+- Verified: 16 surfaces clean, edit→save loop (two saves), `next build` 0
+  warnings, playground builds against the shipped stylesheet, `pnpm verify`
+  green.
 - **Housekeeping**: a Next 15 dev server left on :3456 by the grilling
   session was killed. pnpm 11's `minimumReleaseAge` wrote
   `minimumReleaseAgeExclude` entries for `next@16.3.4` into
@@ -71,14 +103,20 @@ initial design-and-build conversation (12 commits).
   ProseMirror warns the canvas lacks `white-space: pre-wrap`.
 - Files/packages changed: examples/demo-next (package.json, next.config.mjs,
   tsconfig.json, postcss.config.mjs, components.json, app/globals.css,
-  app/layout.tsx, components/ui/*, lib/, hooks/), packages/project
-  (config.ts), packages/dashboard (package.json, next/index.ts, styles.css),
-  pnpm-lock.yaml, pnpm-workspace.yaml.
-- ADRs: ADR-049 (dashboard stylesheet host-independence in `@layer base`).
-- Tests: 389 (unchanged), `pnpm verify` green.
+  app/layout.tsx, components/ui/*, lib/, hooks/), examples/editor-playground
+  (styles.css), packages/project (config.ts), packages/dashboard
+  (package.json, next/index.ts, styles.css, config.ts, views/EditorView.tsx),
+  packages/editor (styles.css, package.json, react/Editor.tsx + new hooks/
+  components, viewport.ts, panels.ts, icons.tsx), pnpm-lock.yaml,
+  pnpm-workspace.yaml.
+- ADRs: ADR-049 (dashboard stylesheet host-independence in `@layer base`),
+  ADR-050 (the canvas is the page), ADR-051 (`fit` default + collapsible
+  panels).
+- Tests: 389 → 402 (+11 editor, +2 dashboard), `pnpm verify` green.
 - Wiki pages touched: SessionLog, Roadmap (new Phase 2.8 — 0.6.0 milestone
-  table), Home (status line), Packages (dashboard stylesheet), DECISIONS,
-  AGENTS.md.
+  table), Home (status line), Packages (editor files + stylesheet, dashboard
+  stylesheet), Glossary (Canvas, Content class, Fit mode), DECISIONS, guide
+  04 (theming, `contentClassName`, manual mounts), AGENTS.md.
 - Follow-ups: examples/demo-next/README.md still describes the 0.4-era
   `lib/components.ts` mount (M7 docs wave); Roadmap has no 0.5.0 phase
   section (M7).

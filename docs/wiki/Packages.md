@@ -95,7 +95,11 @@ flat React editor UI behind the `@mdmx/editor/react` subpath.
 | `commands.ts` | `slashItems`/`slashItemsFor` (context-aware palette), region-local + `allowedParents`-aware `insertComponent`, `canInsertComponent`, `resolveComponentDrop`, `mdmxInputRules`, mark commands, `initialProps` (ADR-028). |
 | `react/react-node-view.tsx` | Thin React-NodeView adapter (one React root per component node; `contentDOM` placement). Replaces TipTap (ADR-023). |
 | `react/ComponentBlock.tsx` | Generic component renderer: live author component + error boundary → placeholder card; content hole for rich-text/blocks. |
-| `react/Editor.tsx` | `MDMXEditor` — owns the `EditorView` (history, baseKeymap, input rules, drop/gap cursor, slash plugin), builds per-component NodeViews, drag-from-rail drop; composes the chrome. |
+| `react/Editor.tsx` | `MDMXEditor` — the composition root: wires the hooks below to the chrome, owns save state, the media picker, the sidebar resize, and the canvas click-into-padding behavior. Puts the host's content class (`contentClassName`, default `mdmx-page`) on the ProseMirror root (ADR-050). |
+| `react/use-editor-view.ts`, `use-viewport.ts`, `use-snippets.ts` | `useEditorView` owns the `EditorView` (history, baseKeymap, input rules, drop/gap cursor, slash plugin, per-component NodeViews, paste-image and drag-from-rail handlers); `useViewport` the preview mode + pane width → zoom; `useSnippets` the save-as-snippet flow. |
+| `react/viewport.ts`, `panels.ts`, `sidebar-resize.ts` | Pure, unit-tested state helpers: `fit` + device modes and `canvasZoom` (ADR-036/051), collapsible rail/sidebar persistence, sidebar width clamping/persistence. |
+| `react/EditorToolbar.tsx`, `MobileFabs.tsx` | The sticky toolbar (back link, title, viewport switch, panel toggles, insert image, snippet save, save status) and the mobile floating controls. |
+| `styles.css` (→ `@mdmx/editor/styles.css`) | The reference chrome stylesheet: tokens at `:where(:root)`, chrome rooted at `.mdmx-editor`, canvas fallbacks + host-independence pins in `@layer base` (ADR-049/050). Imported by the dashboard and the playground. |
 | `react/Rail.tsx`, `SlashMenu.tsx`, `PropPanel.tsx`, `SourcePane.tsx`, `EditorSidebar.tsx` | Chrome: component palette, `/`-menu, props editor (one tx per edit), live canonical source with active-block marking, and the unified right sidebar that toggles Source ⇄ Properties (ADR-030). |
 | `react/Editor.tsx` (`onSave`/`docTitle`/`collection`) | Optional save toolbar (dirty/saving/saved/error); serializes the doc via `serializeDoc` and hands canonical MDMX to the host. Used by the Next mount page. |
 | `react/FrontmatterPanel.tsx`, `controls.tsx` | Document-level panel editing a collection's typed frontmatter; writes canonical YAML to the doc attr in one tx. `Control` is the shared typed input (also used by `PropPanel`). |
@@ -144,11 +148,13 @@ library siblings. Ships a complete stylesheet (`--mdmx-*` tokens, light+dark,
 under `.mdmx-dash-editor` so standalone editor mounts stay headless. Its
 *host independence* section (`@layer base`) pins everything the chrome used
 to take from UA defaults, so it renders the same under Tailwind's preflight,
-another reset, or no global CSS (ADR-049).
+another reset, or no global CSS (ADR-049). The editor's chrome itself is
+`@mdmx/editor/styles.css`, imported alongside (ADR-050); only the mount
+wrapper (`.mdmx-dash-editor`) remains here.
 
 | File | Responsibility |
 | --- | --- |
-| `next/index.ts` | `createDashboardPage()` — optional-catch-all page factory; reads `.mdmx/registry.json` per request, hands spec + resolved config + author-component client references to the client app; re-exports the `@mdmx/next` surface; imports the stylesheet (zero-config styling via `transpilePackages`). |
+| `next/index.ts` | `createDashboardPage()` — optional-catch-all page factory; reads `.mdmx/registry.json` per request, hands spec + resolved config (incl. `contentClassName`) + author-component client references to the client app; imports the editor stylesheet and the dashboard stylesheet (zero-config styling via `transpilePackages`). |
 | `DashboardApp.tsx`, `context.ts` | Client root: `AuthGate` → `DashboardContext` (api, me, registry, live collections via `GET /collections`, refresh) → shell + view router. Applies the stored theme pin on load. |
 | `routes.ts` | Pure `resolveRoute(slug)` URL scheme + `routeHref`/`editorHref` (editor routes carry the full repo-relative path). |
 | `api-client.ts` | Typed same-origin client over the content API; `UnauthorizedError` drops the UI to the login screen. |

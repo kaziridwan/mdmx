@@ -82,3 +82,35 @@ export function MonitorIcon({ size = 15 }: IconProps) {
     </svg>
   );
 }
+
+/** Fit-to-pane viewport (the default): the canvas takes the pane's width. */
+export function FitIcon({ size = 15 }: IconProps) {
+  return (
+    <svg {...base(size)}>
+      <polyline points="9 3 3 3 3 9" />
+      <polyline points="15 3 21 3 21 9" />
+      <polyline points="9 21 3 21 3 15" />
+      <polyline points="15 21 21 21 21 15" />
+    </svg>
+  );
+}
+
+/** Left panel (the component rail) toggle. */
+export function PanelLeftIcon({ size = 15 }: IconProps) {
+  return (
+    <svg {...base(size)}>
+      <rect x="3" y="4" width="18" height="16" rx="2" />
+      <line x1="9" y1="4" x2="9" y2="20" />
+    </svg>
+  );
+}
+
+/** Right panel (the Source/Properties sidebar) toggle. */
+export function PanelRightIcon({ size = 15 }: IconProps) {
+  return (
+    <svg {...base(size)}>
+      <rect x="3" y="4" width="18" height="16" rx="2" />
+      <line x1="15" y1="4" x2="15" y2="20" />
+    </svg>
+  );
+}
