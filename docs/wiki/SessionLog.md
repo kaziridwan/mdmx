@@ -11,6 +11,47 @@ initial design-and-build conversation (12 commits).
 
 <!-- APPEND NEW ENTRIES ABOVE THIS LINE -->
 
+### S33 — 0.6.0 release session (release/0.6.0): M1 Next 16
+- **M1 — Next 16**: demo-next on `next@16.3.4` (Turbopack by default) with
+  React 19.2 types; `@mdmx/dashboard`'s `next` devDependency bumped in step
+  so one copy resolves (its `next/link.js`/`next/dynamic.js` shims are typed
+  and bundled against the same version the app runs). Package peer ranges
+  stay `next >=15`. Next rewrote demo-next's `tsconfig.json` (`jsx:
+  react-jsx`, `.next/dev/types`) — kept. Its new habit of writing
+  `AGENTS.md`/`CLAUDE.md` into the app on every `next dev` is off
+  (`agentRules: false`): the repo keeps its hand-curated pair at the root.
+- **Turbopack fallout** (the reason M1 is its own milestone): `next dev` and
+  every surface were clean on the first run — home, three posts, the private
+  post, dashboard home/collection/edit/new, three editors, media, studio,
+  studio component, settings (16 pages, 0 console errors, 0 failed requests),
+  plus the edit→save loop (one-line diff, second save via the sha handoff).
+  `next build` was not: six "Dynamic filesystem access causes tracing of the
+  whole project" warnings pointing into `@mdmx/project` `config.ts`
+  (`join`/`existsSync`/`readFileSync`/`resolve`/dynamic `import()`) and
+  `@mdmx/dashboard` `next/index.ts` (registry read). Consumers bundle these
+  same files (`transpilePackages`), so the fix is in-source:
+  `/* turbopackIgnore: true */` at each call (+ `webpackIgnore` on the
+  `.mjs` config import, which no bundler should try to resolve). Build now
+  reports 0 warnings. Recorded as an AGENTS.md sharp edge.
+- **Housekeeping**: a Next 15 dev server left on :3456 by the grilling
+  session was killed. pnpm 11's `minimumReleaseAge` wrote
+  `minimumReleaseAgeExclude` entries for `next@16.3.4` into
+  `pnpm-workspace.yaml`; committed as-is so the install stays reproducible
+  inside the window.
+- Noted for M3 (Next 16 now forwards browser console output to the terminal):
+  ProseMirror warns the canvas lacks `white-space: pre-wrap`.
+- Files/packages changed: examples/demo-next (package.json, next.config.mjs,
+  tsconfig.json), packages/project (config.ts), packages/dashboard
+  (package.json, next/index.ts), pnpm-lock.yaml, pnpm-workspace.yaml.
+- ADRs: none (version bump; the tracing opt-out is a sharp edge, not a
+  decision).
+- Tests: 389 (unchanged), `pnpm verify` green.
+- Wiki pages touched: SessionLog, Roadmap (new Phase 2.8 — 0.6.0 milestone
+  table), Home (status line: Next 16, honest test count), AGENTS.md.
+- Follow-ups: examples/demo-next/README.md still describes the 0.4-era
+  `lib/components.ts` mount (M7 docs wave); Roadmap has no 0.5.0 phase
+  section (M7).
+
 ### S32 — repo hygiene: attribution scrub, root `start` script
 - **History rewrite**: every `Co-Authored-By: Claude …` trailer removed from
   all 64 commits across all branches (`git filter-branch --msg-filter`);

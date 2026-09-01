@@ -30,8 +30,10 @@ registry that drives validation, the editor palette, and prop panels.
 
 ## Status at a glance
 
-- **8 packages** at **v0.5.0** (`release/0.5.0`), 364 tests, all green; strict
-  TypeScript throughout; Next 15 + React 19.
+- **8 packages** at **v0.5.0** on `main`; 0.6.0 in progress on
+  `release/0.6.0` (see [Roadmap](Roadmap.md#phase-28--060-shadcn-example-canvas-fidelity-first-npm-publish)).
+  389 tests, all green; strict TypeScript throughout; Next 16 (Turbopack) +
+  React 19.2.
 - **Setup is convention-first (0.5)**: `mdmx init nextjs` scaffolds the app,
   `createMDMXHandlers()` takes no arguments, and `mdmx generate` writes the
   component maps and bound server helpers into a committed `.mdmx/`. Mode is

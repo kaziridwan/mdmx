@@ -128,6 +128,16 @@ see phantom "has no exported member" errors.
 - `remark-stringify` minor bumps can change output bytes — see invariant 1.
 - `strong` wrapping an entire `link` re-nests as link>strong once
   (canonicalization); idempotent thereafter. Covered by a test; don't "fix" it.
+- **Next 16 / Turbopack traces filesystem access.** `next build` statically
+  follows `process.cwd()` into `join`/`resolve`/`existsSync`/`readFileSync`/
+  dynamic `import()` and warns "Dynamic filesystem access causes tracing of
+  the whole project" for each call it cannot scope — and it does so from
+  inside our published `dist`, i.e. in every consumer's build. Reading the
+  working tree per request is the design, so opt the call out at the source:
+  `join(/* turbopackIgnore: true */ root, name)` (see `@mdmx/project`
+  `config.ts` and `@mdmx/dashboard` `next/index.ts`). New server-side fs
+  calls reachable from a route get the same comment; verify with
+  `pnpm --filter demo-next build` (must report 0 warnings).
 
 ## Wiki upkeep (required)
 

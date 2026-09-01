@@ -46,10 +46,13 @@ export function createDashboardPage(options: DashboardPageOptions = {}) {
 
   return async function MDMXDashboardPage({ params }: DashboardPageProps) {
     const { slug = [] } = await params;
-    const registryPath = join(process.cwd(), resolved.registryPath);
+    // Read from the working tree per request by design; the turbopackIgnore
+    // comments keep Next 16's build from tracing the whole project for it
+    // (see @mdmx/project's findConfigFile for the longer note).
+    const registryPath = join(/* turbopackIgnore: true */ process.cwd(), resolved.registryPath);
     let spec: RegistrySpec;
     try {
-      spec = JSON.parse(readFileSync(registryPath, "utf8")) as RegistrySpec;
+      spec = JSON.parse(readFileSync(/* turbopackIgnore: true */ registryPath, "utf8")) as RegistrySpec;
     } catch (err) {
       throw new Error(
         `MDMX dashboard: could not read the registry at ${registryPath}. ` +

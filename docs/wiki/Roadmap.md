@@ -63,6 +63,21 @@ content; GitHub-mode deploy is wired but undocumented as a guide.
 | Studio defs with children regions | ⬜ | v1 studio components are leaf components |
 | `mdmx dev` HMR into a running editor | ⬜ | Carried over from Phase 2 |
 
+## Phase 2.8 — 0.6.0: shadcn example, canvas fidelity, first npm publish
+
+Plan and decision table (Q1–Q15): `.dev-context/plans/2026-09-01-0.6-plan.md`
+(local, untracked). One commit per verified milestone on `release/0.6.0`.
+
+| Milestone | Status | Notes |
+| --- | --- | --- |
+| M1 — demo-next on Next 16 (Turbopack) | ✅ | `next@16.3.4`, React 19.2 types; package peers stay `next >=15`. Turbopack fallout was one thing: build-time fs tracing warnings from `@mdmx/project`/`@mdmx/dashboard`, fixed in-source with `turbopackIgnore` (AGENTS.md sharp edge). Every surface + edit→save loop live-verified; `next build` clean. |
+| M2 — Tailwind v4 + shadcn foundation | ⬜ | `shadcn init` + `add --all`; dashboard chrome hardened against preflight |
+| M3 — canvas parity + editor structure | ⬜ | `@layer base` defaults, `mdmx-page` on the canvas root, `fit` viewport default, collapsible panels, Editor.tsx split |
+| M4 — interactivity | ⬜ | NodeView `stopEvent` routing, links never navigate, `render.interactive` (SPEC) |
+| M5 — shadcn blocks + content | ⬜ | ~24 content-shaped blocks; 17 marketing components rebuilt on shadcn primitives, same names/props |
+| M6 — studio Tailwind handoff | ⬜ | Tailwind detection → class manifest + `@source`; `mdmx check` guidance |
+| M7 — distribution, docs, publish prep | ⬜ | MIT, `pack:all` + overrides (guide 08), RELEASING.md, docs wave |
+
 ## Phase 3 — the moat
 
 | Item | Status | Notes |
