@@ -71,7 +71,7 @@ Plan and decision table (Q1–Q15): `.dev-context/plans/2026-09-01-0.6-plan.md`
 | Milestone | Status | Notes |
 | --- | --- | --- |
 | M1 — demo-next on Next 16 (Turbopack) | ✅ | `next@16.3.4`, React 19.2 types; package peers stay `next >=15`. Turbopack fallout was one thing: build-time fs tracing warnings from `@mdmx/project`/`@mdmx/dashboard`, fixed in-source with `turbopackIgnore` (AGENTS.md sharp edge). Every surface + edit→save loop live-verified; `next build` clean. |
-| M2 — Tailwind v4 + shadcn foundation | ⬜ | `shadcn init` + `add --all`; dashboard chrome hardened against preflight |
+| M2 — Tailwind v4 + shadcn foundation | ✅ | Tailwind v4 via PostCSS, `shadcn init -d` (base-nova / Base UI) + `add --all` → 61 components in `components/ui/`. Dashboard chrome + `.mdmx-page` prose hardened against preflight with `@layer base` pins (ADR-049), driven by a computed-style diff of every screen (998 → 243 changed elements, the rest intended). `--muted` token collision renamed to `--ink-muted`. |
 | M3 — canvas parity + editor structure | ⬜ | `@layer base` defaults, `mdmx-page` on the canvas root, `fit` viewport default, collapsible panels, Editor.tsx split |
 | M4 — interactivity | ⬜ | NodeView `stopEvent` routing, links never navigate, `render.interactive` (SPEC) |
 | M5 — shadcn blocks + content | ⬜ | ~24 content-shaped blocks; 17 marketing components rebuilt on shadcn primitives, same names/props |

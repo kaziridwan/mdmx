@@ -110,6 +110,82 @@
   --mdmx-shadow: 0 1px 2px rgba(0, 0, 0, 0.4), 0 6px 20px rgba(0, 0, 0, 0.35);
 }
 
+/* -- host independence ------------------------------------------------------
+   The dashboard mounts inside the host app and inherits whatever global
+   stylesheet that app ships: Tailwind's preflight (a shadcn app), another
+   reset, or nothing at all. Everything the chrome used to take from UA
+   defaults is pinned here so it renders the same in every host.
+
+   Why `@layer base`: Tailwind puts preflight in `base`, so these rules beat
+   it (same layer, higher specificity) while still losing to utilities (a
+   later layer — a studio template's `font-semibold` must win) and to every
+   unlayered rule in this file. In a host without layers they simply beat
+   the UA stylesheet. Verified by a computed-style diff of every dashboard
+   screen before/after preflight. */
+@layer base {
+  .mdmx-dash,
+  .mdmx-dash-gate {
+    line-height: normal;
+  }
+  .mdmx-dash h1, .mdmx-dash-gate h1 { font-size: 2em; font-weight: 700; margin: 0.67em 0; }
+  .mdmx-dash h2, .mdmx-dash-gate h2 { font-size: 1.5em; font-weight: 700; margin: 0.83em 0; }
+  .mdmx-dash h3, .mdmx-dash-gate h3 { font-size: 1.17em; font-weight: 700; margin: 1em 0; }
+  .mdmx-dash h4, .mdmx-dash-gate h4,
+  .mdmx-dash h5, .mdmx-dash-gate h5,
+  .mdmx-dash h6, .mdmx-dash-gate h6 { font-weight: 700; margin: 1.33em 0; }
+  .mdmx-dash p, .mdmx-dash-gate p,
+  .mdmx-dash pre, .mdmx-dash-gate pre,
+  .mdmx-dash blockquote, .mdmx-dash-gate blockquote,
+  .mdmx-dash ul, .mdmx-dash-gate ul,
+  .mdmx-dash ol, .mdmx-dash-gate ol {
+    margin: 1em 0;
+  }
+  .mdmx-dash ul, .mdmx-dash-gate ul,
+  .mdmx-dash ol, .mdmx-dash-gate ol {
+    padding-left: 40px;
+  }
+  .mdmx-dash ul, .mdmx-dash-gate ul { list-style: disc; }
+  .mdmx-dash ol, .mdmx-dash-gate ol { list-style: decimal; }
+  .mdmx-dash code, .mdmx-dash-gate code,
+  .mdmx-dash kbd, .mdmx-dash-gate kbd,
+  .mdmx-dash samp, .mdmx-dash-gate samp,
+  .mdmx-dash pre, .mdmx-dash-gate pre {
+    font-family: var(--mdmx-mono);
+  }
+  .mdmx-dash button, .mdmx-dash-gate button,
+  .mdmx-dash input, .mdmx-dash-gate input,
+  .mdmx-dash select, .mdmx-dash-gate select,
+  .mdmx-dash textarea, .mdmx-dash-gate textarea {
+    font: inherit;
+    /* A control inside a bold label must not inherit the label's weight. */
+    font-weight: 400;
+    color: inherit;
+    margin: 0;
+  }
+  .mdmx-dash button, .mdmx-dash-gate button {
+    padding: 0;
+    border: 0;
+    background: transparent;
+  }
+  .mdmx-dash fieldset, .mdmx-dash-gate fieldset {
+    margin: 0;
+    padding: 0;
+    border: 0;
+    min-inline-size: 0;
+  }
+  .mdmx-dash a, .mdmx-dash-gate a {
+    color: inherit;
+    text-decoration: none;
+  }
+  .mdmx-dash img, .mdmx-dash-gate img,
+  .mdmx-dash svg, .mdmx-dash-gate svg,
+  .mdmx-dash video, .mdmx-dash-gate video {
+    display: block;
+    vertical-align: middle;
+    max-width: 100%;
+  }
+}
+
 /* -- auth gate / login ---------------------------------------------------- */
 
 .mdmx-dash-gate {
@@ -581,6 +657,7 @@
 
 .mdmx-dash-view-sub a {
   color: var(--mdmx-accent);
+  text-decoration: underline;
 }
 
 /* -- entry table ---------------------------------------------------------------- */

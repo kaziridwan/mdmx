@@ -141,7 +141,10 @@ The app layer (ADR-034): the drop-in CMS mounted with two ~3-line files
 Depends on core + editor + next — the one allowed composition point above the
 library siblings. Ships a complete stylesheet (`--mdmx-*` tokens, light+dark,
 `data-mdmx-theme` override) that also themes the embedded editor, scoped
-under `.mdmx-dash-editor` so standalone editor mounts stay headless.
+under `.mdmx-dash-editor` so standalone editor mounts stay headless. Its
+*host independence* section (`@layer base`) pins everything the chrome used
+to take from UA defaults, so it renders the same under Tailwind's preflight,
+another reset, or no global CSS (ADR-049).
 
 | File | Responsibility |
 | --- | --- |

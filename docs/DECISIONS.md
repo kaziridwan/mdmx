@@ -1426,3 +1426,47 @@ package now has `files: ["dist"]`, and `cli`/`provider-github` gained
 `exports` maps. `@mdmx/next` also gained a barrel-contract test — the
 published surface asserted as a list, closing the "entry points are never
 exercised" blind spot the prune made urgent.
+
+## ADR-049 — The shipped dashboard stylesheet pins its host-independence in `@layer base`
+
+**Context.** `@mdmx/dashboard/styles.css` is imported into the host app and
+rendered under whatever global CSS that app ships. Until 0.6 the chrome
+silently took ~40 values from the UA stylesheet — root `line-height`,
+heading sizes/weights and block margins, control fonts/padding/borders, link
+color and decoration, `code` monospace. 0.6 turns demo-next into a Tailwind
+v4 + shadcn app, whose preflight replaces every one of them. A computed-style
+diff of all 15 screens before/after preflight showed 998 element-level
+changes: inputs inherited **bold** from their labels, hint paragraphs lost
+their margins, `code` lost monospace, the whole chrome got 1.5 line-height —
+and, in the other direction, the editor's viewport switch rendered all three
+buttons for the first time (UA button padding had been overflowing the
+fixed-width buttons and the group clipped two of them).
+
+**Decision.** The stylesheet gains a *host independence* section that pins
+every UA-derived value, written in `@layer base` with element-level
+specificity (`.mdmx-dash h1`, `.mdmx-dash button`, …). The cascade contract:
+
+- beats Tailwind's preflight (same layer, higher specificity) and the UA
+  stylesheet (any author rule does), so the chrome looks the same in a
+  shadcn app, under another reset, or with no global CSS at all;
+- loses to utilities (a later layer) — a studio template's `font-semibold`
+  or `text-2xl` must win over the dashboard's defaults;
+- loses to every unlayered rule in the same file, so the existing chrome
+  rules stay authoritative and nothing had to be rewritten.
+
+The demo's own `.mdmx-page` prose defaults follow the identical contract in
+`app/globals.css`; M3 extends it to the editor canvas (plan Q8), which is
+why this is a stylesheet-wide convention and not a one-off fix.
+
+**Alternatives rejected.** Unlayered pins at `:where()` specificity — the
+first attempt: they beat preflight but also beat utilities (measured:
+`h2.font-semibold` became 700, `text-2xl` became 27px). `@layer base` with
+`:where()` — loses to preflight's own element selectors inside the same
+layer. Asking hosts to scope preflight away from the dashboard — puts the
+burden on every consumer and does nothing for hosts without Tailwind.
+
+**Status.** Shipped — 0.6 M2. The diff went 998 → 243 changed elements; the
+remainder are the pins themselves and accepted improvements (controls
+inheriting the page font, the canvas `figure` now matching the public page).
+Method kept for later milestones: `snapshot.mjs` + `snapdiff.mjs` in the
+session scratchpad — snapshot every surface, change the stylesheet, diff.

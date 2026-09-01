@@ -11,7 +11,7 @@ initial design-and-build conversation (12 commits).
 
 <!-- APPEND NEW ENTRIES ABOVE THIS LINE -->
 
-### S33 — 0.6.0 release session (release/0.6.0): M1 Next 16
+### S33 — 0.6.0 release session (release/0.6.0): M1 Next 16, M2 Tailwind + shadcn
 - **M1 — Next 16**: demo-next on `next@16.3.4` (Turbopack by default) with
   React 19.2 types; `@mdmx/dashboard`'s `next` devDependency bumped in step
   so one copy resolves (its `next/link.js`/`next/dynamic.js` shims are typed
@@ -33,6 +33,35 @@ initial design-and-build conversation (12 commits).
   `/* turbopackIgnore: true */` at each call (+ `webpackIgnore` on the
   `.mjs` config import, which no bundler should try to resolve). Build now
   reports 0 warnings. Recorded as an AGENTS.md sharp edge.
+- **M2 — Tailwind v4 + shadcn foundation**: demo-next gets `tailwindcss` +
+  `@tailwindcss/postcss` (`postcss.config.mjs`, `@import "tailwindcss"` at
+  the top of `globals.css`), `@/*` alias, then `shadcn init -d` (style
+  `base-nova` on Base UI, neutral, CSS variables — the current defaults, the
+  same thing a fresh `create-next-app` + `shadcn init` gives) and
+  `shadcn add --all`: **61 components** in `components/ui/`, `lib/utils.ts`,
+  `hooks/use-mobile.ts`, `TooltipProvider` around the layout. `mdmx
+  generate` still sees exactly the 17 author components (its glob is
+  `components/mdmx/**`). Two collisions handled: shadcn's `--muted`
+  (a near-white *background* token) overwrote the app's `--muted` *text*
+  color — renamed to `--ink-muted` (15 usages); init also wired Geist via
+  `next/font` and `html { font-sans }`, inert for now because `body` and the
+  dashboard set their own families (typography is unified in M5).
+- **Preflight hardening, measured**: a playwright script snapshots the
+  computed style of every element on all 15 surfaces; diffing before/after
+  Tailwind showed 998 changed elements. Real regressions: 1.5 line-height
+  across the chrome, headings collapsing (700→400, sizes → body), inputs
+  inheriting **bold** from `.mdmx-dash-field` labels, hint paragraphs and
+  canvas paragraphs losing their margins, `code` losing monospace, UA
+  underline/blue gone. Fix: a *host independence* section in the dashboard
+  stylesheet and a prose-defaults block for `.mdmx-page`, both in
+  `@layer base` at element specificity (ADR-049 — the first, unlayered
+  attempt beat Tailwind utilities too and turned a studio template's
+  `font-semibold` into 700). Diff after: 243, all intended pins or accepted
+  improvements. Bonus: the editor's viewport switch had been clipped to one
+  button by UA padding since 0.4.1; it now shows all three.
+- Verified: 16 surfaces clean, `next build` 0 warnings (Tailwind through
+  PostCSS), demo-next typechecks with all 61 components under TS 5.5.4,
+  `pnpm verify` green.
 - **Housekeeping**: a Next 15 dev server left on :3456 by the grilling
   session was killed. pnpm 11's `minimumReleaseAge` wrote
   `minimumReleaseAgeExclude` entries for `next@16.3.4` into
@@ -41,13 +70,15 @@ initial design-and-build conversation (12 commits).
 - Noted for M3 (Next 16 now forwards browser console output to the terminal):
   ProseMirror warns the canvas lacks `white-space: pre-wrap`.
 - Files/packages changed: examples/demo-next (package.json, next.config.mjs,
-  tsconfig.json), packages/project (config.ts), packages/dashboard
-  (package.json, next/index.ts), pnpm-lock.yaml, pnpm-workspace.yaml.
-- ADRs: none (version bump; the tracing opt-out is a sharp edge, not a
-  decision).
+  tsconfig.json, postcss.config.mjs, components.json, app/globals.css,
+  app/layout.tsx, components/ui/*, lib/, hooks/), packages/project
+  (config.ts), packages/dashboard (package.json, next/index.ts, styles.css),
+  pnpm-lock.yaml, pnpm-workspace.yaml.
+- ADRs: ADR-049 (dashboard stylesheet host-independence in `@layer base`).
 - Tests: 389 (unchanged), `pnpm verify` green.
 - Wiki pages touched: SessionLog, Roadmap (new Phase 2.8 — 0.6.0 milestone
-  table), Home (status line: Next 16, honest test count), AGENTS.md.
+  table), Home (status line), Packages (dashboard stylesheet), DECISIONS,
+  AGENTS.md.
 - Follow-ups: examples/demo-next/README.md still describes the 0.4-era
   `lib/components.ts` mount (M7 docs wave); Roadmap has no 0.5.0 phase
   section (M7).
