@@ -241,6 +241,9 @@ importers:
       '@mdmx/next':
         specifier: workspace:*
         version: link:../next
+      '@mdmx/project':
+        specifier: workspace:*
+        version: link:../project
       '@mdmx/studio':
         specifier: workspace:*
         version: link:../studio

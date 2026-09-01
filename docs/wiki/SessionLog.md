@@ -11,7 +11,7 @@ initial design-and-build conversation (12 commits).
 
 <!-- APPEND NEW ENTRIES ABOVE THIS LINE -->
 
-### S33 — 0.6.0 release session (release/0.6.0): M1 Next 16, M2 Tailwind + shadcn, M3 canvas parity, M4 interactivity, M5 shadcn blocks
+### S33 — 0.6.0 release session (release/0.6.0): M1 Next 16, M2 Tailwind + shadcn, M3 canvas parity, M4 interactivity, M5 shadcn blocks, M6 studio handoff
 - **M1 — Next 16**: demo-next on `next@16.3.4` (Turbopack by default) with
   React 19.2 types; `@mdmx/dashboard`'s `next` devDependency bumped in step
   so one copy resolves (its `next/link.js`/`next/dynamic.js` shims are typed
@@ -145,6 +145,26 @@ initial design-and-build conversation (12 commits).
   editor), 12/12 interactivity checks (Tabs switch, accordions open, the
   newsletter input types — all inside the editor), `next build` 0 warnings,
   `pnpm verify` green. demo-next README rewritten for what the app is now.
+- **M6 — studio Tailwind handoff** (ADR-054, amends ADR-042).
+  `detectTailwind(root)` in `@mdmx/project` (an explicit `node_modules`
+  ancestor walk — not `require.resolve`, whose global folders made a bare
+  temp dir look like a Tailwind host in the first test run — with the
+  package.json dependency lists as fallback). `mdmx generate` in a Tailwind
+  host writes `.mdmx/studio-classes.txt` (one class per line), removes any
+  stale `studio.css`, and emits `server.ts` without the CSS import; other
+  hosts are unchanged. `mdmx check` warns when a Tailwind host with studio
+  components has no stylesheet referencing the manifest. The dashboard page
+  resolves `tailwindRuntime` from the same detection (config overrides) and
+  the browser runtime stays off; the studio editor's hint says a new class
+  styles after save + regenerate. demo-next adds the one `@source` line.
+  Tests: project +3, cli +5 (handoff in both directions, the check warning
+  clearing once the line exists).
+- **Parity residue gone**: with one Tailwind on the page, canvas and page
+  agree on every measured property (`marketing`, `blocks`, `welcome` at 0
+  differing elements apart from `animate-pulse` timing); PromoCard renders
+  styled on the public page, in the canvas, and in the studio preview with
+  no CDN script anywhere. Sweep 18/18, `next build` 0 warnings, `pnpm
+  verify` green.
 - **Housekeeping**: a Next 15 dev server left on :3456 by the grilling
   session was killed. pnpm 11's `minimumReleaseAge` wrote
   `minimumReleaseAgeExclude` entries for `next@16.3.4` into
@@ -163,14 +183,18 @@ initial design-and-build conversation (12 commits).
 - ADRs: ADR-049 (dashboard stylesheet host-independence in `@layer base`),
   ADR-050 (the canvas is the page), ADR-051 (`fit` default + collapsible
   panels), ADR-052 (event routing, `render.interactive`, canvas link policy),
-  ADR-053 (shadcn blocks: the rules, and why Carousel/ButtonGroup aren't).
-- Tests: 389 → 414 (+22 editor, +2 dashboard, +1 cli), `pnpm verify` green.
+  ADR-053 (shadcn blocks: the rules, and why Carousel/ButtonGroup aren't),
+  ADR-054 (studio Tailwind handoff: manifest + `@source`, runtime off).
+- Tests: 389 → 422 (+22 editor, +2 dashboard, +6 cli, +3 project), `pnpm
+  verify` green.
 - Wiki pages touched: SessionLog, Roadmap (new Phase 2.8 — 0.6.0 milestone
   table), Home (status line), Packages (editor files + stylesheet, dashboard
   stylesheet, core types), Glossary (Canvas, Content class, Fit mode,
-  Interactive routing), DECISIONS, SPEC (§5 registry v2 + event routing,
-  §8), guide 02 (`render`), guide 04 (theming, `contentClassName`, manual
-  mounts, interactivity), guide 07, AGENTS.md.
+  Interactive routing, Class manifest), Architecture (`.mdmx/` artifacts),
+  DECISIONS, SPEC (§5 registry v2 + event routing, §7 studio styling, §8),
+  guide 01 (artifacts table), guide 02 (`render`), guide 04 (theming,
+  `contentClassName`, manual mounts, interactivity), guide 05 (studio CSS
+  handoff), guide 07, AGENTS.md.
 - Follow-ups: Roadmap has no 0.5.0 phase section (M7); the CLI extractor
   should honor tsconfig `paths` so prop types imported through `@/` infer
   (0.7 candidate, ADR-053); Carousel as a block needs a wrapper-aware slide

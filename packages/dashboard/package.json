@@ -34,6 +34,7 @@
     "@mdmx/core": "workspace:*",
     "@mdmx/editor": "workspace:*",
     "@mdmx/next": "workspace:*",
+    "@mdmx/project": "workspace:*",
     "@mdmx/studio": "workspace:*"
   },
   "devDependencies": {

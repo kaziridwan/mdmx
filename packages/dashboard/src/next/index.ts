@@ -18,6 +18,7 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { createElement } from "react";
 import type { RegistrySpec } from "@mdmx/core";
+import { detectTailwind } from "@mdmx/project";
 import type { ComponentMap } from "@mdmx/editor/react";
 import { DashboardApp } from "../DashboardApp.js";
 import { resolveConfig, type DashboardConfig } from "../config.js";
@@ -43,7 +44,12 @@ export interface DashboardPageProps {
  */
 export function createDashboardPage(options: DashboardPageOptions = {}) {
   const { components, ...config } = options;
-  const resolved = resolveConfig(config);
+  // A Tailwind host styles studio components through its own build, so the
+  // browser runtime stays off unless asked for (ADR-054).
+  const resolved = resolveConfig({
+    tailwindRuntime: !detectTailwind(process.cwd()),
+    ...config,
+  });
 
   return async function MDMXDashboardPage({ params }: DashboardPageProps) {
     const { slug = [] } = await params;

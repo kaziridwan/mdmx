@@ -101,3 +101,9 @@ zero-specificity fallbacks in `@layer base` (ADR-050).
 **Fit mode** — the default preview viewport: the canvas takes the pane's own
 width at zoom 1. The device modes (mobile/tablet/desktop) render at a fixed
 width and are zoomed down to fit the pane (ADR-036, ADR-051).
+
+**Class manifest** — `.mdmx/studio-classes.txt`: the classes used by studio
+components, one per line, written by `mdmx generate` when the host app runs
+Tailwind so the host's own build compiles them (via one `@source` line)
+against the host's theme. Hosts without Tailwind get `studio.css` instead
+(ADR-042, ADR-054).

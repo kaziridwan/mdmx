@@ -42,3 +42,5 @@ export {
   registryPath,
   tryLoadRegistrySpec,
 } from "./registry.js";
+
+export { detectTailwind } from "./tailwind.js";

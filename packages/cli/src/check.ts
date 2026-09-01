@@ -9,7 +9,9 @@ import {
 } from "@mdmx/core";
 import { mergeStudioSpecs, parseStudioComponent, STUDIO_COMPONENTS_DIR } from "@mdmx/studio";
 import type { MDMXConfig } from "@mdmx/project";
+import { detectTailwind } from "@mdmx/project";
 import { computeRegistryHash } from "./generate.js";
+import { STUDIO_MANIFEST } from "./studio-css.js";
 
 export interface FileDiagnostics {
   file: string;
@@ -24,6 +26,11 @@ export interface CheckResult {
   staleRegistry: string | null;
   /** Non-null when next.config is missing `transpilePackages` (ADR-041). */
   setupWarning: string | null;
+  /**
+   * Non-null when the host runs Tailwind, has studio components, and no
+   * stylesheet points Tailwind at the class manifest (ADR-054).
+   */
+  studioWarning: string | null;
 }
 
 export async function check(cwd: string, config: MDMXConfig): Promise<CheckResult> {
@@ -43,6 +50,7 @@ export async function check(cwd: string, config: MDMXConfig): Promise<CheckResul
   // `mdmx init` prints the next.config snippet rather than editing the file,
   // so check is what makes forgetting it visible instead of mysterious.
   const setupWarning = detectMissingTranspile(cwd);
+  const studioWarning = await detectMissingStudioSource(cwd, config);
 
   const contentFiles = await glob([`${config.contentDir}/**/*.{md,mdx}`], {
     cwd,
@@ -69,7 +77,7 @@ export async function check(cwd: string, config: MDMXConfig): Promise<CheckResul
     files.push({ file: rel, diagnostics });
   }
 
-  return { files, errorCount, warningCount, staleRegistry, setupWarning };
+  return { files, errorCount, warningCount, staleRegistry, setupWarning, studioWarning };
 }
 
 /**
@@ -104,6 +112,31 @@ async function detectStaleRegistry(
   return (
     `${join(config.outDir, "registry.json")} is stale (committed ${committed.hash}, ` +
     `components hash ${specHash}). Run \`mdmx generate\` and commit the result.`
+  );
+}
+
+/**
+ * A Tailwind host compiles studio classes itself, from the manifest `mdmx
+ * generate` writes — but only if a stylesheet tells Tailwind to scan it:
+ * automatic source detection can't be relied on for a generated (often
+ * gitignored, always dot-named) directory. Missing that one line means
+ * unstyled studio components with no error anywhere.
+ */
+async function detectMissingStudioSource(cwd: string, config: MDMXConfig): Promise<string | null> {
+  if (!detectTailwind(cwd)) return null;
+  const manifest = join(config.outDir, STUDIO_MANIFEST);
+  if (!existsSync(join(cwd, manifest))) return null; // no studio components
+  const stylesheets = await glob(["**/*.css"], {
+    cwd,
+    ignore: ["**/node_modules/**", "**/.next/**", `${config.outDir}/**`, "**/dist/**"],
+  });
+  for (const file of stylesheets) {
+    if (readFileSync(join(cwd, file), "utf8").includes(STUDIO_MANIFEST)) return null;
+  }
+  return (
+    `Tailwind is installed and you have studio components, but no stylesheet scans their classes. ` +
+    `Add \`@source "<relative path to ${manifest}>";\` to the CSS file that imports tailwindcss ` +
+    `(e.g. \`@source "../${manifest}";\` in app/globals.css).`
   );
 }
 

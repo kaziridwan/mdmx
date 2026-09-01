@@ -15,6 +15,18 @@ import type { StudioComponentDef, TemplateChild, TemplateElement } from "@mdmx/s
  * reaches the app bundle.
  */
 
+/** The class manifest a Tailwind host scans via `@source` (ADR-054). */
+export const STUDIO_MANIFEST = "studio-classes.txt";
+
+/**
+ * One class per line, nothing else: Tailwind's source scanner extracts
+ * class-like tokens from any text file, so the file must not carry prose
+ * that would read as utilities.
+ */
+export function emitStudioManifest(classes: readonly string[]): string {
+  return classes.length ? classes.join("\n") + "\n" : "";
+}
+
 /** Every class name referenced by a set of studio definitions, sorted. */
 export function extractStudioClasses(defs: readonly StudioComponentDef[]): string[] {
   const out = new Set<string>();

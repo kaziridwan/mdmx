@@ -1670,3 +1670,50 @@ the project's tsconfig `paths`, so prop types that *import* through `@/`
 (e.g. `VariantProps<typeof buttonVariants>`) infer as `json`; every wrapper
 declares JSON-literal props explicitly, which is the convention until the
 extractor honors `paths` (0.7 candidate).
+
+## ADR-054 — Studio Tailwind handoff: a Tailwind host compiles studio classes itself, from a generated class manifest (amends ADR-042)
+
+**Context.** ADR-042 compiles studio component utilities into
+`.mdmx/studio.css` at generate time, and kept the Tailwind browser runtime
+for the editor canvas. Both were built for hosts *without* Tailwind. In a
+host that runs Tailwind v4 (the 0.6 demo, and every `create-next-app` +
+shadcn project), they hurt: the compiled sheet carries Tailwind's default
+theme, and the browser runtime does too — it compiles the same utilities
+with the default radius/color scales and loads after the app's stylesheet,
+so every `rounded-xl` in the canvas was 12px where the page's theme said
+14px (measured element-by-element in M5). Two Tailwinds on one page always
+disagree eventually.
+
+**Decision.** Detect Tailwind in the host (`detectTailwind` in
+`@mdmx/project`: `tailwindcss` resolvable from the project root, with the
+package.json dependency lists as the fallback) and hand off:
+
+- `mdmx generate` writes `.mdmx/studio-classes.txt` — one class per line,
+  nothing else — instead of `studio.css`, removes a stale compiled sheet,
+  and emits `server.ts` without the CSS import. The host's own build scans
+  the manifest through one line in its stylesheet, `@source
+  "../.mdmx/studio-classes.txt";` — explicit because automatic source
+  detection can't be relied on for a generated dot-directory (gitignored in
+  many setups; Tailwind honors `.gitignore`). Studio classes then compile
+  against the host's theme, once.
+- `mdmx check` warns when the host runs Tailwind, has studio components,
+  and no stylesheet references the manifest — the failure mode is otherwise
+  silent (unstyled studio components, no error anywhere). `mdmx init` still
+  never edits CSS; the warning is the guidance.
+- The dashboard page resolves `tailwindRuntime` from the same detection
+  (explicit config overrides) and skips the browser runtime when the host
+  compiles; the studio editor's preview says so, and a class new to the
+  project styles after save + regenerate — which `mdmx dev` does on every
+  definition change.
+- A host without Tailwind is unchanged: compiled `studio.css`, runtime in
+  the editor (ADR-042).
+
+**Alternatives rejected.** Keeping the runtime for studio authoring in
+Tailwind hosts (the injected stylesheet persists across client navigation
+and overrides the app's theme in every canvas afterwards). Emitting the
+manifest *and* the compiled sheet (two sources of truth; the sheet would
+carry the default theme). Auto-editing the host's stylesheet (the same
+reasoning as `next.config`: config-as-code is not ours to rewrite).
+
+**Status.** Shipped — 0.6 M6. The M5 parity residue is gone: canvas and page
+agree on every measured property.

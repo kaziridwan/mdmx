@@ -11,7 +11,8 @@ side-channel that types it all.
         │  defineMDMX()                      .mdmx/registry.ts    (server map)
         │                                    .mdmx/components.ts  (client map)
         │                                    .mdmx/server.ts      (bound helpers)
-        │                                    .mdmx/studio.css     (studio styles)
+        │                                    .mdmx/studio.css     (studio styles — or
+        │                                    .mdmx/studio-classes.txt in a Tailwind host)
         │                                          │
         │                                          ▼  drives
         ▼                              ┌───────────────────────────┐

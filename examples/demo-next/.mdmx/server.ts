@@ -5,7 +5,6 @@ import { getEntries, getEntryBySlug, getStudioComponentDefs, type MDMXEntry } fr
 import { MDMXContent } from "@mdmx/next/render";
 import { studioRenderComponents } from "@mdmx/studio/react";
 import { serverComponents } from "./registry";
-import "./studio.css";
 
 /** Collection name → directory, from mdmx.config.json. */
 export const collections = {

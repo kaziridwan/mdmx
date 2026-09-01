@@ -140,10 +140,14 @@ Your components carry their own styles — MDMX renders *your* React, so nothing
 is imposed. Two things worth knowing:
 
 - Components built in the **Component Studio** use Tailwind-style classes that
-  your CSS build never sees, so `mdmx generate` compiles exactly those
-  utilities into `.mdmx/studio.css`, which the generated `server.ts` imports.
-  Preflight is excluded on purpose: studio components are guests on your page,
-  not a design system.
+  your CSS build never sees (they live in JSON). If your app runs Tailwind,
+  `mdmx generate` writes their classes to `.mdmx/studio-classes.txt` and you
+  add one line to the stylesheet that imports Tailwind —
+  `@source "../.mdmx/studio-classes.txt";` — so they compile against *your*
+  theme; `mdmx check` reminds you if the line is missing. If your app doesn't
+  run Tailwind, `mdmx generate` compiles exactly those utilities into
+  `.mdmx/studio.css`, which the generated `server.ts` imports (preflight
+  excluded: studio components are guests on your page, not a design system).
 - The prose around them (headings, lists, tables from the Markdown side) is
   unstyled HTML. Wrap it in whatever your site uses.
 

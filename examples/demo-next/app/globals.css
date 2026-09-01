@@ -1,6 +1,11 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
+/* Studio components (content/_components) are JSON, so their classes never
+   appear in source; `mdmx generate` writes them to this manifest, named
+   explicitly because automatic source detection can't be relied on for a
+   generated dot-directory. */
+@source "../.mdmx/studio-classes.txt";
 @custom-variant dark (&:is(.dark *));
 
 /*

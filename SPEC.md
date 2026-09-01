@@ -276,9 +276,11 @@ the definition out as a real `defineMDMX` TSX file; the JSON stays valid until
 the next `mdmx generate` promotes the code version, at which point the merge
 rule shadows it.
 
-Styling: class names in a definition are extracted at build time and compiled
-into `<outDir>/studio.css` (ADR-042). Public pages must not depend on a
-browser-side CSS runtime.
+Styling: class names in a definition are extracted at build time. A host
+that runs Tailwind gets them as a class manifest, `<outDir>/studio-classes.txt`
+(one class per line), for its own build to scan via `@source` (ADR-054); any
+other host gets them compiled into `<outDir>/studio.css` (ADR-042). Public
+pages must not depend on a browser-side CSS runtime.
 
 ## 8. Versioning
 

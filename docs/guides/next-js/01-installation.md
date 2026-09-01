@@ -138,7 +138,8 @@ variables rather than quietly serving unauthenticated writes.
 | `registry.ts` | The spec plus `serverComponents` — server-safe, for public pages |
 | `components.ts` | The same map behind `"use client"`, for the dashboard |
 | `server.ts` | Bound helpers: `MDMXEntry`, `getEntry`, `listEntries`, `renderComponents` |
-| `studio.css` | Utilities for components built in the Studio (only when you have some) |
+| `studio.css` | Utilities for components built in the Studio — only in apps that don't run Tailwind themselves |
+| `studio-classes.txt` | In apps that run Tailwind: the Studio components' classes, one per line, for your build to scan via `@source` |
 
 **Commit this directory.** The registry is the contract your editor palette and
 your validation rules are built from, so a reviewer should see it change in the

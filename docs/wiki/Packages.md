@@ -38,6 +38,7 @@ What a project on disk looks like: the layer between the spec and the runtimes
 | `config.ts` | `MDMXConfig` schema + `DEFAULT_CONFIG`; `loadConfig` reads `mdmx.config.json` **or** `.mjs` (the CLI and the runtime used to disagree about this); `mergeConfig`, `validateConfig`, and `parseProjectConfig`/`ProjectConfigFile` for the provider-read path (ADR-035). |
 | `env.ts` | `resolveMode` — GitHub when the OAuth vars are set, local when they aren't, and a `ModeResolutionError` naming the missing variables in production (ADR-039). `insecureCookiesDefault`. |
 | `registry.ts` | `loadRegistrySpec`/`loadRegistry`/`tryLoadRegistrySpec` + `MissingRegistryError` that points at `mdmx generate`. |
+| `tailwind.ts` | `detectTailwind(root)` — does the host run Tailwind? Decides the studio CSS handoff in the CLI and the browser runtime in the dashboard (ADR-054). |
 
 ---
 

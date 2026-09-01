@@ -33,8 +33,9 @@ export function useStudioBridge(): { client: StudioClient; host: StudioHost } {
         navigate: (href: string) => window.location.assign(href),
         Link,
         tailwindSrc: config.tailwindSrc,
+        tailwindRuntime: config.tailwindRuntime,
       },
     }),
-    [api, config.contentDir, config.mountPath, config.tailwindSrc, studio],
+    [api, config.contentDir, config.mountPath, config.tailwindSrc, config.tailwindRuntime, studio],
   );
 }
