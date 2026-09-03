@@ -42,7 +42,7 @@ import TwoColumn from "../components/mdmx/TwoColumn";
 
 export const spec: RegistrySpec = {
   "mdmxRegistryVersion": 3,
-  "hash": "d658db4e3eedfb01",
+  "hash": "b2dbf755b2f0a7ec",
   "components": [
     {
       "name": "Accordion",
@@ -76,11 +76,12 @@ export const spec: RegistrySpec = {
       "props": [
         {
           "name": "title",
-          "required": true,
+          "required": false,
           "control": {
             "type": "text",
             "placeholder": "Section title"
-          }
+          },
+          "default": "Section"
         },
         {
           "name": "open",
@@ -100,6 +101,10 @@ export const spec: RegistrySpec = {
       },
       "render": {
         "mode": "live"
+      },
+      "preview": {
+        "title": "What is a block?",
+        "children": "A registered component the editor can insert."
       }
     },
     {
@@ -166,11 +171,12 @@ export const spec: RegistrySpec = {
       "props": [
         {
           "name": "src",
-          "required": true,
+          "required": false,
           "control": {
             "type": "image"
           },
-          "description": "Image URL (pick from the media library)"
+          "description": "Image URL (pick from the media library)",
+          "default": "/media/placeholder.svg"
         },
         {
           "name": "alt",
@@ -202,6 +208,10 @@ export const spec: RegistrySpec = {
       },
       "render": {
         "mode": "live"
+      },
+      "preview": {
+        "src": "/media/placeholder.svg",
+        "alt": "Placeholder"
       }
     },
     {
@@ -224,18 +234,23 @@ export const spec: RegistrySpec = {
         },
         {
           "name": "fallback",
-          "required": true,
+          "required": false,
           "control": {
             "type": "text",
             "placeholder": "JD"
           },
-          "description": "Initials shown while the image loads or when there is none"
+          "description": "Initials shown while the image loads or when there is none",
+          "default": "JD"
         },
         {
           "name": "alt",
           "required": false,
           "control": {
-            "type": "text"
+            "type": "text",
+            "placeholder": "Who is pictured"
+          },
+          "showIf": {
+            "prop": "src"
           }
         },
         {
@@ -244,8 +259,8 @@ export const spec: RegistrySpec = {
           "control": {
             "type": "select",
             "options": [
-              "default",
               "sm",
+              "default",
               "lg"
             ]
           },
@@ -267,7 +282,7 @@ export const spec: RegistrySpec = {
       "name": "Badge",
       "category": "UI",
       "icon": "tag",
-      "description": "A small status label",
+      "description": "A small status label, optionally linking somewhere",
       "source": "components/mdmx/Badge.tsx",
       "children": {
         "policy": "none"
@@ -275,11 +290,12 @@ export const spec: RegistrySpec = {
       "props": [
         {
           "name": "label",
-          "required": true,
+          "required": false,
           "control": {
             "type": "text",
             "placeholder": "New"
-          }
+          },
+          "default": "New"
         },
         {
           "name": "variant",
@@ -288,13 +304,23 @@ export const spec: RegistrySpec = {
             "type": "select",
             "options": [
               "default",
-              "destructive",
               "secondary",
+              "destructive",
               "outline",
-              "ghost"
+              "ghost",
+              "link"
             ]
           },
           "default": "default"
+        },
+        {
+          "name": "href",
+          "required": false,
+          "control": {
+            "type": "link",
+            "placeholder": "/changelog"
+          },
+          "description": "Makes the badge a link"
         }
       ],
       "constraints": {
@@ -320,17 +346,19 @@ export const spec: RegistrySpec = {
       "props": [
         {
           "name": "label",
-          "required": true,
+          "required": false,
           "control": {
             "type": "text",
             "placeholder": "Click me"
-          }
+          },
+          "default": "Button"
         },
         {
           "name": "href",
           "required": false,
           "control": {
-            "type": "link"
+            "type": "link",
+            "placeholder": "/docs"
           },
           "description": "Where the button links to; leave empty for a plain button"
         },
@@ -341,10 +369,10 @@ export const spec: RegistrySpec = {
             "type": "select",
             "options": [
               "default",
-              "destructive",
-              "secondary",
               "outline",
+              "secondary",
               "ghost",
+              "destructive",
               "link"
             ]
           },
@@ -356,8 +384,8 @@ export const spec: RegistrySpec = {
           "control": {
             "type": "select",
             "options": [
-              "default",
               "sm",
+              "default",
               "lg"
             ]
           },
@@ -433,26 +461,30 @@ export const spec: RegistrySpec = {
       "props": [
         {
           "name": "heading",
-          "required": true,
+          "required": false,
           "control": {
             "type": "text",
             "placeholder": "Ready to start?"
-          }
+          },
+          "default": "Ready to start?"
         },
         {
           "name": "buttonLabel",
-          "required": true,
+          "required": false,
           "control": {
             "type": "text",
             "placeholder": "Button text"
-          }
+          },
+          "default": "Get started"
         },
         {
           "name": "buttonHref",
-          "required": true,
+          "required": false,
           "control": {
-            "type": "link"
-          }
+            "type": "link",
+            "placeholder": "/signup"
+          },
+          "default": "#"
         },
         {
           "name": "variant",
@@ -527,6 +559,11 @@ export const spec: RegistrySpec = {
       },
       "render": {
         "mode": "live"
+      },
+      "preview": {
+        "title": "Card title",
+        "description": "A short description.",
+        "children": "Card body."
       }
     },
     {
@@ -541,12 +578,13 @@ export const spec: RegistrySpec = {
       "props": [
         {
           "name": "title",
-          "required": true,
+          "required": false,
           "control": {
             "type": "text",
             "placeholder": "Show details"
           },
-          "description": "The toggle's label"
+          "description": "The toggle's label",
+          "default": "Details"
         },
         {
           "name": "open",
@@ -564,6 +602,10 @@ export const spec: RegistrySpec = {
       },
       "render": {
         "mode": "live"
+      },
+      "preview": {
+        "title": "Show details",
+        "children": "Hidden until opened."
       }
     },
     {
@@ -598,11 +640,12 @@ export const spec: RegistrySpec = {
       "props": [
         {
           "name": "title",
-          "required": true,
+          "required": false,
           "control": {
             "type": "text",
             "placeholder": "Nothing here yet"
-          }
+          },
+          "default": "Nothing here yet"
         },
         {
           "name": "description",
@@ -666,11 +709,12 @@ export const spec: RegistrySpec = {
       "props": [
         {
           "name": "question",
-          "required": true,
+          "required": false,
           "control": {
             "type": "text",
             "placeholder": "Frequently asked question?"
-          }
+          },
+          "default": "Question?"
         },
         {
           "name": "open",
@@ -690,6 +734,10 @@ export const spec: RegistrySpec = {
       },
       "render": {
         "mode": "live"
+      },
+      "preview": {
+        "question": "How does it work?",
+        "children": "Like this."
       }
     },
     {
@@ -704,11 +752,12 @@ export const spec: RegistrySpec = {
       "props": [
         {
           "name": "title",
-          "required": true,
+          "required": false,
           "control": {
             "type": "text",
             "placeholder": "Feature title"
-          }
+          },
+          "default": "Feature"
         },
         {
           "name": "icon",
@@ -728,6 +777,11 @@ export const spec: RegistrySpec = {
       },
       "render": {
         "mode": "live"
+      },
+      "preview": {
+        "title": "Fast",
+        "icon": "⚡",
+        "children": "Ships in seconds."
       }
     },
     {
@@ -785,11 +839,12 @@ export const spec: RegistrySpec = {
         },
         {
           "name": "title",
-          "required": true,
+          "required": false,
           "control": {
             "type": "text",
             "placeholder": "Headline"
-          }
+          },
+          "default": "Headline"
         },
         {
           "name": "subtitle",
@@ -811,7 +866,11 @@ export const spec: RegistrySpec = {
           "name": "primaryHref",
           "required": false,
           "control": {
-            "type": "link"
+            "type": "link",
+            "placeholder": "/start"
+          },
+          "showIf": {
+            "prop": "primaryLabel"
           }
         },
         {
@@ -826,7 +885,11 @@ export const spec: RegistrySpec = {
           "name": "secondaryHref",
           "required": false,
           "control": {
-            "type": "link"
+            "type": "link",
+            "placeholder": "/docs"
+          },
+          "showIf": {
+            "prop": "secondaryLabel"
           }
         },
         {
@@ -878,12 +941,40 @@ export const spec: RegistrySpec = {
         },
         {
           "name": "content",
-          "required": true,
+          "required": false,
           "control": {
             "type": "textarea",
             "placeholder": "Card body"
           },
-          "description": "Card body, shown on hover"
+          "description": "Card body, shown on hover",
+          "default": "Card body"
+        },
+        {
+          "name": "side",
+          "required": false,
+          "control": {
+            "type": "select",
+            "options": [
+              "top",
+              "right",
+              "bottom",
+              "left"
+            ]
+          },
+          "default": "bottom"
+        },
+        {
+          "name": "align",
+          "required": false,
+          "control": {
+            "type": "select",
+            "options": [
+              "start",
+              "center",
+              "end"
+            ]
+          },
+          "default": "center"
         }
       ],
       "constraints": {
@@ -891,7 +982,8 @@ export const spec: RegistrySpec = {
         "allowedChildren": null
       },
       "render": {
-        "mode": "live"
+        "mode": "live",
+        "interactive": true
       },
       "preview": {
         "title": "MDMX",
@@ -911,12 +1003,13 @@ export const spec: RegistrySpec = {
       "props": [
         {
           "name": "code",
-          "required": true,
+          "required": false,
           "control": {
             "type": "textarea",
             "placeholder": "<div>…</div>"
           },
-          "description": "Raw HTML, sanitized before render"
+          "description": "Raw HTML, sanitized before render",
+          "default": ""
         }
       ],
       "constraints": {
@@ -942,11 +1035,12 @@ export const spec: RegistrySpec = {
       "props": [
         {
           "name": "title",
-          "required": true,
+          "required": false,
           "control": {
             "type": "text",
             "placeholder": "Item title"
-          }
+          },
+          "default": "Item"
         },
         {
           "name": "description",
@@ -977,6 +1071,28 @@ export const spec: RegistrySpec = {
             ]
           },
           "default": "outline"
+        },
+        {
+          "name": "size",
+          "required": false,
+          "control": {
+            "type": "select",
+            "options": [
+              "default",
+              "sm",
+              "xs"
+            ]
+          },
+          "default": "default"
+        },
+        {
+          "name": "href",
+          "required": false,
+          "control": {
+            "type": "link",
+            "placeholder": "/docs/item"
+          },
+          "description": "Makes the row a link"
         }
       ],
       "constraints": {
@@ -1003,12 +1119,18 @@ export const spec: RegistrySpec = {
       "props": [
         {
           "name": "keys",
-          "required": true,
+          "required": false,
           "control": {
-            "type": "text",
-            "placeholder": "⌘ K"
+            "type": "list",
+            "item": {
+              "type": "text"
+            }
           },
-          "description": "Keys separated by spaces, e.g. \"⌘ K\""
+          "description": "One key per entry, e.g. ⌘ and K",
+          "default": [
+            "⌘",
+            "K"
+          ]
         }
       ],
       "constraints": {
@@ -1019,7 +1141,10 @@ export const spec: RegistrySpec = {
         "mode": "live"
       },
       "preview": {
-        "keys": "⌘ K"
+        "keys": [
+          "⌘",
+          "K"
+        ]
       }
     },
     {
@@ -1044,10 +1169,12 @@ export const spec: RegistrySpec = {
           "name": "names",
           "required": false,
           "control": {
-            "type": "textarea",
-            "placeholder": "Acme, Globex, Initech"
+            "type": "list",
+            "item": {
+              "type": "text"
+            }
           },
-          "description": "Comma-separated company names"
+          "description": "Company names, one per entry"
         }
       ],
       "constraints": {
@@ -1059,7 +1186,13 @@ export const spec: RegistrySpec = {
       },
       "preview": {
         "title": "Trusted by teams at",
-        "names": "Acme, Globex, Initech, Umbrella, Hooli"
+        "names": [
+          "Acme",
+          "Globex",
+          "Initech",
+          "Umbrella",
+          "Hooli"
+        ]
       }
     },
     {
@@ -1074,19 +1207,21 @@ export const spec: RegistrySpec = {
       "props": [
         {
           "name": "heading",
-          "required": true,
+          "required": false,
           "control": {
             "type": "text",
             "placeholder": "Stay in the loop"
-          }
+          },
+          "default": "Stay in the loop"
         },
         {
           "name": "buttonLabel",
-          "required": true,
+          "required": false,
           "control": {
             "type": "text",
             "placeholder": "Subscribe"
-          }
+          },
+          "default": "Subscribe"
         },
         {
           "name": "placeholder",
@@ -1127,7 +1262,21 @@ export const spec: RegistrySpec = {
       "children": {
         "policy": "blocks"
       },
-      "props": [],
+      "props": [
+        {
+          "name": "columns",
+          "required": false,
+          "control": {
+            "type": "select",
+            "options": [
+              "2",
+              "3",
+              "4"
+            ]
+          },
+          "default": "3"
+        }
+      ],
       "constraints": {
         "allowedParents": null,
         "allowedChildren": [
@@ -1150,19 +1299,21 @@ export const spec: RegistrySpec = {
       "props": [
         {
           "name": "name",
-          "required": true,
+          "required": false,
           "control": {
             "type": "text",
             "placeholder": "Plan name"
-          }
+          },
+          "default": "Plan"
         },
         {
           "name": "price",
-          "required": true,
+          "required": false,
           "control": {
             "type": "text",
             "placeholder": "$0"
-          }
+          },
+          "default": "$0"
         },
         {
           "name": "period",
@@ -1184,7 +1335,11 @@ export const spec: RegistrySpec = {
           "name": "ctaHref",
           "required": false,
           "control": {
-            "type": "link"
+            "type": "link",
+            "placeholder": "/signup"
+          },
+          "showIf": {
+            "prop": "ctaLabel"
           }
         },
         {
@@ -1204,6 +1359,13 @@ export const spec: RegistrySpec = {
       },
       "render": {
         "mode": "live"
+      },
+      "preview": {
+        "name": "Starter",
+        "price": "$0",
+        "period": "mo",
+        "ctaLabel": "Choose plan",
+        "children": "Everything you need to get going."
       }
     },
     {
@@ -1274,7 +1436,23 @@ export const spec: RegistrySpec = {
             "type": "text",
             "placeholder": "or"
           },
-          "description": "Optional centered label"
+          "description": "Optional centered label",
+          "showIf": {
+            "prop": "orientation",
+            "eq": "horizontal"
+          }
+        },
+        {
+          "name": "orientation",
+          "required": false,
+          "control": {
+            "type": "select",
+            "options": [
+              "horizontal",
+              "vertical"
+            ]
+          },
+          "default": "horizontal"
         }
       ],
       "constraints": {
@@ -1318,7 +1496,11 @@ export const spec: RegistrySpec = {
             "step": 1
           },
           "description": "Number of lines when shape is \"text\"",
-          "default": 3
+          "default": 3,
+          "showIf": {
+            "prop": "shape",
+            "eq": "text"
+          }
         }
       ],
       "constraints": {
@@ -1353,8 +1535,8 @@ export const spec: RegistrySpec = {
           "control": {
             "type": "select",
             "options": [
-              "default",
               "sm",
+              "default",
               "lg"
             ]
           },
@@ -1384,18 +1566,22 @@ export const spec: RegistrySpec = {
       "props": [
         {
           "name": "value",
-          "required": true,
+          "required": false,
           "control": {
-            "type": "text"
+            "type": "text",
+            "placeholder": "27ms"
           },
-          "description": "The headline number, preformatted"
+          "description": "The headline number, preformatted",
+          "default": "0"
         },
         {
           "name": "label",
-          "required": true,
+          "required": false,
           "control": {
-            "type": "text"
-          }
+            "type": "text",
+            "placeholder": "What the number measures"
+          },
+          "default": "Label"
         },
         {
           "name": "trend",
@@ -1413,7 +1599,8 @@ export const spec: RegistrySpec = {
           "name": "delta",
           "required": false,
           "control": {
-            "type": "number"
+            "type": "number",
+            "step": 0.1
           }
         }
       ],
@@ -1423,6 +1610,12 @@ export const spec: RegistrySpec = {
       },
       "render": {
         "mode": "live"
+      },
+      "preview": {
+        "value": "27ms",
+        "label": "median save-to-commit",
+        "trend": "up",
+        "delta": 4
       }
     },
     {
@@ -1442,6 +1635,19 @@ export const spec: RegistrySpec = {
             "type": "text",
             "placeholder": "Optional band title"
           }
+        },
+        {
+          "name": "columns",
+          "required": false,
+          "control": {
+            "type": "select",
+            "options": [
+              "2",
+              "3",
+              "4"
+            ]
+          },
+          "default": "3"
         }
       ],
       "constraints": {
@@ -1466,12 +1672,13 @@ export const spec: RegistrySpec = {
       "props": [
         {
           "name": "title",
-          "required": true,
+          "required": false,
           "control": {
             "type": "text",
             "placeholder": "Overview"
           },
-          "description": "Must match one of the parent Tabs' titles"
+          "description": "Must match one of the parent Tabs' titles",
+          "default": "Overview"
         }
       ],
       "constraints": {
@@ -1482,13 +1689,17 @@ export const spec: RegistrySpec = {
       },
       "render": {
         "mode": "live"
+      },
+      "preview": {
+        "title": "Overview",
+        "children": "Panel content."
       }
     },
     {
       "name": "Table",
       "category": "UI",
       "icon": "table",
-      "description": "A simple data table (headings + rows as text)",
+      "description": "A simple data table (headings + rows)",
       "source": "components/mdmx/Table.tsx",
       "children": {
         "policy": "none"
@@ -1496,21 +1707,38 @@ export const spec: RegistrySpec = {
       "props": [
         {
           "name": "columns",
-          "required": true,
+          "required": false,
           "control": {
-            "type": "text",
-            "placeholder": "Plan, Price, Seats"
+            "type": "list",
+            "item": {
+              "type": "text"
+            }
           },
-          "description": "Column headings, comma-separated"
+          "description": "Column headings",
+          "default": [
+            "Plan",
+            "Price"
+          ]
         },
         {
           "name": "rows",
-          "required": true,
+          "required": false,
           "control": {
-            "type": "textarea",
-            "placeholder": "Starter | $0 | 1\nTeam | $29 | 10"
+            "type": "list",
+            "item": {
+              "type": "list",
+              "item": {
+                "type": "text"
+              }
+            }
           },
-          "description": "One row per line; cells separated by \"|\""
+          "description": "Rows of cells, in column order",
+          "default": [
+            [
+              "Starter",
+              "$0"
+            ]
+          ]
         },
         {
           "name": "caption",
@@ -1529,8 +1757,28 @@ export const spec: RegistrySpec = {
         "mode": "live"
       },
       "preview": {
-        "columns": "Plan, Price, Seats",
-        "rows": "Starter | $0 | 1\nTeam | $29 | 10\nEnterprise | Custom | Unlimited"
+        "columns": [
+          "Plan",
+          "Price",
+          "Seats"
+        ],
+        "rows": [
+          [
+            "Starter",
+            "$0",
+            "1"
+          ],
+          [
+            "Team",
+            "$29",
+            "10"
+          ],
+          [
+            "Enterprise",
+            "Custom",
+            "Unlimited"
+          ]
+        ]
       }
     },
     {
@@ -1545,12 +1793,18 @@ export const spec: RegistrySpec = {
       "props": [
         {
           "name": "tabs",
-          "required": true,
+          "required": false,
           "control": {
-            "type": "text",
-            "placeholder": "Overview, Details"
+            "type": "list",
+            "item": {
+              "type": "text"
+            }
           },
-          "description": "Tab titles, comma-separated — each matches a Tab block's title"
+          "description": "Tab titles — each matches a Tab block's title",
+          "default": [
+            "Overview",
+            "Details"
+          ]
         },
         {
           "name": "variant",
@@ -1563,6 +1817,27 @@ export const spec: RegistrySpec = {
             ]
           },
           "default": "default"
+        },
+        {
+          "name": "orientation",
+          "required": false,
+          "control": {
+            "type": "select",
+            "options": [
+              "horizontal",
+              "vertical"
+            ]
+          },
+          "default": "horizontal"
+        },
+        {
+          "name": "defaultTab",
+          "required": false,
+          "control": {
+            "type": "text",
+            "placeholder": "Overview"
+          },
+          "description": "Title of the tab shown first (defaults to the first)"
         }
       ],
       "constraints": {
@@ -1573,6 +1848,12 @@ export const spec: RegistrySpec = {
       },
       "render": {
         "mode": "live"
+      },
+      "preview": {
+        "tabs": [
+          "Overview",
+          "Details"
+        ]
       }
     },
     {
@@ -1587,11 +1868,12 @@ export const spec: RegistrySpec = {
       "props": [
         {
           "name": "author",
-          "required": true,
+          "required": false,
           "control": {
             "type": "text",
             "placeholder": "Jane Doe"
-          }
+          },
+          "default": "Jane Doe"
         },
         {
           "name": "role",
@@ -1634,11 +1916,12 @@ export const spec: RegistrySpec = {
       "props": [
         {
           "name": "label",
-          "required": true,
+          "required": false,
           "control": {
             "type": "text",
             "placeholder": "Bold"
-          }
+          },
+          "default": "Toggle"
         },
         {
           "name": "pressed",
@@ -1667,8 +1950,8 @@ export const spec: RegistrySpec = {
           "control": {
             "type": "select",
             "options": [
-              "default",
               "sm",
+              "default",
               "lg"
             ]
           },
@@ -1698,12 +1981,13 @@ export const spec: RegistrySpec = {
       "props": [
         {
           "name": "content",
-          "required": true,
+          "required": false,
           "control": {
             "type": "text",
             "placeholder": "Helpful detail"
           },
-          "description": "The tooltip text"
+          "description": "The tooltip text",
+          "default": "Tooltip"
         },
         {
           "name": "side",
@@ -1711,13 +1995,38 @@ export const spec: RegistrySpec = {
           "control": {
             "type": "select",
             "options": [
-              "left",
               "top",
+              "right",
               "bottom",
-              "right"
+              "left"
             ]
           },
           "default": "top"
+        },
+        {
+          "name": "align",
+          "required": false,
+          "control": {
+            "type": "select",
+            "options": [
+              "start",
+              "center",
+              "end"
+            ]
+          },
+          "default": "center"
+        },
+        {
+          "name": "sideOffset",
+          "required": false,
+          "control": {
+            "type": "number",
+            "min": 0,
+            "max": 32,
+            "step": 1
+          },
+          "description": "Distance from the trigger, in pixels",
+          "default": 4
         }
       ],
       "constraints": {
@@ -1725,7 +2034,8 @@ export const spec: RegistrySpec = {
         "allowedChildren": null
       },
       "render": {
-        "mode": "live"
+        "mode": "live",
+        "interactive": true
       },
       "preview": {
         "content": "A tooltip",
@@ -1741,7 +2051,22 @@ export const spec: RegistrySpec = {
       "children": {
         "policy": "blocks"
       },
-      "props": [],
+      "props": [
+        {
+          "name": "ratio",
+          "required": false,
+          "control": {
+            "type": "select",
+            "options": [
+              "1:1",
+              "1:2",
+              "2:1"
+            ]
+          },
+          "description": "Width ratio of the two columns",
+          "default": "1:1"
+        }
+      ],
       "constraints": {
         "allowedParents": null,
         "allowedChildren": [

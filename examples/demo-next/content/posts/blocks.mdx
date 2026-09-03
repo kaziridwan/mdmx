@@ -21,7 +21,7 @@ canonical MDMX.
   <Badge label="Nested" variant="secondary" />
 </Card>
 
-<Tabs tabs="Overview, Details">
+<Tabs tabs={["Overview", "Details"]}>
   <Tab title="Overview">
     The overview panel.
   </Tab>
@@ -46,16 +46,26 @@ canonical MDMX.
 </Collapsible>
 
 <Table
-  columns="Plan, Price, Seats"
-  rows="Starter | $0 | 1
-Team | $29 | 10
-Enterprise | Custom | Unlimited"
+  columns={["Plan", "Price", "Seats"]}
+  rows={[["Starter", "$0", "1"], ["Team", "$29", "10"], ["Enterprise", "Custom", "Unlimited"]]}
   caption="Plans at a glance"
 />
 
 <Progress value={62} label="Migration" />
 
-<Item title="An item row" description="With a description and an icon." icon="📦" />
+<Item
+  title="An item row"
+  description="With a description and an icon."
+  icon="📦"
+/>
+
+<Item
+  title="A compact row that links"
+  description="size and href are props too."
+  icon="🔗"
+  size="sm"
+  href="#"
+/>
 
 <Empty
   title="Nothing here yet"
@@ -69,21 +79,34 @@ Enterprise | Custom | Unlimited"
 
 <Badge label="Beta" variant="outline" />
 
+<Badge label="Changelog" variant="link" href="#" />
+
 <Avatar fallback="MX" size="lg" />
 
-<Kbd keys="⌘ K" />
+<Kbd keys={["⌘", "K"]} />
 
 <Toggle label="Pinned" pressed={true} />
 
 <Spinner label="Working…" />
 
-<Tooltip content="Tooltips take their text as a prop; the trigger is inline-editable.">
+<Tooltip
+  content="Tooltips take their text as a prop; the trigger is inline-editable."
+  side="right"
+  align="start"
+  sideOffset={8}
+>
   Hover this text
 </Tooltip>
 
-<HoverCard title="MDMX" content="A git-native CMS where your components are blocks.">
+<HoverCard
+  title="MDMX"
+  content="A git-native CMS where your components are blocks."
+  side="top"
+>
   Hover for a card
 </HoverCard>
+
+<Separator orientation="vertical" />
 
 <AspectRatio src="/media/placeholder.svg" alt="Placeholder" ratio="21/9" />
 

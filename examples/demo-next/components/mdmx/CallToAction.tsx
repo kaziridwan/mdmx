@@ -4,18 +4,18 @@ import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 interface CallToActionProps {
-  heading: string;
-  buttonLabel: string;
-  buttonHref: string;
+  heading?: string;
+  buttonLabel?: string;
+  buttonHref?: string;
   variant?: "solid" | "soft";
   /** Supporting copy, edited inline */
   children: ReactNode;
 }
 
 function CallToActionImpl({
-  heading,
-  buttonLabel,
-  buttonHref,
+  heading = "Ready to start?",
+  buttonLabel = "Get started",
+  buttonHref = "#",
   variant = "solid",
   children,
 }: CallToActionProps) {
@@ -49,10 +49,10 @@ export const CallToAction = defineMDMX(CallToActionImpl, {
   description: "Banner with a heading, supporting text, and one action button",
   children: "rich-text",
   props: {
-    heading: { placeholder: "Ready to start?" },
-    buttonLabel: { placeholder: "Button text" },
-    buttonHref: { control: { type: "link" } },
-    variant: { default: "solid" },
+    heading: { placeholder: "Ready to start?", default: "Ready to start?" },
+    buttonLabel: { placeholder: "Button text", default: "Get started" },
+    buttonHref: { control: { type: "link" }, placeholder: "/signup", default: "#" },
+    variant: { control: { type: "select", options: ["solid", "soft"] }, default: "solid" },
   },
   preview: {
     heading: "Ready to dive in?",

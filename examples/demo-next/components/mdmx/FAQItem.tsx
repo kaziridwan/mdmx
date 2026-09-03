@@ -4,14 +4,14 @@ import { defineMDMX } from "@mdmx/core";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 
 interface FAQItemProps {
-  question: string;
+  question?: string;
   /** Start expanded */
   open?: boolean;
   /** The answer, edited inline */
   children: ReactNode;
 }
 
-function FAQItemImpl({ question, open = true, children }: FAQItemProps) {
+function FAQItemImpl({ question = "Question?", open = true, children }: FAQItemProps) {
   return (
     <Collapsible defaultOpen={open} className="group/faq py-3">
       <CollapsibleTrigger className="flex w-full items-center justify-between gap-4 text-left font-heading font-semibold hover:underline">
@@ -34,7 +34,8 @@ export const FAQItem = defineMDMX(FAQItemImpl, {
   children: "rich-text",
   constraints: { allowedParents: ["FAQ"] },
   props: {
-    question: { placeholder: "Frequently asked question?" },
+    question: { placeholder: "Frequently asked question?", default: "Question?" },
     open: { default: true },
   },
+  preview: { question: "How does it work?", children: "Like this." },
 });

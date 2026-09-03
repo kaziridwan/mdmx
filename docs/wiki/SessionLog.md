@@ -116,6 +116,41 @@ initial design-and-build conversation (12 commits).
   marker; extra spaces stay while focused and snap on blur; ⌘Z reverts
   exactly the last apply; "edit source" on a nested Tab focuses the pane
   on `<Tab title="Overview">` and outlines the block on the canvas.
+- **M5 — Blocks made usable** (ADR-053 note, ADR-060). All 39 demo-next
+  wrappers revisited. Rule: a registry `default` is the *component's own
+  default parameter* (the panel's effective default and the page agree, and
+  `<Table />` never crashes), so the 24 required-without-default props
+  became optional-with-default in TS + config. Defensive parsing in Kbd,
+  Table, Tabs, LogoCloud, Testimonial. True arrays are real lists —
+  `Kbd.keys: string[]`, `Table.columns: string[]` + `rows: string[][]`,
+  `Tabs.tabs`, `LogoCloud.names` — edited as `list` controls (nested for
+  rows); `blocks.mdx` and `marketing.mdx` updated where the shapes changed
+  (the only content edits) and `blocks.mdx` canonicalized after the
+  printer wrapped the longer tags; `layout.mdx`/`team-notes.mdx` were
+  already non-canonical before this session (a missing final newline, a
+  long PromoCard line) and were left alone. Explicit `select` controls keep
+  the author's option order (Tooltip, Badge, Button, Avatar, Item, Toggle,
+  Spinner, Skeleton, ratios, columns). `showIf`: `Skeleton.lines`,
+  `Hero.*Href`, `PricingTier.ctaHref`, `Avatar.alt`, `Separator.label`.
+  Variant gaps: `Badge.href` + `link` variant, `Item.size`/`href`,
+  `Separator.orientation`, `Tabs.orientation`/`defaultTab`,
+  `Tooltip.align`/`sideOffset`, `HoverCard.side`/`align`, `TwoColumn.ratio`
+  (`1:1 | 1:2 | 2:1`), `columns` on PricingTable and StatsBand; Stat gets
+  placeholders, defaults, an ordered `trend` select and a `delta` step —
+  but no `allowedParents` (welcome/team-notes use it standalone).
+  Tooltip/HoverCard set `render.interactive` so the popup previews on
+  hover. `blocks.mdx` showcases the new props. Registry: 30/39 with a
+  `preview` (none for Accordion, Column, FAQ, FeatureGrid, PricingTable, Separator, Skeleton, StatsBand, TwoColumn — containers seeded by their
+  children, or blocks whose defaults already render), 6 `showIf`
+  rules, 5 list props, 2 interactive. `mdmx check` 0/0.
+  Live: every top-level block (34 of the 40 rail items; 6 are child-only)
+  inserts with no placeholder card and zero lint markers afterwards; the
+  Tooltip popup previews on hover and Alt-click puts it in context; Table
+  rows add from the list control and the canvas grows a row; parity
+  (`parity.mjs`, 21 computed properties per element, root margins read
+  from the wrapper, height excluded because the editor seeds a caret
+  paragraph in empty containers) — layout 0/3, welcome 0/5, marketing
+  0/18, blocks 0/25 blocks differ; sweep 16/16 clean.
 
 ### S33 — 0.6.0 release session (release/0.6.0): M1–M7, publish-ready
 - **M1 — Next 16**: demo-next on `next@16.3.4` (Turbopack by default) with

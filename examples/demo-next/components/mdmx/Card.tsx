@@ -32,6 +32,7 @@ export const Card = defineMDMX(CardImpl, {
   props: {
     title: { placeholder: "Card title" },
     description: { placeholder: "Optional description" },
-    size: { default: "default" },
+    size: { control: { type: "select", options: ["default", "sm"] }, default: "default" },
   },
+  preview: { title: "Card title", description: "A short description.", children: "Card body." },
 });

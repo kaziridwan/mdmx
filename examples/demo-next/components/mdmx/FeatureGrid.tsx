@@ -31,6 +31,6 @@ export const FeatureGrid = defineMDMX(FeatureGridImpl, {
   children: "blocks",
   constraints: { allowedChildren: ["Feature"] },
   props: {
-    columns: { default: "3" },
+    columns: { control: { type: "select", options: ["2", "3", "4"] }, default: "3" },
   },
 });

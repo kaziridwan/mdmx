@@ -6,13 +6,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
 interface NewsletterProps {
-  heading: string;
-  buttonLabel: string;
+  heading?: string;
+  buttonLabel?: string;
   placeholder?: string;
   note?: string;
 }
 
-function NewsletterImpl({ heading, buttonLabel, placeholder, note }: NewsletterProps) {
+function NewsletterImpl({ heading = "Stay in the loop", buttonLabel = "Subscribe", placeholder, note }: NewsletterProps) {
   return (
     <section className="rounded-2xl border bg-card px-6 py-8 text-center">
       <h2 className="font-heading mt-0 mb-4 text-2xl font-semibold">{heading}</h2>
@@ -38,8 +38,8 @@ export const Newsletter = defineMDMX(NewsletterImpl, {
   icon: "mail",
   description: "Email signup band",
   props: {
-    heading: { placeholder: "Stay in the loop" },
-    buttonLabel: { placeholder: "Subscribe" },
+    heading: { placeholder: "Stay in the loop", default: "Stay in the loop" },
+    buttonLabel: { placeholder: "Subscribe", default: "Subscribe" },
     placeholder: { placeholder: "you@example.com" },
     note: { control: { type: "textarea" }, placeholder: "No spam. Unsubscribe anytime." },
   },

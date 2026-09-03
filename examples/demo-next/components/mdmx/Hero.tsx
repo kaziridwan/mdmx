@@ -5,7 +5,7 @@ import { cn } from "@/lib/utils";
 interface HeroProps {
   /** Small label above the title */
   eyebrow?: string;
-  title: string;
+  title?: string;
   subtitle?: string;
   primaryLabel?: string;
   primaryHref?: string;
@@ -16,7 +16,7 @@ interface HeroProps {
 
 function HeroImpl({
   eyebrow,
-  title,
+  title = "Headline",
   subtitle,
   primaryLabel,
   primaryHref,
@@ -74,13 +74,13 @@ export const Hero = defineMDMX(HeroImpl, {
   description: "Headline section with title, subtitle, and call-to-action buttons",
   props: {
     eyebrow: { placeholder: "Eyebrow label" },
-    title: { placeholder: "Headline" },
+    title: { placeholder: "Headline", default: "Headline" },
     subtitle: { control: { type: "textarea" }, placeholder: "Supporting subtitle" },
     primaryLabel: { placeholder: "Primary button" },
-    primaryHref: { control: { type: "link" } },
+    primaryHref: { control: { type: "link" }, placeholder: "/start", showIf: { prop: "primaryLabel" } },
     secondaryLabel: { placeholder: "Secondary button" },
-    secondaryHref: { control: { type: "link" } },
-    align: { default: "center" },
+    secondaryHref: { control: { type: "link" }, placeholder: "/docs", showIf: { prop: "secondaryLabel" } },
+    align: { control: { type: "select", options: ["left", "center"] }, default: "center" },
   },
   preview: {
     eyebrow: "Now in beta",

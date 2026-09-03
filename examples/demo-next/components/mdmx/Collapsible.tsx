@@ -7,13 +7,13 @@ import { cn } from "@/lib/utils";
 
 interface CollapsibleProps {
   /** The toggle's label */
-  title: string;
+  title?: string;
   /** Start expanded */
   open?: boolean;
   children: ReactNode;
 }
 
-function CollapsibleImpl({ title, open = false, children }: CollapsibleProps) {
+function CollapsibleImpl({ title = "Details", open = false, children }: CollapsibleProps) {
   return (
     <UICollapsible defaultOpen={open} className="group/collapsible rounded-lg border px-3 py-2">
       <CollapsibleTrigger className={cn(buttonVariants({ variant: "ghost", size: "sm" }), "w-full justify-between px-1")}>
@@ -34,7 +34,8 @@ export const Collapsible = defineMDMX(CollapsibleImpl, {
   description: "A section that folds away behind a toggle",
   children: "blocks",
   props: {
-    title: { placeholder: "Show details" },
+    title: { placeholder: "Show details", default: "Details" },
     open: { default: false },
   },
+  preview: { title: "Show details", children: "Hidden until opened." },
 });

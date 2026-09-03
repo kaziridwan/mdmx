@@ -3,11 +3,11 @@ import { defineMDMX } from "@mdmx/core";
 
 interface TabProps {
   /** Must match one of the parent Tabs' titles */
-  title: string;
+  title?: string;
   children: ReactNode;
 }
 
-function TabImpl({ title, children }: TabProps) {
+function TabImpl({ title = "Overview", children }: TabProps) {
   return (
     <div data-tab-panel={title} className="text-sm">
       {children}
@@ -23,6 +23,7 @@ export const Tab = defineMDMX(TabImpl, {
   children: "blocks",
   constraints: { allowedParents: ["Tabs"] },
   props: {
-    title: { placeholder: "Overview" },
+    title: { placeholder: "Overview", default: "Overview" },
   },
+  preview: { title: "Overview", children: "Panel content." },
 });

@@ -5,8 +5,8 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { cn } from "@/lib/utils";
 
 interface PricingTierProps {
-  name: string;
-  price: string;
+  name?: string;
+  price?: string;
   period?: string;
   ctaLabel?: string;
   ctaHref?: string;
@@ -15,7 +15,7 @@ interface PricingTierProps {
   children: ReactNode;
 }
 
-function PricingTierImpl({ name, price, period, ctaLabel, ctaHref, featured, children }: PricingTierProps) {
+function PricingTierImpl({ name = "Plan", price = "$0", period, ctaLabel, ctaHref, featured, children }: PricingTierProps) {
   return (
     <Card data-featured={featured ? "true" : undefined} className={cn("h-full", featured && "ring-2 ring-primary")}>
       <CardHeader>
@@ -45,11 +45,18 @@ export const PricingTier = defineMDMX(PricingTierImpl, {
   children: "rich-text",
   constraints: { allowedParents: ["PricingTable"] },
   props: {
-    name: { placeholder: "Plan name" },
-    price: { placeholder: "$0" },
+    name: { placeholder: "Plan name", default: "Plan" },
+    price: { placeholder: "$0", default: "$0" },
     period: { placeholder: "mo" },
     ctaLabel: { placeholder: "Choose plan" },
-    ctaHref: { control: { type: "link" } },
+    ctaHref: { control: { type: "link" }, placeholder: "/signup", showIf: { prop: "ctaLabel" } },
     featured: { default: false },
+  },
+  preview: {
+    name: "Starter",
+    price: "$0",
+    period: "mo",
+    ctaLabel: "Choose plan",
+    children: "Everything you need to get going.",
   },
 });

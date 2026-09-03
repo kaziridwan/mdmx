@@ -1671,6 +1671,16 @@ the project's tsconfig `paths`, so prop types that *import* through `@/`
 declares JSON-literal props explicitly, which is the convention until the
 extractor honors `paths` (0.7 candidate).
 
+**0.7 M5 note.** The rules were re-applied across all 39 wrappers: every
+required prop now has a component default that the registry mirrors
+(`default` in `defineMDMX` equals the default parameter, so `<Table />`
+renders the same on the page and in the panel), true arrays are `list`
+props (`Kbd.keys`, `Table.columns/rows`, `Tabs.tabs`, `LogoCloud.names`),
+popups opt into `render.interactive`, and 30 of 39 blocks carry an
+insert-time `preview` (the nine without are containers seeded by their
+children, or blocks whose defaults already render). Carousel/ButtonGroup
+stay unregistered.
+
 ## ADR-054 — Studio Tailwind handoff: a Tailwind host compiles studio classes itself, from a generated class manifest (amends ADR-042)
 
 **Context.** ADR-042 compiles studio component utilities into
@@ -1884,7 +1894,7 @@ keyboard path, and nested drags have no indicator yet).
 
 **Status.** Shipped — 0.7 M3.
 
-## ADR-059 — The source pane is an editor: CodeMirror 6, parse-gated live apply, focused-pane authority, canonicalize on blur (supersedes the read-only pane's rationale in `examples/DESIGN_NOTES.txt`)
+## ADR-059 — The source pane is an editor: CodeMirror 6, parse-gated live apply, focused-pane authority, canonicalize on blur (supersedes the read-only pane's rationale in `packages/editor/DESIGN_NOTES.txt`)
 
 **Context.** The right-hand pane has shown the canonical MDMX since the
 prototype — the product thesis made visible — but as a read-only `<pre>`
@@ -1949,3 +1959,38 @@ text editor (two source surfaces).
 **Status.** Shipped — 0.7 M4. Verified live and in jsdom (CodeMirror
 mounts under jsdom with a `Range.getClientRects` polyfill in the editor's
 vitest setup).
+
+## ADR-060 — Props stay static JSON: canvas interaction does not write back (the per-block `setProp` channel is the 0.8 candidate)
+
+**Context.** Five demo wrappers hold uncontrolled state — `AccordionItem`
+and `Collapsible` (`defaultOpen`), `FAQItem`, `Toggle` (`defaultPressed`),
+`Tabs` (a local `useState`). Toggling them in the canvas changes what the
+author sees and nothing else: the prop keeps its authored value, the source
+pane does not move, a reload restores the file. An author who opens an
+accordion item and saves expects `open={true}`; today they must set it in
+the panel. The 0.7 audit recorded this as the one editing gap the plan does
+not close (Q7).
+
+**Decision.** Deferred; recorded here so it is a decision, not an
+oversight. Props remain static JSON (SPEC §1.3, invariant 2) written only
+through the prop panel, the source pane, or a load. Interaction in the
+canvas is *preview*: a wrapper seeds its state from the prop and diverges
+freely, exactly as it would on the page. The candidate design for 0.8: a
+per-block **`setProp` channel** — the React NodeView passes the author
+component, beside its props, a setter (`useMDMXProps()` → `{ props,
+setProp(name, value) }`); a wrapper calls it from `onOpenChange` /
+`onPressedChange` / `onValueChange`; the editor turns each call into one
+`setNodeMarkup` transaction (invariant 6), with the same history grouping
+as typing. It needs a registry-level opt-in (`render.writeBack`, or a
+per-prop `bind`) so a component can keep preview-only state, the public
+renderer to ignore the channel, and its own live checks — which is why it
+is not part of the editing wave.
+
+**Alternatives rejected.** Making the wrappers controlled from the prop
+alone (then a click in the canvas does nothing — worse than diverging).
+Observing DOM state (`data-open`, `aria-pressed`) from the NodeView and
+writing it back (couples the editor to each primitive's DOM contract; the
+studio components have none).
+
+**Status.** Deferred to 0.8 (Roadmap). 0.7 ships the gap as documented
+behavior.

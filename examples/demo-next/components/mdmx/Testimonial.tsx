@@ -3,7 +3,7 @@ import { defineMDMX } from "@mdmx/core";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 interface TestimonialProps {
-  author: string;
+  author?: string;
   role?: string;
   avatar?: string;
   /** The quote, edited inline */
@@ -11,14 +11,14 @@ interface TestimonialProps {
 }
 
 const initials = (name: string) =>
-  name
+  (name ?? "")
     .split(/\s+/)
     .filter(Boolean)
     .slice(0, 2)
     .map((part) => part[0]?.toUpperCase() ?? "")
     .join("");
 
-function TestimonialImpl({ author, role, avatar, children }: TestimonialProps) {
+function TestimonialImpl({ author = "Jane Doe", role, avatar, children }: TestimonialProps) {
   return (
     <figure className="my-0 border-l-2 border-primary py-2 pl-6">
       <blockquote className="font-serif my-0 mb-3.5 border-0 p-0 text-xl text-foreground">{children}</blockquote>
@@ -43,7 +43,7 @@ export const Testimonial = defineMDMX(TestimonialImpl, {
   description: "A customer quote with attribution",
   children: "rich-text",
   props: {
-    author: { placeholder: "Jane Doe" },
+    author: { placeholder: "Jane Doe", default: "Jane Doe" },
     role: { placeholder: "CTO, Acme" },
     avatar: { control: { type: "image" } },
   },

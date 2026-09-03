@@ -10,22 +10,18 @@ import {
 } from "@/components/ui/table";
 
 interface TableProps {
-  /** Column headings, comma-separated */
-  columns: string;
-  /** One row per line; cells separated by "|" */
-  rows: string;
+  /** Column headings */
+  columns?: string[];
+  /** Rows of cells, in column order */
+  rows?: string[][];
   caption?: string;
 }
 
-const splitCells = (line: string) => line.split("|").map((cell) => cell.trim());
+const cellText = (cell: unknown) => (cell == null ? "" : String(cell));
 
-function TableImpl({ columns, rows, caption }: TableProps) {
-  const heads = columns.split(",").map((c) => c.trim()).filter(Boolean);
-  const body = rows
-    .split(/\r?\n/)
-    .map((line) => line.trim())
-    .filter(Boolean)
-    .map(splitCells);
+function TableImpl({ columns = ["Plan", "Price"], rows = [["Starter", "$0"]], caption }: TableProps) {
+  const heads = (Array.isArray(columns) ? columns : []).map(cellText);
+  const body = (Array.isArray(rows) ? rows : []).map((row) => (Array.isArray(row) ? row.map(cellText) : [cellText(row)]));
   return (
     <UITable>
       {caption ? <TableCaption>{caption}</TableCaption> : null}
@@ -53,14 +49,18 @@ export const Table = defineMDMX(TableImpl, {
   name: "Table",
   category: "UI",
   icon: "table",
-  description: "A simple data table (headings + rows as text)",
+  description: "A simple data table (headings + rows)",
   props: {
-    columns: { placeholder: "Plan, Price, Seats" },
-    rows: { control: { type: "textarea" }, placeholder: "Starter | $0 | 1\nTeam | $29 | 10" },
+    columns: { default: ["Plan", "Price"] },
+    rows: { default: [["Starter", "$0"]] },
     caption: { placeholder: "Optional caption" },
   },
   preview: {
-    columns: "Plan, Price, Seats",
-    rows: "Starter | $0 | 1\nTeam | $29 | 10\nEnterprise | Custom | Unlimited",
+    columns: ["Plan", "Price", "Seats"],
+    rows: [
+      ["Starter", "$0", "1"],
+      ["Team", "$29", "10"],
+      ["Enterprise", "Custom", "Unlimited"],
+    ],
   },
 });

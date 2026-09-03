@@ -25,7 +25,7 @@ export const Spinner = defineMDMX(SpinnerImpl, {
   description: "A loading indicator with an optional label",
   props: {
     label: { placeholder: "Loading…" },
-    size: { default: "default" },
+    size: { control: { type: "select", options: ["sm", "default", "lg"] }, default: "default" },
   },
   preview: { label: "Loading…" },
 });

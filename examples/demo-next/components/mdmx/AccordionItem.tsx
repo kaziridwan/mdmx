@@ -4,13 +4,13 @@ import { defineMDMX } from "@mdmx/core";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 
 interface AccordionItemProps {
-  title: string;
+  title?: string;
   /** Start expanded */
   open?: boolean;
   children: ReactNode;
 }
 
-function AccordionItemImpl({ title, open = false, children }: AccordionItemProps) {
+function AccordionItemImpl({ title = "Section", open = false, children }: AccordionItemProps) {
   return (
     <Collapsible defaultOpen={open} className="group/acc">
       <CollapsibleTrigger className="flex w-full items-center justify-between gap-4 py-2.5 text-left text-sm font-medium hover:underline">
@@ -32,7 +32,8 @@ export const AccordionItem = defineMDMX(AccordionItemImpl, {
   children: "blocks",
   constraints: { allowedParents: ["Accordion"] },
   props: {
-    title: { placeholder: "Section title" },
+    title: { placeholder: "Section title", default: "Section" },
     open: { default: false },
   },
+  preview: { title: "What is a block?", children: "A registered component the editor can insert." },
 });

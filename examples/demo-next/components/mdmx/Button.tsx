@@ -2,14 +2,14 @@ import { defineMDMX } from "@mdmx/core";
 import { Button as UIButton, buttonVariants } from "@/components/ui/button";
 
 interface ButtonProps {
-  label: string;
+  label?: string;
   /** Where the button links to; leave empty for a plain button */
   href?: string;
   variant?: "default" | "outline" | "secondary" | "ghost" | "destructive" | "link";
   size?: "sm" | "default" | "lg";
 }
 
-function ButtonImpl({ label, href, variant = "default", size = "default" }: ButtonProps) {
+function ButtonImpl({ label = "Button", href, variant = "default", size = "default" }: ButtonProps) {
   if (href) {
     return (
       <a className={buttonVariants({ variant, size })} href={href}>
@@ -30,10 +30,13 @@ export const Button = defineMDMX(ButtonImpl, {
   icon: "mouse-pointer-click",
   description: "A button, optionally linking somewhere",
   props: {
-    label: { placeholder: "Click me" },
-    href: { control: { type: "link" } },
-    variant: { default: "default" },
-    size: { default: "default" },
+    label: { placeholder: "Click me", default: "Button" },
+    href: { control: { type: "link" }, placeholder: "/docs" },
+    variant: {
+      control: { type: "select", options: ["default", "outline", "secondary", "ghost", "destructive", "link"] },
+      default: "default",
+    },
+    size: { control: { type: "select", options: ["sm", "default", "lg"] }, default: "default" },
   },
   preview: { label: "Get started" },
 });

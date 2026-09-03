@@ -2,15 +2,12 @@ import { defineMDMX } from "@mdmx/core";
 
 interface LogoCloudProps {
   title?: string;
-  /** Comma-separated company names */
-  names?: string;
+  /** Company names, one per entry */
+  names?: string[];
 }
 
 function LogoCloudImpl({ title, names }: LogoCloudProps) {
-  const items = (names ?? "")
-    .split(",")
-    .map((s) => s.trim())
-    .filter(Boolean);
+  const items = (Array.isArray(names) ? names : []).map((s) => String(s).trim()).filter(Boolean);
   return (
     <section className="py-3 text-center">
       {title ? (
@@ -34,10 +31,9 @@ export const LogoCloud = defineMDMX(LogoCloudImpl, {
   description: "A row of customer or partner logos (by name)",
   props: {
     title: { placeholder: "Trusted by teams at" },
-    names: { control: { type: "textarea" }, placeholder: "Acme, Globex, Initech" },
   },
   preview: {
     title: "Trusted by teams at",
-    names: "Acme, Globex, Initech, Umbrella, Hooli",
+    names: ["Acme", "Globex", "Initech", "Umbrella", "Hooli"],
   },
 });

@@ -4,9 +4,17 @@ import { Separator as UISeparator } from "@/components/ui/separator";
 interface SeparatorProps {
   /** Optional centered label */
   label?: string;
+  orientation?: "horizontal" | "vertical";
 }
 
-function SeparatorImpl({ label }: SeparatorProps) {
+function SeparatorImpl({ label, orientation = "horizontal" }: SeparatorProps) {
+  if (orientation === "vertical") {
+    return (
+      <div className="flex justify-center py-1">
+        <UISeparator orientation="vertical" className="h-8" />
+      </div>
+    );
+  }
   if (!label) return <UISeparator />;
   return (
     <div className="flex items-center gap-3">
@@ -23,6 +31,7 @@ export const Separator = defineMDMX(SeparatorImpl, {
   icon: "minus",
   description: "A horizontal rule, optionally labeled",
   props: {
-    label: { placeholder: "or" },
+    label: { placeholder: "or", showIf: { prop: "orientation", eq: "horizontal" } },
+    orientation: { control: { type: "select", options: ["horizontal", "vertical"] }, default: "horizontal" },
   },
 });

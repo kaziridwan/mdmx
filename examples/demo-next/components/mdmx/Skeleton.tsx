@@ -26,7 +26,7 @@ export const Skeleton = defineMDMX(SkeletonImpl, {
   icon: "loader",
   description: "A loading placeholder",
   props: {
-    shape: { default: "text" },
-    lines: { control: { type: "number", min: 1, max: 8, step: 1 }, default: 3 },
+    shape: { control: { type: "select", options: ["text", "rect", "circle"] }, default: "text" },
+    lines: { control: { type: "number", min: 1, max: 8, step: 1 }, default: 3, showIf: { prop: "shape", eq: "text" } },
   },
 });

@@ -2,13 +2,13 @@ import { defineMDMX } from "@mdmx/core";
 import { Empty as UIEmpty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@/components/ui/empty";
 
 interface EmptyProps {
-  title: string;
+  title?: string;
   description?: string;
   /** Emoji or short glyph */
   icon?: string;
 }
 
-function EmptyImpl({ title, description, icon }: EmptyProps) {
+function EmptyImpl({ title = "Nothing here yet", description, icon }: EmptyProps) {
   return (
     <UIEmpty className="border">
       <EmptyHeader>
@@ -30,7 +30,7 @@ export const Empty = defineMDMX(EmptyImpl, {
   icon: "inbox",
   description: "An empty-state placeholder with a title and description",
   props: {
-    title: { placeholder: "Nothing here yet" },
+    title: { placeholder: "Nothing here yet", default: "Nothing here yet" },
     description: { control: { type: "textarea" }, placeholder: "What to do about it" },
     icon: { placeholder: "📭" },
   },

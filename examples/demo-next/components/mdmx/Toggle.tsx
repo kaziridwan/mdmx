@@ -2,14 +2,14 @@ import { defineMDMX } from "@mdmx/core";
 import { Toggle as UIToggle } from "@/components/ui/toggle";
 
 interface ToggleProps {
-  label: string;
+  label?: string;
   /** Start pressed */
   pressed?: boolean;
   variant?: "default" | "outline";
   size?: "sm" | "default" | "lg";
 }
 
-function ToggleImpl({ label, pressed = false, variant = "outline", size = "default" }: ToggleProps) {
+function ToggleImpl({ label = "Toggle", pressed = false, variant = "outline", size = "default" }: ToggleProps) {
   return (
     <UIToggle defaultPressed={pressed} variant={variant} size={size} aria-label={label}>
       {label}
@@ -23,10 +23,10 @@ export const Toggle = defineMDMX(ToggleImpl, {
   icon: "toggle-left",
   description: "A two-state button",
   props: {
-    label: { placeholder: "Bold" },
+    label: { placeholder: "Bold", default: "Toggle" },
     pressed: { default: false },
-    variant: { default: "outline" },
-    size: { default: "default" },
+    variant: { control: { type: "select", options: ["default", "outline"] }, default: "outline" },
+    size: { control: { type: "select", options: ["sm", "default", "lg"] }, default: "default" },
   },
   preview: { label: "Toggle me" },
 });
