@@ -1773,3 +1773,54 @@ explicit toggle persisted once is one click). A responsive breakpoint alone
 (does nothing for the 1400px case that motivated this).
 
 **Status.** Shipped — 0.7 M1.
+
+## ADR-057 — Registry v3: `preview` as the insert-time seed, `showIf` panel visibility, `link.placeholder` (SPEC §5, §8)
+
+**Context.** The 0.7 block audit over demo-next's 39 wrappers found that 24
+insert failing MDMX006 (a required prop with no `default`), four throw on
+insert (`.split()` on `undefined`) and then stay bricked, and that the
+`preview` 17 wrappers already author in `defineMDMX` was never extracted:
+`ComponentSpec` had no field, the CLI read only `override.default`,
+`registry.json` had zero occurrences. `initialProps` seeded only defaults;
+a rich-text block always seeded one empty paragraph — for Tooltip and
+HoverCard that paragraph *is* the trigger, so the block inserted as an
+invisible zero-width span. Every wrapper faked arrays with delimited strings
+because the panel had no `list` control, and the panel had no way to hide a
+prop that only applies in one configuration (`Skeleton.lines`, the `*Href`
+beside each `*Label`).
+
+**Decision.** Registry schema v2 → v3, three additive fields:
+
+- `ComponentSpec.preview?: PropsObject & { children?: string }` — the
+  insert-time seed. The CLI evaluates it from the `defineMDMX` literal with
+  `static-eval` and validates it: keys must be declared props (undeclared
+  keys are warned about and dropped, so a typo can never seed a prop MDMX007
+  would flag), values are JSON, `children` is a string and is dropped with a
+  warning on a `children: none` component. The editor seeds inserts (palette,
+  slash menu, and the rail drop, which now goes through the same
+  `buildComponentNode`) with `preview` over `default`s, in the spec's
+  declaration order, and the seeded first paragraph carries
+  `preview.children`. `preview` is editor-only: validation and existing
+  content never see it.
+- `PropSpec.showIf?: { prop; eq? }` — panel-only visibility: show the
+  control when `prop` equals `eq`, or is truthy when `eq` is omitted. The
+  CLI checks the governing prop exists and isn't the prop itself. Content is
+  never rewritten: a hidden prop keeps its value, still validates, still
+  serializes.
+- `ControlSpec` `link` gains `placeholder?`, applied through the same
+  `placeholder` override `text`/`textarea` use.
+
+`MDMX_REGISTRY_VERSION = 3`. Every field is optional, so v1 and v2
+registries load unchanged; `mdmx generate` once picks the fields up. The
+`isPropVisible` rule lives in core so the panel and any future check agree.
+
+**Alternatives rejected.** Seeding from `default` alone (a default is what
+the *component* renders when the prop is absent; a preview is what an
+*author* should see first — Tooltip's default `content` is nothing). Letting
+`preview` seed undeclared keys (silent MDMX007). Making `showIf` rewrite or
+clear hidden props (it would turn a panel affordance into a content
+mutation, and hidden-but-set is exactly the state an author toggling
+`shape` back expects to find intact).
+
+**Status.** Shipped — 0.7 M2. Registries regenerated for `examples/demo`
+and `demo-next` (20 of 39 blocks carry a preview; the rest get one in M5).

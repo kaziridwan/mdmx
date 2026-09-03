@@ -5,13 +5,13 @@ Per-package reference. Test counts are current as of the last session (see
 
 ---
 
-## @mdmx/core — 54 tests
+## @mdmx/core — 61 tests
 
 The format. Zero React/Next dependencies (Invariant #9).
 
 | File | Responsibility |
 | --- | --- |
-| `types.ts` | All shared types: `JsonValue`, diagnostics + codes, `ControlSpec` taxonomy, `ComponentSpec`/`RegistrySpec` (incl. `RenderSpec` — mode + `interactive` routing, ADR-052), `Registry` class, `defineMDMX`, the `MDMX_SPEC_VERSION` / `MDMX_REGISTRY_VERSION` counters. |
+| `types.ts` | All shared types: `JsonValue`, diagnostics + codes, `ControlSpec` taxonomy (`link.placeholder` since v3), `ComponentSpec`/`RegistrySpec` (incl. `RenderSpec` — mode + `interactive` routing, ADR-052 — and `preview`, the insert-time seed, ADR-057), `PropSpec.showIf` + `isPropVisible` (the one panel-visibility rule), `Registry` class, `defineMDMX`, the `MDMX_SPEC_VERSION` / `MDMX_REGISTRY_VERSION` counters. |
 | `parse.ts` | `parseMDX`/`parseDocument` — the single shared remark processor (frontmatter + GFM + MDX). |
 | `props.ts` | `evaluateAttributes`/`evaluateExpression` — enforces props-are-JSON by walking attribute estrees. |
 | `validate.ts` | `validateTree`/`validateSource` — subset whitelist, registry membership, prop schema, children policies, slot constraints → diagnostics. |
@@ -55,7 +55,7 @@ one package. Depends only on core; core never imports it.
 
 ---
 
-## @mdmx/cli — 40 tests
+## @mdmx/cli — 44 tests
 
 Tooling. Binary: `mdmx`. Config loading now lives in `@mdmx/project`; the CLI
 owns codegen, linting, scaffolding, and watch mode.
@@ -70,7 +70,7 @@ warning), `dev` (watch components, config, and studio definitions).
 | --- | --- |
 | `bin.ts` | CLI entry; `generate`, `check`, and `dev` subcommands; exit codes for CI. |
 | `config.ts` | Loads `mdmx.config.json`/`.mjs`; defaults. Collection types re-exported from core (one canonical shape, ADR-035). |
-| `extract.ts` | Walks a `ts.Program` for `defineMDMX` calls; pulls props from the component type; merges config. |
+| `extract.ts` | Walks a `ts.Program` for `defineMDMX` calls; pulls props from the component type; merges config (per-prop `control`/`default`/`description`/`required`/`placeholder`/`showIf` overrides, validated against the declared props); extracts and validates the insert-time `preview` (registry v3, ADR-057). |
 | `infer.ts` | `ts.Type` → `ControlSpec` (string→text, literal union→select, array→list, …); `isFunctionType`. |
 | `static-eval.ts` | Statically evaluates the `defineMDMX` config literal to JSON (never executes user code). |
 | `generate.ts` | Orchestrates discovery→extraction→dedup→emit `registry.json` + `registry.ts`. |
@@ -83,7 +83,7 @@ registry on change; reports `unchanged` when the content hash is identical).
 
 ---
 
-## @mdmx/editor — 135 tests
+## @mdmx/editor — 138 tests
 
 Registry→ProseMirror, converters, commands (main entry, React-free), plus the
 flat React editor UI behind the `@mdmx/editor/react` subpath.
@@ -93,7 +93,7 @@ flat React editor UI behind the `@mdmx/editor/react` subpath.
 | `schema.ts` | `buildSchema(registry)` — static markdown core + one node per component; children policies → content expressions; `MARK_PRIORITY`. |
 | `from-mdast.ts` | `fromMdast` — mdast → PM doc; mark accumulation; component nodes; `mdmx_raw` fallback. |
 | `to-mdast.ts` | `toMdast` + `printPropValue` — PM doc → mdast; priority-ordered mark grouping; canonical prop printing. |
-| `commands.ts` | `slashItems`/`slashItemsFor` (context-aware palette), region-local + `allowedParents`-aware `insertComponent`, `canInsertComponent`, `resolveComponentDrop`, `mdmxInputRules`, mark commands, `initialProps` (ADR-028). |
+| `commands.ts` | `slashItems`/`slashItemsFor` (context-aware palette), region-local + `allowedParents`-aware `insertComponent`, `canInsertComponent`, `resolveComponentDrop`, `mdmxInputRules`, mark commands, `initialProps` (`preview` over defaults, declaration order) + `previewChildren` seeding the first paragraph (ADR-028, ADR-057). |
 | `react/react-node-view.tsx`, `link-policy.ts` | Thin React-NodeView adapter (one React root per component node; `contentDOM` placement; ADR-023) with `stopEvent` routing by target / `render.interactive` (`routeEvent`, pure), and the canvas-wide link policy (`linkClickAction`, pure): links never navigate, ⌘-click opens a tab (ADR-052). |
 | `react/ComponentBlock.tsx` | Generic component renderer: live author component + error boundary → placeholder card; content hole for rich-text/blocks. |
 | `react/Editor.tsx` | `MDMXEditor` — the composition root: wires the hooks below to the chrome, owns save state, the media picker, the sidebar resize, and the canvas click-into-padding behavior. Puts the host's content class (`contentClassName`, default `mdmx-page`) on the ProseMirror root (ADR-050). |

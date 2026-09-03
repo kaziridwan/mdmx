@@ -127,7 +127,7 @@ metadata is inferred from TypeScript types and overlaid with explicit config
 
 ```jsonc
 {
-  "mdmxRegistryVersion": 2,
+  "mdmxRegistryVersion": 3,
   "generatedAt": "ISO-8601",
   "hash": "16-hex content hash of the component specs",
   "components": [{
@@ -143,12 +143,17 @@ metadata is inferred from TypeScript types and overlaid with explicit config
       "required": true,
       "control": { /* see control taxonomy */ },
       "default": "info",                // JSON value, optional
-      "description": "…"                // optional (JSDoc-derived)
+      "description": "…",               // optional (JSDoc-derived)
+      "showIf": { "prop": "…", "eq": … } // optional; panel visibility (below)
     }],
     "constraints": { "allowedParents": null | ["…"], "allowedChildren": null | ["…"] },
     "render": {
       "mode": "live" | "placeholder" | "static",
       "interactive": true | false     // optional; editor event routing (below)
+    },
+    "preview": {                        // optional; insert-time seed (below)
+      "variant": "info",               // declared props only, JSON values
+      "children": "Sample text"        // first-paragraph text, when children ≠ none
     }
   }],
   "collections": [{                       // optional; omitted when none configured
@@ -202,9 +207,22 @@ are always the editor's, whatever the policy. Links are never interactive:
 a click on `<a href>` anywhere in the canvas selects the block and does not
 navigate; ⌘/Ctrl-click opens the target in a new tab.
 
-**Control taxonomy** (discriminated union on `type`): `text` / `textarea`
-(`placeholder?`), `number` (`min?`, `max?`, `step?`), `boolean`, `select` /
-`multiselect` (`options`), `color`, `date`, `image`, `link`, `json`,
+**Insert-time preview** (`preview`, registry v3): what a block holds the
+moment it is inserted from the palette, so it never lands failing MDMX006 or
+rendering nothing. Keys are declared props (the CLI rejects others) with
+JSON values, applied over the props' `default`s; `children` is the text of
+the seeded first paragraph for a `rich-text` or `blocks` component (ignored
+for `none`). `preview` is editor-only: it never touches validation or
+content already written.
+
+**Conditional visibility** (`showIf` on a prop, registry v3): the panel
+shows the prop's control only when `prop` holds `eq` — or, with `eq`
+omitted, any truthy value. Panel-only: a hidden prop keeps its value, is
+still validated, and still serializes; the rule never rewrites content.
+
+**Control taxonomy** (discriminated union on `type`): `text` / `textarea` /
+`link` (`placeholder?`), `number` (`min?`, `max?`, `step?`), `boolean`,
+`select` / `multiselect` (`options`), `color`, `date`, `image`, `json`,
 `list` (`item: Control`), `object` (`fields: Record<string, Control>`).
 Inference: `string`→text, `number`→number, `boolean`→boolean, string-literal
 union→select, `T[]`→list of inferred `T`, other objects/unions→json.
@@ -287,9 +305,12 @@ pages must not depend on a browser-side CSS runtime.
 - Documents may declare the spec they target (`mdmx: 1` in frontmatter or a
   repo-level config); absent means "current".
 - `mdmxRegistryVersion` (registry schema; `MDMX_REGISTRY_VERSION`, currently
-  2 — v2 added `render.interactive`) and `MDMX_SPEC_VERSION` (grammar,
-  currently 1) are distinct counters and must not be conflated. A v1
-  registry reads as v2 with no routing overrides.
+  3 — v2 added `render.interactive`; v3 added `preview`, `showIf`, and
+  `link.placeholder`) and `MDMX_SPEC_VERSION` (grammar, currently 1) are
+  distinct counters and must not be conflated. Every registry field added
+  since v1 is optional: a v1 registry reads as v3 with no routing overrides,
+  a v2 registry with no insert-time previews or visibility rules. Run
+  `mdmx generate` once to pick the new fields up.
 - The registry carries `mdmxRegistryVersion` and a content `hash`; editors
   must detect hash drift between a loaded document's session and the current
   registry. Generated artifacts carry no timestamp, so identical inputs

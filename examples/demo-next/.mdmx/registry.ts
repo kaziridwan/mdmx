@@ -41,8 +41,8 @@ import { Tooltip } from "../components/mdmx/Tooltip";
 import TwoColumn from "../components/mdmx/TwoColumn";
 
 export const spec: RegistrySpec = {
-  "mdmxRegistryVersion": 2,
-  "hash": "5d4141a927f3acb2",
+  "mdmxRegistryVersion": 3,
+  "hash": "d658db4e3eedfb01",
   "components": [
     {
       "name": "Accordion",
@@ -148,6 +148,10 @@ export const spec: RegistrySpec = {
       },
       "render": {
         "mode": "live"
+      },
+      "preview": {
+        "title": "Heads up",
+        "children": "Something worth knowing."
       }
     },
     {
@@ -254,6 +258,9 @@ export const spec: RegistrySpec = {
       },
       "render": {
         "mode": "live"
+      },
+      "preview": {
+        "fallback": "JD"
       }
     },
     {
@@ -296,6 +303,9 @@ export const spec: RegistrySpec = {
       },
       "render": {
         "mode": "live"
+      },
+      "preview": {
+        "label": "New"
       }
     },
     {
@@ -360,6 +370,9 @@ export const spec: RegistrySpec = {
       },
       "render": {
         "mode": "live"
+      },
+      "preview": {
+        "label": "Get started"
       }
     },
     {
@@ -401,6 +414,11 @@ export const spec: RegistrySpec = {
       },
       "render": {
         "mode": "live"
+      },
+      "preview": {
+        "variant": "info",
+        "title": "Example",
+        "children": "Sample text"
       }
     },
     {
@@ -455,6 +473,13 @@ export const spec: RegistrySpec = {
       },
       "render": {
         "mode": "live"
+      },
+      "preview": {
+        "heading": "Ready to dive in?",
+        "buttonLabel": "Start now",
+        "buttonHref": "#",
+        "variant": "solid",
+        "children": "Start authoring with your own components today."
       }
     },
     {
@@ -603,6 +628,10 @@ export const spec: RegistrySpec = {
       },
       "render": {
         "mode": "live"
+      },
+      "preview": {
+        "title": "Nothing here yet",
+        "description": "Add something to get started."
       }
     },
     {
@@ -819,6 +848,13 @@ export const spec: RegistrySpec = {
       },
       "render": {
         "mode": "live"
+      },
+      "preview": {
+        "eyebrow": "Now in beta",
+        "title": "Ship content at the speed of git",
+        "subtitle": "Edit your components as blocks. Commit canonical MDMX.",
+        "primaryLabel": "Get started",
+        "secondaryLabel": "Read the docs"
       }
     },
     {
@@ -856,6 +892,11 @@ export const spec: RegistrySpec = {
       },
       "render": {
         "mode": "live"
+      },
+      "preview": {
+        "title": "MDMX",
+        "content": "A git-native CMS for Next.js.",
+        "children": "Hover over me"
       }
     },
     {
@@ -884,6 +925,9 @@ export const spec: RegistrySpec = {
       },
       "render": {
         "mode": "live"
+      },
+      "preview": {
+        "code": "<div style=\"padding:12px;border-radius:10px;background:#eef2ff\">Custom <strong>HTML</strong> block</div>"
       }
     },
     {
@@ -941,6 +985,10 @@ export const spec: RegistrySpec = {
       },
       "render": {
         "mode": "live"
+      },
+      "preview": {
+        "title": "An item",
+        "description": "With a short description."
       }
     },
     {
@@ -969,6 +1017,9 @@ export const spec: RegistrySpec = {
       },
       "render": {
         "mode": "live"
+      },
+      "preview": {
+        "keys": "⌘ K"
       }
     },
     {
@@ -1005,6 +1056,10 @@ export const spec: RegistrySpec = {
       },
       "render": {
         "mode": "live"
+      },
+      "preview": {
+        "title": "Trusted by teams at",
+        "names": "Acme, Globex, Initech, Umbrella, Hooli"
       }
     },
     {
@@ -1056,6 +1111,11 @@ export const spec: RegistrySpec = {
       },
       "render": {
         "mode": "live"
+      },
+      "preview": {
+        "heading": "Stay in the loop",
+        "buttonLabel": "Subscribe",
+        "note": "Product updates, roughly monthly."
       }
     },
     {
@@ -1191,6 +1251,10 @@ export const spec: RegistrySpec = {
       },
       "render": {
         "mode": "live"
+      },
+      "preview": {
+        "value": 62,
+        "label": "Progress"
       }
     },
     {
@@ -1303,6 +1367,9 @@ export const spec: RegistrySpec = {
       },
       "render": {
         "mode": "live"
+      },
+      "preview": {
+        "label": "Loading…"
       }
     },
     {
@@ -1460,6 +1527,10 @@ export const spec: RegistrySpec = {
       },
       "render": {
         "mode": "live"
+      },
+      "preview": {
+        "columns": "Plan, Price, Seats",
+        "rows": "Starter | $0 | 1\nTeam | $29 | 10\nEnterprise | Custom | Unlimited"
       }
     },
     {
@@ -1544,6 +1615,11 @@ export const spec: RegistrySpec = {
       },
       "render": {
         "mode": "live"
+      },
+      "preview": {
+        "author": "Jane Doe",
+        "role": "CTO, Acme",
+        "children": "MDMX let our writers ship landing pages without touching the build."
       }
     },
     {
@@ -1605,6 +1681,9 @@ export const spec: RegistrySpec = {
       },
       "render": {
         "mode": "live"
+      },
+      "preview": {
+        "label": "Toggle me"
       }
     },
     {
@@ -1647,6 +1726,10 @@ export const spec: RegistrySpec = {
       },
       "render": {
         "mode": "live"
+      },
+      "preview": {
+        "content": "A tooltip",
+        "children": "Hover me"
       }
     },
     {

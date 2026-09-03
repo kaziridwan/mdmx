@@ -4,6 +4,7 @@ import type {
   ComponentSpec,
   DefineMDMXConfig,
   JsonValue,
+  PreviewSpec,
   PropSpec,
 } from "@mdmx/core";
 import { inferControl, isFunctionType } from "./infer.js";
@@ -171,14 +172,70 @@ export function extractComponents(files: string[], cwd: string): ExtractionResul
       if (
         "placeholder" in override &&
         typeof override.placeholder === "string" &&
-        (base.control.type === "text" || base.control.type === "textarea")
+        (base.control.type === "text" ||
+          base.control.type === "textarea" ||
+          base.control.type === "link")
       ) {
         base.control = { ...base.control, placeholder: override.placeholder };
+      }
+      if (override.showIf !== undefined) {
+        const rule = override.showIf as unknown;
+        const governing =
+          rule !== null && typeof rule === "object" && !Array.isArray(rule)
+            ? (rule as { prop?: unknown }).prop
+            : undefined;
+        if (typeof governing !== "string" || !inferred.has(governing)) {
+          warn(
+            `Prop "${propName}" of "${config.name}" has a showIf rule naming "${String(governing)}", which is not a declared prop; the rule was ignored.`,
+          );
+        } else if (governing === propName) {
+          warn(
+            `Prop "${propName}" of "${config.name}" has a showIf rule naming itself; the rule was ignored.`,
+          );
+        } else {
+          const eq = (rule as { eq?: JsonValue }).eq;
+          base.showIf = { prop: governing, ...(eq !== undefined ? { eq } : {}) };
+        }
       }
     }
 
     const childrenPolicy =
       config.children ?? (hasChildrenProp ? "blocks" : "none");
+
+    // ---- Insert-time preview (registry v3) ---------------------------------
+    // Keys must be declared props (so a typo never seeds an undeclared prop
+    // that MDMX007 would then flag); `children` is the seeded paragraph text.
+    let preview: PreviewSpec | undefined;
+    if (config.preview !== undefined) {
+      const raw = config.preview as unknown;
+      if (raw === null || typeof raw !== "object" || Array.isArray(raw)) {
+        warn(`"${config.name}" declares a preview that is not an object; it was ignored.`);
+      } else {
+        const out: Record<string, JsonValue> = {};
+        for (const [key, value] of Object.entries(raw as Record<string, JsonValue>)) {
+          if (key === "children") {
+            if (typeof value !== "string") {
+              warn(`"${config.name}" preview.children must be a string; it was ignored.`);
+            } else if (childrenPolicy === "none") {
+              warn(
+                `"${config.name}" preview declares children text but its children policy is "none"; it was ignored.`,
+              );
+            } else {
+              out.children = value;
+            }
+            continue;
+          }
+          if (!inferred.has(key)) {
+            warn(
+              `"${config.name}" preview sets "${key}", which is not a declared prop; it was ignored.`,
+            );
+            continue;
+          }
+          out[key] = value;
+        }
+        if (Object.keys(out).length > 0) preview = out as PreviewSpec;
+      }
+    }
     if (!hasChildrenProp && config.children && config.children !== "none") {
       warn(
         `"${config.name}" declares children policy "${config.children}" but its props type has no "children" prop.`,
@@ -204,6 +261,7 @@ export function extractComponents(files: string[], cwd: string): ExtractionResul
           ? { interactive: config.render.interactive }
           : {}),
       },
+      ...(preview ? { preview } : {}),
     };
 
     components.push({ spec, file: sf.fileName, exportName });

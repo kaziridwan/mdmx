@@ -5,6 +5,7 @@ export {
   Registry,
   collectionForPath,
   defineMDMX,
+  isPropVisible,
 } from "./types.js";
 export type {
   ChildrenPolicy,
@@ -17,9 +18,11 @@ export type {
   DiagnosticCode,
   FrontmatterField,
   JsonValue,
+  PreviewSpec,
   PropSpec,
   PropsObject,
   RegistrySpec,
+  ShowIf,
   RenderMode,
   RenderSpec,
   SourcePosition,

@@ -81,13 +81,29 @@ export function wrapBlockquote(schema: Schema): Command {
 // Component insertion
 // ---------------------------------------------------------------------------
 
-/** Build the initial props object for a freshly inserted component. */
+/**
+ * The props a freshly inserted component starts with: every `default`, then
+ * the spec's insert-time `preview` over it (registry v3; `preview.children`
+ * is paragraph text, not a prop — see `previewChildren`).
+ */
 export function initialProps(spec: ComponentSpec): Record<string, unknown> {
+  const preview = spec.preview ?? {};
+  // Spec declaration order, so the serialized attributes read the way the
+  // author declared them regardless of where each value came from.
   const props: Record<string, unknown> = {};
   for (const p of spec.props) {
-    if (p.default !== undefined) props[p.name] = p.default;
+    const value = preview[p.name] !== undefined ? preview[p.name] : p.default;
+    if (value !== undefined) props[p.name] = value;
   }
   return props;
+}
+
+/** The text a component's seeded first paragraph carries on insert, if any. */
+export function previewChildren(spec: ComponentSpec): string | null {
+  const text = spec.preview?.children;
+  return typeof text === "string" && text.length > 0 && spec.children.policy !== "none"
+    ? text
+    : null;
 }
 
 /** Cap recursion when seeding container subtrees (guards self-allowing specs). */
@@ -97,7 +113,8 @@ const MAX_SEED_DEPTH = 4;
  * Build a component node, seeding a usable initial subtree so containers land
  * editable rather than empty:
  * - `none` → atom (no content)
- * - `rich-text` / `blocks` → one empty paragraph
+ * - `rich-text` / `blocks` → one paragraph, carrying the spec's
+ *   `preview.children` text when it has one (registry v3), else empty
  * - slot containers (`allowedChildren`) → one of each allowed child, or **two**
  *   when there is a single allowed type (the TwoColumn / repeater case),
  *   recursively seeded.
@@ -124,7 +141,8 @@ export function buildComponentNode(
         if (child) content.push(child);
       }
     } else if (spec.children.policy === "rich-text" || spec.children.policy === "blocks") {
-      content.push(schema.nodes.paragraph!.create());
+      const text = previewChildren(spec);
+      content.push(schema.nodes.paragraph!.create(null, text ? schema.text(text) : null));
     }
   }
 

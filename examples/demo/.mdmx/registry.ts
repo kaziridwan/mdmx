@@ -4,8 +4,8 @@ import Callout from "../components/mdmx/Callout";
 import { Stat } from "../components/mdmx/Stat";
 
 export const spec: RegistrySpec = {
-  "mdmxRegistryVersion": 1,
-  "hash": "22036803a2eaa056",
+  "mdmxRegistryVersion": 3,
+  "hash": "7856b803bc401f2f",
   "components": [
     {
       "name": "Callout",
@@ -46,6 +46,11 @@ export const spec: RegistrySpec = {
       },
       "render": {
         "mode": "live"
+      },
+      "preview": {
+        "variant": "info",
+        "title": "Example",
+        "children": "Sample text"
       }
     },
     {

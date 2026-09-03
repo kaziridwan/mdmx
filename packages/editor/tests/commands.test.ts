@@ -5,6 +5,7 @@ import {
   buildSchema,
   buildComponentNode,
   initialProps,
+  previewChildren,
   insertComponent,
   slashItems,
   groupSlashItems,
@@ -79,9 +80,40 @@ describe("initialProps", () => {
     expect(initialProps(spec.components[0]!)).toEqual({ variant: "info" });
     expect(initialProps(spec.components[1]!)).toEqual({});
   });
+
+  it("layers the insert-time preview over defaults, keeping children out (registry v3)", () => {
+    const callout = {
+      ...spec.components[0]!,
+      preview: { variant: "warn", title: "Heads up", children: "Sample text" },
+    };
+    expect(initialProps(callout)).toEqual({ variant: "warn", title: "Heads up" });
+    // Declaration order, whichever source each value came from.
+    expect(Object.keys(initialProps({ ...callout, preview: { title: "T", variant: "info" } }))).toEqual(["variant", "title"]);
+    expect(previewChildren(callout)).toBe("Sample text");
+    // A leaf's children text is ignored even if a registry carried one.
+    expect(previewChildren({ ...spec.components[1]!, preview: { children: "x" } })).toBeNull();
+  });
 });
 
 describe("insertComponent", () => {
+  it("inserts a component node carrying its preview over its defaults", () => {
+    const reg = new Registry({
+      ...spec,
+      components: [{ ...spec.components[0]!, preview: { title: "Heads up" } }, spec.components[1]!],
+    });
+    const sch = buildSchema(reg);
+    let state = EditorState.create({ schema: sch });
+    insertComponent(reg, sch, "Callout")(state, (tr) => {
+      state = state.apply(tr);
+    });
+    let props: Record<string, unknown> | null = null;
+    state.doc.descendants((n) => {
+      if (n.type.name === "mdmx_Callout") props = n.attrs.props;
+      return !props;
+    });
+    expect(props).toEqual({ variant: "info", title: "Heads up" });
+  });
+
   it("inserts a component node carrying its default props", () => {
     let state = EditorState.create({ schema });
     const cmd = insertComponent(registry, schema, "Callout");
@@ -143,6 +175,25 @@ describe("buildComponentNode (subtree seeding)", () => {
     const node = buildComponentNode(reg, sch, "Callout")!;
     expect(node.childCount).toBe(1);
     expect(node.child(0).type.name).toBe("paragraph");
+  });
+
+  it("seeds the preview's children text into that paragraph (rich-text and blocks)", () => {
+    const withPreview = new Registry({
+      mdmxRegistryVersion: 3,
+      components: [
+        { name: "Tooltip", children: { policy: "rich-text" }, props: [], preview: { children: "Hover me" } },
+        { name: "Card", children: { policy: "blocks" }, props: [], preview: { children: "Card body" } },
+        { name: "Chip", children: { policy: "none" }, props: [], preview: { children: "nope" } },
+      ],
+    });
+    const s = buildSchema(withPreview);
+    const tip = buildComponentNode(withPreview, s, "Tooltip")!;
+    expect(tip.childCount).toBe(1);
+    expect(tip.child(0).textContent).toBe("Hover me");
+    const card = buildComponentNode(withPreview, s, "Card")!;
+    expect(card.child(0).type.name).toBe("paragraph");
+    expect(card.child(0).textContent).toBe("Card body");
+    expect(buildComponentNode(withPreview, s, "Chip")!.childCount).toBe(0);
   });
 
   it("leaves a children:none component as an empty atom", () => {

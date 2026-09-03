@@ -9,7 +9,7 @@ import { dropCursor } from "prosemirror-dropcursor";
 import { gapCursor } from "prosemirror-gapcursor";
 import { parseMDX, type CollectionSpec, type Registry } from "@mdmx/core";
 import { componentNodeName } from "../schema.js";
-import { markKeymap, mdmxInputRules, initialProps, resolveComponentDrop } from "../commands.js";
+import { buildComponentNode, markKeymap, mdmxInputRules, resolveComponentDrop } from "../commands.js";
 import { fromMdast } from "../from-mdast.js";
 import { createReactNodeView } from "./react-node-view.js";
 import { makeComponentBlock } from "./ComponentBlock.js";
@@ -147,15 +147,15 @@ export function useEditorView(options: UseEditorViewOptions): EditorViewHandle {
         if (moved) return false; // internal block move: let ProseMirror handle it
         const name = (event as DragEvent).dataTransfer?.getData(MDMX_DRAG_MIME);
         if (!name) return false;
-        const spec = registry.get(name);
-        const type = view.state.schema.nodes[componentNodeName(name)];
-        if (!spec || !type) return false;
+        if (!registry.has(name) || !view.state.schema.nodes[componentNodeName(name)]) return false;
         const coords = view.posAtCoords({
           left: (event as DragEvent).clientX,
           top: (event as DragEvent).clientY,
         });
         if (!coords) return false;
-        const node = type.createAndFill({ props: initialProps(spec) });
+        // Same seeding as a palette insert: defaults + preview, children text,
+        // container subtrees — a dropped block must never land emptier.
+        const node = buildComponentNode(registry, view.state.schema, name);
         if (!node) return false;
         // Resolve the drop into the deepest valid container (e.g. inside a
         // Column); reject it if the schema or `allowedParents` forbids it there.

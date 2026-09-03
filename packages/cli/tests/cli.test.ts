@@ -78,7 +78,41 @@ describe("mdmx generate", () => {
     // default policy applies and the registry stays minimal.
     const callout = result.spec.components.find((c) => c.name === "Callout")!;
     expect(callout.render).toEqual({ mode: "live" });
-    expect(result.spec.mdmxRegistryVersion).toBe(2);
+    expect(result.spec.mdmxRegistryVersion).toBe(3);
+  });
+
+  it("extracts the insert-time preview, children text included (registry v3)", () => {
+    const callout = result.spec.components.find((c) => c.name === "Callout")!;
+    expect(callout.preview).toEqual({ variant: "info", title: "Example", children: "Sample text" });
+    // Components without a preview get no key: the registry stays minimal.
+    const poll = result.spec.components.find((c) => c.name === "Poll")!;
+    expect(poll.preview).toBeUndefined();
+  });
+
+  it("drops undeclared preview keys and children text on a leaf, with warnings", () => {
+    const chart = result.spec.components.find((c) => c.name === "Chart")!;
+    expect(chart.preview).toEqual({ title: "Sales", series: ["q1", "q2"] });
+    const warnings = result.issues.filter((i) => i.severity === "warning").map((i) => i.message);
+    expect(warnings.some((m) => m.includes('preview sets "bogus"'))).toBe(true);
+    expect(warnings.some((m) => m.includes("preview declares children text"))).toBe(true);
+  });
+
+  it("carries showIf rules that name a declared prop and ignores the rest", () => {
+    const chart = result.spec.components.find((c) => c.name === "Chart")!;
+    const byName = Object.fromEntries(chart.props.map((p) => [p.name, p]));
+    expect(byName.title!.showIf).toEqual({ prop: "stacked", eq: true });
+    expect(byName.height!.showIf).toBeUndefined(); // names an unknown prop
+    expect(byName.config!.showIf).toBeUndefined(); // names itself
+    const warnings = result.issues.filter((i) => i.severity === "warning").map((i) => i.message);
+    expect(warnings.some((m) => m.includes('naming "nope"'))).toBe(true);
+    expect(warnings.some((m) => m.includes("naming itself"))).toBe(true);
+  });
+
+  it("gives link controls a placeholder", () => {
+    const poll = result.spec.components.find((c) => c.name === "Poll")!;
+    const href = poll.props.find((p) => p.name === "resultsHref")!;
+    expect(href.control).toEqual({ type: "link", placeholder: "https://example.com/results" });
+    expect(href.required).toBe(false);
   });
 
   it("excludes function props with a warning", () => {

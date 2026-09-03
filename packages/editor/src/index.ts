@@ -23,6 +23,7 @@ export {
   canInsertComponent,
   resolveComponentDrop,
   initialProps,
+  previewChildren,
   slashItems,
   slashItemsFor,
   groupSlashItems,

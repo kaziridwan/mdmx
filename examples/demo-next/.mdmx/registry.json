@@ -1,6 +1,6 @@
 {
-  "mdmxRegistryVersion": 2,
-  "hash": "5d4141a927f3acb2",
+  "mdmxRegistryVersion": 3,
+  "hash": "d658db4e3eedfb01",
   "components": [
     {
       "name": "Accordion",
@@ -106,6 +106,10 @@
       },
       "render": {
         "mode": "live"
+      },
+      "preview": {
+        "title": "Heads up",
+        "children": "Something worth knowing."
       }
     },
     {
@@ -212,6 +216,9 @@
       },
       "render": {
         "mode": "live"
+      },
+      "preview": {
+        "fallback": "JD"
       }
     },
     {
@@ -254,6 +261,9 @@
       },
       "render": {
         "mode": "live"
+      },
+      "preview": {
+        "label": "New"
       }
     },
     {
@@ -318,6 +328,9 @@
       },
       "render": {
         "mode": "live"
+      },
+      "preview": {
+        "label": "Get started"
       }
     },
     {
@@ -359,6 +372,11 @@
       },
       "render": {
         "mode": "live"
+      },
+      "preview": {
+        "variant": "info",
+        "title": "Example",
+        "children": "Sample text"
       }
     },
     {
@@ -413,6 +431,13 @@
       },
       "render": {
         "mode": "live"
+      },
+      "preview": {
+        "heading": "Ready to dive in?",
+        "buttonLabel": "Start now",
+        "buttonHref": "#",
+        "variant": "solid",
+        "children": "Start authoring with your own components today."
       }
     },
     {
@@ -561,6 +586,10 @@
       },
       "render": {
         "mode": "live"
+      },
+      "preview": {
+        "title": "Nothing here yet",
+        "description": "Add something to get started."
       }
     },
     {
@@ -777,6 +806,13 @@
       },
       "render": {
         "mode": "live"
+      },
+      "preview": {
+        "eyebrow": "Now in beta",
+        "title": "Ship content at the speed of git",
+        "subtitle": "Edit your components as blocks. Commit canonical MDMX.",
+        "primaryLabel": "Get started",
+        "secondaryLabel": "Read the docs"
       }
     },
     {
@@ -814,6 +850,11 @@
       },
       "render": {
         "mode": "live"
+      },
+      "preview": {
+        "title": "MDMX",
+        "content": "A git-native CMS for Next.js.",
+        "children": "Hover over me"
       }
     },
     {
@@ -842,6 +883,9 @@
       },
       "render": {
         "mode": "live"
+      },
+      "preview": {
+        "code": "<div style=\"padding:12px;border-radius:10px;background:#eef2ff\">Custom <strong>HTML</strong> block</div>"
       }
     },
     {
@@ -899,6 +943,10 @@
       },
       "render": {
         "mode": "live"
+      },
+      "preview": {
+        "title": "An item",
+        "description": "With a short description."
       }
     },
     {
@@ -927,6 +975,9 @@
       },
       "render": {
         "mode": "live"
+      },
+      "preview": {
+        "keys": "⌘ K"
       }
     },
     {
@@ -963,6 +1014,10 @@
       },
       "render": {
         "mode": "live"
+      },
+      "preview": {
+        "title": "Trusted by teams at",
+        "names": "Acme, Globex, Initech, Umbrella, Hooli"
       }
     },
     {
@@ -1014,6 +1069,11 @@
       },
       "render": {
         "mode": "live"
+      },
+      "preview": {
+        "heading": "Stay in the loop",
+        "buttonLabel": "Subscribe",
+        "note": "Product updates, roughly monthly."
       }
     },
     {
@@ -1149,6 +1209,10 @@
       },
       "render": {
         "mode": "live"
+      },
+      "preview": {
+        "value": 62,
+        "label": "Progress"
       }
     },
     {
@@ -1261,6 +1325,9 @@
       },
       "render": {
         "mode": "live"
+      },
+      "preview": {
+        "label": "Loading…"
       }
     },
     {
@@ -1418,6 +1485,10 @@
       },
       "render": {
         "mode": "live"
+      },
+      "preview": {
+        "columns": "Plan, Price, Seats",
+        "rows": "Starter | $0 | 1\nTeam | $29 | 10\nEnterprise | Custom | Unlimited"
       }
     },
     {
@@ -1502,6 +1573,11 @@
       },
       "render": {
         "mode": "live"
+      },
+      "preview": {
+        "author": "Jane Doe",
+        "role": "CTO, Acme",
+        "children": "MDMX let our writers ship landing pages without touching the build."
       }
     },
     {
@@ -1563,6 +1639,9 @@
       },
       "render": {
         "mode": "live"
+      },
+      "preview": {
+        "label": "Toggle me"
       }
     },
     {
@@ -1605,6 +1684,10 @@
       },
       "render": {
         "mode": "live"
+      },
+      "preview": {
+        "content": "A tooltip",
+        "children": "Hover me"
       }
     },
     {

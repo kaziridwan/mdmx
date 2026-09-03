@@ -1,6 +1,6 @@
 # Testing
 
-428 tests across eight packages, all green. The suites aren't just coverage —
+442 tests across eight packages, all green. The suites aren't just coverage —
 several *are* the spec, locking guarantees that define the product.
 
 ## How to run
@@ -84,3 +84,14 @@ deliberate semver-major decision that needs a new ADR and a fixture update).
   `Mod-\` rule, editable-target detection incl. ProseMirror and CodeMirror)
   and shell tests for the navbar toggle (class + `aria-expanded` +
   storage), restore-on-mount, and the shortcut yielding to an input.
+- **core**: `registry-v3.test.ts` — the schema counter, a v2 registry
+  loading unchanged, `preview`/`link.placeholder` carried through
+  `Registry`, and every `isPropVisible` branch (`eq`, truthy, structural).
+- **cli**: fixture `Chart` carries valid + invalid `showIf` rules and a
+  `preview` with an undeclared key and children text on a leaf; `Poll` a
+  `link` with a placeholder — extraction keeps the valid parts and warns
+  about the rest; the registry is v3.
+- **editor**: `initialProps` layers `preview` over defaults in declaration
+  order; `previewChildren` ignores a leaf; `buildComponentNode` seeds the
+  children text for rich-text and blocks; `insertComponent` carries the
+  preview into the doc.

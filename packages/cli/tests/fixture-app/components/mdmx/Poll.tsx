@@ -3,6 +3,8 @@ import { defineMDMX } from "@mdmx/core";
 interface PollProps {
   question: string;
   options: string[];
+  /** Where the results live */
+  resultsHref?: string;
 }
 
 function PollImpl({ question, options }: PollProps) {
@@ -23,4 +25,7 @@ export const Poll = defineMDMX(PollImpl, {
   name: "Poll",
   category: "Interactive",
   render: { interactive: true },
+  props: {
+    resultsHref: { control: { type: "link" }, placeholder: "https://example.com/results" },
+  },
 });

@@ -107,3 +107,16 @@ components, one per line, written by `mdmx generate` when the host app runs
 Tailwind so the host's own build compiles them (via one `@source` line)
 against the host's theme. Hosts without Tailwind get `studio.css` instead
 (ADR-042, ADR-054).
+
+**Preview props** — a component's insert-time seed (`preview` in
+`defineMDMX`, registry v3): the props a freshly inserted block starts with,
+over its `default`s, plus `children` — the text of its seeded first
+paragraph. A `default` is what the component renders when a prop is absent;
+a preview is what an author should see first. Editor-only; never touches
+validation or existing content (ADR-057).
+
+**`showIf`** — a panel-only visibility rule on a prop (`{ prop, eq? }`,
+registry v3): the control shows when the governing prop equals `eq`, or is
+truthy when `eq` is omitted. A hidden prop keeps its value, still validates,
+and still serializes; `isPropVisible` in core is the one implementation
+(ADR-057).

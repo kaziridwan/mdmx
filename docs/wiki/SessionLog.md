@@ -26,7 +26,27 @@ initial design-and-build conversation (12 commits).
   `isEditableTarget` — form fields, contenteditable/ProseMirror, `.cm-editor`
   ahead of M4). Tests: `nav-state.test.ts` (3) + three shell tests (toggle +
   persistence + aria, restore on mount, shortcut yields to an input).
-  Dashboard 43 → 49 tests; total 428.
+  Dashboard 43 → 49 tests; total 428. Live: 12/12 nav checks, 16/16
+  surfaces clean, editor canvas 568 → 800px with the nav collapsed.
+- **M2 — Registry v3** (ADR-057). Core: `ComponentSpec.preview` (insert-time
+  props + `children` text), `PropSpec.showIf` (`{ prop, eq? }`),
+  `link.placeholder`, `MDMX_REGISTRY_VERSION` 3, `isPropVisible` (the one
+  visibility rule). CLI: `preview` extracted from the `defineMDMX` literal
+  via static-eval and validated (undeclared keys / children text on a leaf
+  → warning + dropped), `showIf` checked against declared props (unknown or
+  self-referencing → warning + dropped), `link` takes the `placeholder`
+  override; the `mdmx init` starter Callout carries a `preview`. Editor:
+  `initialProps` = `preview` over `default`s in declaration order,
+  `previewChildren` seeds the first paragraph's text (rich-text and
+  blocks), and the rail drop goes through `buildComponentNode` like a
+  palette insert (it used to seed defaults only, no children). SPEC §5
+  (preview, showIf, taxonomy) and §8 (v3, v1/v2 read unchanged). Registries
+  regenerated: demo-next v3 with 20 previews. Tests: core
+  `registry-v3.test.ts` (+7), CLI fixture Chart/Poll gain showIf/preview/
+  link cases (+4), editor commands (+3). Total 442. Live: Tooltip inserts
+  as `<Tooltip content="A tooltip" side="top">Hover me</Tooltip>` and
+  renders its trigger text; Kbd, Table (three rows), Testimonial insert
+  live instead of throwing.
 
 ### S33 — 0.6.0 release session (release/0.6.0): M1–M7, publish-ready
 - **M1 — Next 16**: demo-next on `next@16.3.4` (Turbopack by default) with
