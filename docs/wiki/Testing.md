@@ -117,3 +117,17 @@ deliberate semver-major decision that needs a new ADR and a fixture update).
   drives the real CodeMirror pane under jsdom (a `Range.getClientRects`
   polyfill in `tests/setup.ts`): debounce apply, syntax-error strip + fix,
   Mod-Enter, frontmatter → panel, unknown → raw, blur snap, canvas → pane.
+- **Live verification (0.7)**, one playwright script per milestone in the
+  session scratchpad (recreated from this description when needed):
+  `m1-nav.mjs` (toggle, persistence, `Mod-\` and where it yields, canvas
+  width delta), `m2-preview.mjs` (rail inserts carry preview props and
+  children text), `m3-editing.mjs` (breadcrumb, effective default + reset,
+  block actions by toolbar and keyboard, boundary revive), `m4-source.mjs`
+  (typed prop → canvas, syntax-error strip + gutter, ⌘⏎, frontmatter →
+  panel, unknown → raw, blur snap, undo, edit-source reveal),
+  `m5-blocks.mjs` (insert every top-level block: no placeholder, no lint
+  marker; popup preview; list-control rows), `parity.mjs` (21 computed
+  properties per element of every block, public page vs desktop preview at
+  zoom 1 with panels collapsed; root margins read from the block wrapper,
+  height excluded), and `sweep.mjs` (16 surfaces, console errors + failed
+  requests). Numbers are recorded in the SessionLog.

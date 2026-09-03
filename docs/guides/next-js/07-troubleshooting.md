@@ -115,3 +115,12 @@ The upload `path` must sit under the handler's `mediaDir`. Keep the editor's
   registry schema, and provider contract.
 - [`docs/wiki/Architecture.md`](../../wiki/Architecture.md) explains the
   request lifecycle end to end.
+
+## The source pane says "Syntax error, line N"
+
+The text in the pane does not parse as MDX (an unclosed tag, a stray `<`),
+so nothing was applied: the canvas shows the last version that did parse,
+and the line number points at the problem. Fix the text and the canvas
+follows; ⌘/Ctrl-⏎ applies right away. A parse error is different from a
+validation marker (MDMX001–010, shown in the gutter) — those describe a
+document that parses and applies but would fail `mdmx check`.

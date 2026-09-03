@@ -30,12 +30,22 @@ registry that drives validation, the editor palette, and prop panels.
 
 ## Status at a glance
 
-- **8 packages** at **v0.6.0** on `release/0.6.0`, MIT, prepared for the
-  first npm publish (RELEASING.md; see
-  [Roadmap](Roadmap.md#phase-28--060-shadcn-example-canvas-fidelity-first-npm-publish)).
+- **8 packages** at **v0.7.0** on `release/0.7.0`, MIT, prepared for the
+  first npm publish (RELEASING.md; 0.6.0 was prepared but never published —
+  its work ships in 0.7.0; see
+  [Roadmap](Roadmap.md#phase-29--070-editing-ux--two-way-source-component-editing-blocks-that-insert-usable)).
   489 tests, all green; strict TypeScript throughout; Next 16 (Turbopack) +
-  React 19.2; demo-next is a Tailwind v4 + shadcn app with 39 author blocks, 22 of them shadcn components (0.6 M2/M5) and the
+  React 19.2; demo-next is a Tailwind v4 + shadcn app with 39 author blocks,
+  22 of them shadcn components, all inserting usable (0.7 M5), and the
   dashboard stylesheet is host-independent (ADR-049).
+- **The editor edits both ways (0.7)**: the source pane is a CodeMirror 6
+  editor whose text applies to the canvas live through the load path
+  (ADR-059); the prop panel follows the caret into nested blocks with real
+  `list`/`object` controls, effective defaults, and `showIf` (ADR-058);
+  blocks move, duplicate, and delete from a toolbar or the keyboard;
+  registry v3 seeds every insert from `preview` (ADR-057); the dashboard
+  nav collapses (ADR-056). Canvas interaction does not write props back —
+  ADR-060 records the 0.8 candidate.
 - **Setup is convention-first (0.5)**: `mdmx init nextjs` scaffolds the app,
   `createMDMXHandlers()` takes no arguments, and `mdmx generate` writes the
   component maps and bound server helpers into a committed `.mdmx/`. Mode is

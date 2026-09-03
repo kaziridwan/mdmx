@@ -39,17 +39,17 @@ maintainer runs the publish steps.
 3. **Tag and push**:
 
    ```sh
-   git tag v0.6.0 && git push origin release/0.6.0 --tags
+   git tag v0.7.0 && git push origin release/0.7.0 --tags
    ```
 
-4. **Merge** `release/0.6.0` into `main` (PR, as with 0.5.0).
+4. **Merge** `release/0.7.0` into `main` (PR, as with 0.5.0).
 5. **GitHub Release** for the tag, with the tarballs attached so the
    before-npm workflow (guide 08) has a download that matches the published
    bits:
 
    ```sh
    pnpm pack:all            # tarballs/*.tgz
-   gh release create v0.6.0 tarballs/*.tgz --title "mdmx 0.6.0" --notes-file docs/releases/0.6.0.md
+   gh release create v0.7.0 tarballs/*.tgz --title "mdmx 0.7.0" --notes-file docs/releases/0.7.0.md
    ```
 
 ## After publishing

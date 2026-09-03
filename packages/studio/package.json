@@ -1,6 +1,6 @@
 {
   "name": "@mdmx/studio",
-  "version": "0.6.0",
+  "version": "0.7.0",
   "description": "Component Studio: the runtime template-component model, validation, registry integration, TSX eject, and the single template\u2192React renderer",
   "license": "MIT",
   "repository": {

@@ -151,6 +151,39 @@ initial design-and-build conversation (12 commits).
   from the wrapper, height excluded because the editor seeds a caret
   paragraph in empty containers) — layout 0/3, welcome 0/5, marketing
   0/18, blocks 0/25 blocks differ; sweep 16/16 clean.
+- **M6 — 0.7.0 release prep + docs wave.** Versions 0.7.0 in lockstep
+  (eight packages + root; AGENTS.md package map row for the editor and the
+  lockstep line; RELEASING.md tag/branch/release commands; guide 08's
+  ranges and tarball names). `docs/releases/0.7.0.md` written to absorb
+  0.6.0's notes (that file deleted): four 0.7 themes, registry v3, the
+  demo pass, dashboard, a "From 0.6 (never published)" section,
+  compatibility (v1/v2 registries read unchanged; props stay static JSON,
+  ADR-060; CodeMirror ~256 KB gzipped on the editor route only). Guides:
+  02 (defaults mirror the component — the example `Callout` now defaults
+  `variant`; `preview` as the insert-time seed; `showIf` section; `link`
+  placeholder; explicit select order), 04 (an "Editing" section: the
+  source pane's rules, properties follow the caret, block actions +
+  shortcuts, making room; the Alt-click sentence corrected), 07 (the
+  syntax-error strip). README (the source is an editor; roadmap phases
+  0.6 folded into 0.7, 0.7 ✅, next; 489 tests), llms.txt (0.7 paragraph,
+  ADR-001…060), wiki Home (v0.7.0 on `release/0.7.0`, the 0.7 bullet),
+  Roadmap (phase 2.8 header notes the unpublished 0.6.0; M6 ✅; "immediate
+  next" rewritten as the 0.7 deferred list), Architecture (the editor row
+  no longer says "ships no CSS"; ADR-058/059), Testing (the 0.7 live
+  scripts). `PROJECT_STATUS.md` (stale at 0.4.1) reduced to a pointer at
+  the wiki. `packages/editor/DESIGN_NOTES.txt` gets a 0.7 addendum (ADR-059
+  supersedes its read-only-pane rationale). SPEC unchanged since M2 (§5
+  and §8 already carry v3).
+  Gate: `pnpm verify` green (489 tests: core 61, project 16, studio 32,
+  cli 44, editor 185, next 90, dashboard 49, provider-github 12); sweep
+  16/16 surfaces clean; demo-next `next build` 0 warnings (client chunks
+  2224 KB raw); `npm pack --dry-run` in all eight packages lists `dist/`
+  only. Publish is the maintainer's step (RELEASING.md).
+- **State after S34**: `release/0.7.0` holds six milestone commits on top
+  of the seven 0.6 ones; 0.7.0 is the first npm release. ADR-056–060
+  added; SPEC §5/§8 at registry v3; wiki Home/Roadmap/Packages/Testing/
+  Glossary/Architecture synced. Verification scripts stayed in the session
+  scratchpad (see Testing → "Live verification (0.7)").
 
 ### S33 — 0.6.0 release session (release/0.6.0): M1–M7, publish-ready
 - **M1 — Next 16**: demo-next on `next@16.3.4` (Turbopack by default) with

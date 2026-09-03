@@ -22,12 +22,19 @@ document belonging to a collection (project/HTTP/dashboard vocabulary); the
 *content class* (`mdmx-page`) is the class a site puts on its article and the
 editor puts on its canvas root, so the canvas renders as the page (0.6).
 
-0.6: MIT, first npm publish under `@mdmx`; the demo is a Next 16 + Tailwind v4
-+ shadcn app with 22 shadcn components registered as blocks; the editor
-canvas is the page (content class, layered fallbacks, `fit` viewport, event
-routing by target with `render.interactive`, links never navigate); studio
-components in a Tailwind host compile through the host's build from a class
-manifest.
+0.7 (the first npm publish under `@mdmx`; 0.6 was prepared but never
+published and ships inside it): the source pane is a CodeMirror 6 editor —
+typed MDMX applies to the canvas live through the load path, parse-gated,
+with MDMX diagnostics as lint markers; the prop panel follows the caret
+into nested blocks (breadcrumb, effective defaults, real `list`/`object`
+controls, `showIf`); block actions (move/duplicate/delete/edit source);
+registry v3 (`preview` seeds inserts with props + children text, `showIf`,
+`link.placeholder`); all 39 demo blocks insert usable; the dashboard nav
+collapses. From 0.6: MIT; the demo is a Next 16 + Tailwind v4 + shadcn app
+with 22 shadcn components registered as blocks; the editor canvas is the
+page (content class, layered fallbacks, `fit` viewport, event routing by
+target with `render.interactive`, links never navigate); studio components
+in a Tailwind host compile through the host's build from a class manifest.
 
 Agents: documentation is part of "done". After each session, follow the
 wiki-upkeep checklist in AGENTS.md (append SessionLog, record ADRs, sync wiki).
@@ -36,7 +43,7 @@ wiki-upkeep checklist in AGENTS.md (append SessionLog, record ADRs, sync wiki).
 
 - [SPEC.md](SPEC.md): normative MDMX v1 grammar, canonical form, registry schema, diagnostics, provider contract
 - [AGENTS.md](AGENTS.md): agent operating guide — architecture map, commands, invariants, wiki-upkeep rule
-- [docs/DECISIONS.md](docs/DECISIONS.md): Architecture Decision Record (ADR-001…055)
+- [docs/DECISIONS.md](docs/DECISIONS.md): Architecture Decision Record (ADR-001…060)
 - [docs/guides/next-js/](docs/guides/next-js/): step-by-step integration, install → GitHub-mode production → using mdmx from a checkout (tarballs)
 - [RELEASING.md](RELEASING.md): the lockstep release + npm publish checklist
 - [docs/wiki/Home.md](docs/wiki/Home.md): the documentation hub
@@ -58,7 +65,7 @@ wiki-upkeep checklist in AGENTS.md (append SessionLog, record ADRs, sync wiki).
 - [packages/project](packages/project): `mdmx.config.*` schema and loading (json + mjs), environment/mode resolution, registry loading
 - [packages/studio](packages/studio): Component Studio — template model, validation, registry merge, TSX eject, `/react` template renderer
 - [packages/cli](packages/cli): `mdmx init` (scaffold), `mdmx generate` (registry + component maps + bound server helpers + studio CSS), `mdmx check` (content lint + stale-registry detection), `mdmx dev` (watch)
-- [packages/editor](packages/editor): registry→ProseMirror schema, mdast⇄ProseMirror converters, React editor under `/react`
+- [packages/editor](packages/editor): registry→ProseMirror schema, mdast⇄ProseMirror converters, React editor under `/react` (context-aware prop panel, block actions, the two-way CodeMirror source pane), reference chrome at `/styles.css`
 - [packages/next](packages/next): route handlers, LocalProvider, entry readers, sessions, `AuthStrategy` seam, `/render` for public pages
 - [packages/dashboard](packages/dashboard): the drop-in CMS mounted at `/mdmx`
 - [packages/provider-github](packages/provider-github): atomic multi-file commits via the GitHub Git Data API with conflict detection

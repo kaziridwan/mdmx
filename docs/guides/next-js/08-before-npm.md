@@ -34,26 +34,26 @@ the overrides the script printed:
 ```jsonc
 {
   "dependencies": {
-    "@mdmx/core": "^0.6.0",
-    "@mdmx/project": "^0.6.0",
-    "@mdmx/studio": "^0.6.0",
-    "@mdmx/next": "^0.6.0",
-    "@mdmx/editor": "^0.6.0",
-    "@mdmx/dashboard": "^0.6.0"
+    "@mdmx/core": "^0.7.0",
+    "@mdmx/project": "^0.7.0",
+    "@mdmx/studio": "^0.7.0",
+    "@mdmx/next": "^0.7.0",
+    "@mdmx/editor": "^0.7.0",
+    "@mdmx/dashboard": "^0.7.0"
   },
   "devDependencies": {
-    "@mdmx/cli": "^0.6.0"
+    "@mdmx/cli": "^0.7.0"
   },
   "pnpm": {
     "overrides": {
-      "@mdmx/core": "file:/path/to/mdmx/tarballs/mdmx-core-0.6.0.tgz",
-      "@mdmx/project": "file:/path/to/mdmx/tarballs/mdmx-project-0.6.0.tgz",
-      "@mdmx/studio": "file:/path/to/mdmx/tarballs/mdmx-studio-0.6.0.tgz",
-      "@mdmx/next": "file:/path/to/mdmx/tarballs/mdmx-next-0.6.0.tgz",
-      "@mdmx/editor": "file:/path/to/mdmx/tarballs/mdmx-editor-0.6.0.tgz",
-      "@mdmx/dashboard": "file:/path/to/mdmx/tarballs/mdmx-dashboard-0.6.0.tgz",
-      "@mdmx/cli": "file:/path/to/mdmx/tarballs/mdmx-cli-0.6.0.tgz",
-      "@mdmx/provider-github": "file:/path/to/mdmx/tarballs/mdmx-provider-github-0.6.0.tgz"
+      "@mdmx/core": "file:/path/to/mdmx/tarballs/mdmx-core-0.7.0.tgz",
+      "@mdmx/project": "file:/path/to/mdmx/tarballs/mdmx-project-0.7.0.tgz",
+      "@mdmx/studio": "file:/path/to/mdmx/tarballs/mdmx-studio-0.7.0.tgz",
+      "@mdmx/next": "file:/path/to/mdmx/tarballs/mdmx-next-0.7.0.tgz",
+      "@mdmx/editor": "file:/path/to/mdmx/tarballs/mdmx-editor-0.7.0.tgz",
+      "@mdmx/dashboard": "file:/path/to/mdmx/tarballs/mdmx-dashboard-0.7.0.tgz",
+      "@mdmx/cli": "file:/path/to/mdmx/tarballs/mdmx-cli-0.7.0.tgz",
+      "@mdmx/provider-github": "file:/path/to/mdmx/tarballs/mdmx-provider-github-0.7.0.tgz"
     }
   }
 }
@@ -86,6 +86,6 @@ Delete the `pnpm.overrides` block and `pnpm install`; the version ranges in
 - Commit neither the `tarballs/` directory (it's gitignored here) nor the
   overrides — they're a local workstation arrangement.
 - `npm`/`yarn` users: the same tarballs work with `"@mdmx/core":
-  "file:../mdmx/tarballs/mdmx-core-0.6.0.tgz"` directly in `dependencies`
+  "file:../mdmx/tarballs/mdmx-core-0.7.0.tgz"` directly in `dependencies`
   (there is no overrides mechanism to apply them transitively, so list all
   eight).

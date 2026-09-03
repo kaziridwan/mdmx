@@ -1,6 +1,6 @@
 {
   "name": "@mdmx/editor",
-  "version": "0.6.0",
+  "version": "0.7.0",
   "description": "Block editor (ProseMirror) with registry-driven component nodes, React NodeViews, and prop panels",
   "license": "MIT",
   "repository": {

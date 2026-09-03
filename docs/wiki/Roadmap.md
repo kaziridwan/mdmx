@@ -73,7 +73,7 @@ content; GitHub-mode deploy is wired but undocumented as a guide.
 | The convention layer | ✅ | S29 (M3): three-tier config, env-detected mode, codegen-owned `.mdmx/` (component maps, bound `server.ts`), `mdmx init nextjs`, `@mdmx/project` (ADR-039–043) |
 | Studio as a package + docs wave | ✅ | S30/S31: `@mdmx/studio` (model, renderer, UI), studio CSS compiled at generate time (ADR-042/045), typechecked tests, README + guides 01–07 rewritten |
 
-## Phase 2.8 — 0.6.0: shadcn example, canvas fidelity, first npm publish
+## Phase 2.8 — 0.6.0: shadcn example, canvas fidelity, publish prep (never published — shipped in 0.7.0)
 
 Plan and decision table (Q1–Q15): `.dev-context/plans/2026-09-01-0.6-plan.md`
 (local, untracked). One commit per verified milestone on `release/0.6.0`.
@@ -102,7 +102,7 @@ npm release).
 | M3 — Component editing UX | ✅ | `componentContext` follows the caret into nested blocks (breadcrumb, crumb selects the ancestor; an edit keeps the block selected); value-typed controls incl. `list`/`object`/`link`/`color`/`date`; effective defaults muted + per-field reset; `showIf` filtering; block actions as pure commands + keymap + an anchored toolbar (delete/duplicate/move/edit source); the render boundary resets on prop change (ADR-058). |
 | M4 — Two-way source pane | ✅ | The pane is a CodeMirror 6 editor: typed text applies to the canvas live (300 ms, parse-gated, ⌘⏎ now) through the load path; a syntax error keeps the canvas and shows a strip; MDMX diagnostics are lint markers; the focused pane is authoritative and snaps to canonical on blur; `blockLineMap` maps blocks ↔ lines both ways (ADR-059). |
 | M5 — Blocks made usable | ✅ | Wrapper pass over all 39 demo-next blocks: every required prop has a component default mirrored in the registry, defensive parsing, 30/39 previews, 6 `showIf` rules, 5 array props as `list` controls (content updated where shapes changed), variant gaps closed (`Badge.href`/`link`, `Item.size`/`href`, `Separator.orientation`, `Tabs.orientation`/`defaultTab`, `Tooltip.align`/`sideOffset`, `HoverCard.side`/`align`, `TwoColumn.ratio`, `columns` on PricingTable/StatsBand), Tooltip/HoverCard interactive; `mdmx check` clean; parity 0 differing blocks on all four posts (ADR-053 note, ADR-060 records the deferred write-back). |
-| M6 — 0.7.0 release prep + docs wave | ⬜ | Versions 0.7.0 in lockstep, release notes absorb 0.6.0's, guides/README/llms.txt/SPEC/wiki, publish handoff. |
+| M6 — 0.7.0 release prep + docs wave | ✅ | Versions 0.7.0 in lockstep (eight packages + root, AGENTS.md, RELEASING.md, guide 08); `docs/releases/0.7.0.md` absorbs 0.6.0's notes; guides 02 (`preview`, `showIf`, defaults mirror the component) and 04 (source pane, properties, block actions, making room), 07 (syntax-error strip); README, llms.txt, wiki, `PROJECT_STATUS.md` reduced to a pointer; `pnpm verify`, full live sweep, `next build` 0 warnings, `npm pack --dry-run` lists `dist/` only. Publish is the maintainer's step (RELEASING.md). |
 
 ## Phase 3 — the moat
 
@@ -116,9 +116,14 @@ npm release).
 
 ## The immediate next milestone
 
-0.6.0 is prepared on `release/0.6.0` and waits on the maintainer's publish
-(RELEASING.md). Candidates after it: Carousel and ButtonGroup as blocks
-(needs a wrapper-aware layout contract, ADR-053), tsconfig `paths` in the
-CLI extractor, a from-npm smoke app in CI (guide 08's tarball flow against
-a fresh `create-next-app`), nested drop indicators, and the Phase 3 items
+0.7.0 is prepared on `release/0.7.0` and waits on the maintainer's publish
+(RELEASING.md) — the first npm release. Deferred from 0.7, in rough order of
+value: canvas → prop write-back through a per-block `setProp` channel
+(ADR-060); an MDX grammar for the CodeMirror pane (JSX blocks highlight as
+markdown HTML today); the CLI extractor honoring tsconfig `paths`; Carousel
+and ButtonGroup as blocks (a wrapper-aware layout contract, ADR-053); a page
+picker for `link` controls; sidebar auto-switch to Properties on selection
+(rejected for 0.7, Q4); an icon-rail nav; `mdmx dev` HMR into a running
+editor; nested drop indicators; a from-npm smoke app in CI (guide 08's
+tarball flow against a fresh `create-next-app`); then the Phase 3 items
 below.

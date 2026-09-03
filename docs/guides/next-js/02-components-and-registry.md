@@ -16,11 +16,11 @@ import { defineMDMX } from "@mdmx/core";
 interface CalloutProps {
   /** Short label shown in the header */
   title?: string;
-  variant: "info" | "warn" | "danger";
+  variant?: "info" | "warn" | "danger";
   children: ReactNode;
 }
 
-function Callout({ title, variant, children }: CalloutProps) {
+function Callout({ title, variant = "info", children }: CalloutProps) {
   return (
     <aside data-variant={variant}>
       {title ? <strong>{title}</strong> : null}
@@ -50,9 +50,19 @@ What the codegen does with this:
   becomes an optional `text` control; the JSDoc comment becomes the prop's
   description in the prop panel. You don't re-declare prop types in the config.
 - **The `props` block is per-prop overrides** merged over inference: defaults,
-  placeholders, or a different control than the inferred one.
-- **`preview`** is the prop set used to render the block when it's inserted
-  from the palette.
+  placeholders, a different control than the inferred one, or a `showIf`
+  visibility rule.
+- **A `default` mirrors the component.** Make it equal to the component's own
+  default parameter (`variant = "info"` above): the prop panel shows it as
+  the effective value, the validator accepts a missing required prop when a
+  default exists, and `<Callout />` then renders the same on the page as in
+  the editor.
+- **`preview`** is what a freshly inserted block holds: its props over the
+  defaults, plus `children` — the text of the first paragraph for a
+  `rich-text` or `blocks` component. Keys must be declared props (the CLI
+  warns about and drops any other). A default is what the component
+  renders when a prop is absent; a preview is what an author should see
+  first.
 
 `defineMDMX(component, config)` returns the component unchanged (it attaches
 metadata under a symbol), so the same export renders on your public site.
@@ -66,8 +76,8 @@ metadata under a symbol), so the same export renders on your public site.
 | `icon` | `string` | Palette icon name |
 | `description` | `string` | Shown in the palette and slash menu |
 | `children` | `"none" \| "rich-text" \| "blocks"` | Children policy (below); default `none` |
-| `props` | per-prop overrides | `default`, `placeholder`, `control`, `required`, `description` merged over inference |
-| `preview` | props object | Props (plus optional `children` string) used for palette insertion |
+| `props` | per-prop overrides | `default`, `placeholder` (text/textarea/link), `control`, `required`, `description`, `showIf` merged over inference |
+| `preview` | props object | Insert-time seed: props over the defaults, plus a `children` string for the first paragraph (registry v3) |
 | `constraints` | `{ allowedParents?, allowedChildren? }` | Slot constraints (below) |
 | `version` | `number` | Bump when a component's contract changes |
 | `render` | `{ mode?, interactive? }` | `mode`: `live` (default) / `placeholder` / `static`. `interactive`: editor event routing — unset routes by target (buttons, inputs, tabs… are the component's; everything else selects the block), `true` gives the component every event (Alt-click selects), `false` gives the editor every event |
@@ -106,7 +116,33 @@ can't be dropped at the top level. Violations surface as validator diagnostics
 Controls are inferred from types, but you can force one via the `props`
 override. Available `ControlSpec` types: `text`, `textarea`, `number`,
 `boolean`, `select`, `multiselect`, `color`, `date`, `image`, `link`, `json`,
-`list` (typed items), `object` (typed fields).
+`list` (typed items), `object` (typed fields). The prop panel renders every
+one of them: a `string[]` prop is edited as rows you add, remove, and
+reorder, a `string[][]` as rows of rows. `text`, `textarea`, and `link`
+take a `placeholder`.
+
+TypeScript normalizes a string-literal union, so a `select` inferred from
+`"top" | "right" | "bottom" | "left"` may list its options in a different
+order; pass `control: { type: "select", options: [...] }` explicitly when the
+order matters.
+
+### Conditional props: `showIf`
+
+A prop that only applies in one configuration can hide its control
+otherwise:
+
+```ts
+props: {
+  shape: { default: "text" },
+  lines: { default: 3, showIf: { prop: "shape", eq: "text" } },
+  primaryHref: { control: { type: "link" }, showIf: { prop: "primaryLabel" } },
+}
+```
+
+`eq` compares against the governing prop's effective value (its default
+counts); without `eq` the prop shows when the governing prop is truthy.
+`showIf` is panel-only — a hidden prop keeps its value, is still validated,
+and still serializes. The CLI checks that the governing prop exists.
 
 Remember the MDMX grammar: **prop values are JSON** — literals, arrays, plain
 objects. Functions, identifiers, and JSX-valued props can't be expressed in

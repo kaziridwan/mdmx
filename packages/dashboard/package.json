@@ -1,6 +1,6 @@
 {
   "name": "@mdmx/dashboard",
-  "version": "0.6.0",
+  "version": "0.7.0",
   "description": "Drop-in CMS dashboard for Next.js: mount one page + one API route, get the full MDMX authoring UI",
   "license": "MIT",
   "repository": {

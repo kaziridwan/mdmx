@@ -61,6 +61,12 @@ with buttons, inputs, and tabs live and links that never navigate — what you
 edit is what the page renders. `examples/demo-next` shows it with Next 16,
 Tailwind v4, and the full shadcn set, 22 of them registered as blocks.
 
+**And the source is an editor.** The right-hand pane shows the canonical
+MDMX and edits both ways: type a prop and watch the canvas follow; every
+canvas edit re-serializes into the text. The prop panel follows the caret
+into nested blocks, blocks move, duplicate, and delete from a toolbar or the
+keyboard, and a `preview` in `defineMDMX` makes every block insert usable.
+
 ## Packages
 
 | Package | Purpose |
@@ -124,7 +130,7 @@ the HTTP API, the dashboard) speaks in entries.
 
 ```sh
 pnpm install
-pnpm test          # builds all packages, then runs all 422 tests
+pnpm test          # builds all packages, then runs all 489 tests
 pnpm build         # build all packages
 pnpm check         # typecheck all packages
 pnpm verify        # typecheck + test (pre-push gate)
@@ -148,13 +154,19 @@ Key guarantees under test in `@mdmx/core`:
    the UI, Component Studio
 4. **Phase 3 (0.5)** ✅ — convention-over-configuration API, the `project` and
    `studio` packages, provider contract v2, the auth seam, `mdmx init`
-5. **Phase 4 (0.6)** ✅ — MIT + first npm publish; the canvas is the page
+5. **Phase 4 (0.6, folded into 0.7)** ✅ — MIT; the canvas is the page
    (content class, `fit` preview, live components, `render.interactive`);
    the demo on Next 16 + Tailwind v4 + shadcn with shadcn blocks; studio CSS
    handed off to the host's Tailwind
-6. **Next** — Carousel and ButtonGroup as blocks (wrapper-aware layout
-   contracts), tsconfig `paths` in the extractor, segment composer, GitLab /
-   generic git providers, collab (Yjs)
+6. **Phase 5 (0.7)** ✅ — the first npm publish; the two-way source pane
+   (CodeMirror 6, parse-gated live apply), the prop panel that follows the
+   caret with real `list`/`object` controls and block actions, registry v3
+   (`preview` seeds inserts, `showIf`), every demo block inserting usable,
+   the dashboard nav collapse
+7. **Next** — canvas → prop write-back (`setProp` channel, ADR-060), an MDX
+   grammar for the source pane, Carousel and ButtonGroup as blocks
+   (wrapper-aware layout contracts), tsconfig `paths` in the extractor,
+   segment composer, GitLab / generic git providers, collab (Yjs)
 
 ## License
 
