@@ -120,3 +120,20 @@ registry v3): the control shows when the governing prop equals `eq`, or is
 truthy when `eq` is omitted. A hidden prop keeps its value, still validates,
 and still serializes; `isPropVisible` in core is the one implementation
 (ADR-057).
+
+**Component context** — the component the prop panel and block actions
+address: the selected component node, else the deepest component around
+the caret, with its component ancestors as a breadcrumb (`Card › Tabs ›
+Tab`). Pure (`componentContext`); a prop edit keeps the block selected so
+the context never jumps to a child (ADR-058).
+
+**Block actions** — delete, duplicate, move up/down, edit source on the
+contextual block: pure ProseMirror commands (`deleteBlockAt`,
+`duplicateBlockAt`, `moveBlockAt`) behind a keymap (⌘⇧⌫, ⌘⇧D, ⌘⇧↑/↓) and
+a toolbar anchored to the block's top-right corner. A move swaps siblings,
+so nesting constraints hold by construction (ADR-058).
+
+**Effective default** — what the panel shows for an unset prop: the spec's
+`default`, muted; a set value gets a reset that drops the key so the
+default applies again. `showIf` rules read these effective values
+(ADR-058).

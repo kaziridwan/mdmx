@@ -1,6 +1,6 @@
 # Testing
 
-442 tests across eight packages, all green. The suites aren't just coverage —
+468 tests across eight packages, all green. The suites aren't just coverage —
 several *are* the spec, locking guarantees that define the product.
 
 ## How to run
@@ -95,3 +95,14 @@ deliberate semver-major decision that needs a new ADR and a fixture update).
   order; `previewChildren` ignores a leaf; `buildComponentNode` seeds the
   children text for rich-text and blocks; `insertComponent` carries the
   preview into the doc.
+- **editor (M3)**: `component-context.test.ts` (caret → deepest component
+  + ancestor chain, NodeSelection targets, null in plain content);
+  `block-actions.test.ts` (duplicate selects the copy, move swaps and stops
+  at the edges, delete leaves a paragraph in an emptied container, nested
+  moves stay inside the parent, the keymap resolves the context);
+  `render-boundary.test.tsx` (revive on props change, no loop);
+  `prop-panel.test.tsx` — a state + dispatch harness with no DOM view:
+  breadcrumb, crumb selection, effective default + reset, `showIf` against
+  effective values, list rows as one transaction per edit, and the edited
+  block staying selected; `controls.test.tsx` value-typed scalars, select
+  `allowEmpty`, link/color/date, list and object composition.

@@ -7,7 +7,6 @@ import {
   type FrontmatterField,
   type JsonValue,
 } from "@mdmx/core";
-import { coerceControlValue } from "./prop-controls.js";
 import { Control } from "./controls.js";
 
 export interface FrontmatterPanelProps {
@@ -37,8 +36,7 @@ export function FrontmatterPanel({ view, state, collection }: FrontmatterPanelPr
   const frontmatter = parseFrontmatter(raw);
   const fieldOrder = collection.fields.map((f) => f.name);
 
-  const update = (field: FrontmatterField, rawValue: string) => {
-    const value = coerceControlValue(field.control, rawValue);
+  const update = (field: FrontmatterField, value: JsonValue | undefined) => {
     const next: Record<string, JsonValue> = { ...frontmatter };
     if (value === undefined) delete next[field.name];
     else next[field.name] = value;
@@ -50,22 +48,27 @@ export function FrontmatterPanel({ view, state, collection }: FrontmatterPanelPr
     <aside className="mdmx-props" aria-label="Document">
       <div className="mdmx-props-label">Document · {collection.name}</div>
       <div className="mdmx-props-fields">
-        {collection.fields.map((field) => (
-          <label key={field.name} className="mdmx-prop-field">
-            <span className="mdmx-prop-name">
-              {field.name}
-              {field.required ? <span className="mdmx-prop-req"> *</span> : null}
-            </span>
-            <Control
-              control={field.control}
-              value={frontmatter[field.name]}
-              onChange={(rawValue) => update(field, rawValue)}
-            />
-            {field.description ? (
-              <span className="mdmx-prop-desc">{field.description}</span>
-            ) : null}
-          </label>
-        ))}
+        {collection.fields.map((field) => {
+          const composite = field.control.type === "list" || field.control.type === "object";
+          const Tag = composite ? "div" : "label";
+          return (
+            <Tag key={field.name} className="mdmx-prop-field">
+              <span className="mdmx-prop-name">
+                {field.name}
+                {field.required ? <span className="mdmx-prop-req"> *</span> : null}
+              </span>
+              <Control
+                control={field.control}
+                value={frontmatter[field.name]}
+                allowEmpty={!field.required}
+                onChange={(value) => update(field, value)}
+              />
+              {field.description ? (
+                <span className="mdmx-prop-desc">{field.description}</span>
+              ) : null}
+            </Tag>
+          );
+        })}
       </div>
     </aside>
   );

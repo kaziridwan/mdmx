@@ -256,7 +256,8 @@ body.mdmx-resizing {
   .mdmx-editor {
     grid-template-columns: 1fr;
   }
-  .mdmx-editor .mdmx-toolbar-panel {
+  .mdmx-editor .mdmx-toolbar-panel,
+  .mdmx-editor .mdmx-block-actions {
     display: none;
   }
   .mdmx-editor .mdmx-canvas-wrap {
@@ -716,6 +717,195 @@ body.mdmx-resizing {
   object-fit: contain;
   background: var(--mdmx-surface-2);
   border-radius: var(--mdmx-radius);
+}
+
+/* Breadcrumb: the component context (ADR-058) */
+.mdmx-editor .mdmx-props-crumbs {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+}
+.mdmx-editor .mdmx-props-crumb-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.mdmx-editor .mdmx-props-crumb {
+  font: inherit;
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--mdmx-fg-muted);
+  background: none;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+}
+.mdmx-editor .mdmx-props-crumb:hover {
+  color: var(--mdmx-fg);
+  text-decoration: underline;
+}
+.mdmx-editor .mdmx-props-crumb.is-current {
+  color: var(--mdmx-fg);
+  cursor: default;
+}
+.mdmx-editor .mdmx-props-crumb-sep {
+  color: var(--mdmx-fg-muted);
+}
+/* Effective defaults: a value the component supplies reads muted; an explicit
+   value gets a reset that drops the key so the default applies again. */
+.mdmx-editor .mdmx-prop-field.is-default .mdmx-control {
+  color: var(--mdmx-fg-muted);
+}
+.mdmx-editor .mdmx-prop-name {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.mdmx-editor .mdmx-prop-reset {
+  margin-left: auto;
+  font: inherit;
+  font-size: 13px;
+  line-height: 1;
+  border: 0;
+  background: none;
+  color: var(--mdmx-fg-muted);
+  cursor: pointer;
+  padding: 1px 5px;
+  border-radius: 4px;
+}
+.mdmx-editor .mdmx-prop-reset:hover {
+  color: var(--mdmx-fg);
+  background: var(--mdmx-surface-2);
+}
+/* Composite controls: list rows and object fields */
+.mdmx-editor .mdmx-control-list,
+.mdmx-editor .mdmx-control-object {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.mdmx-editor .mdmx-control-list-row {
+  display: flex;
+  gap: 6px;
+  align-items: flex-start;
+}
+.mdmx-editor .mdmx-control-list-value {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+.mdmx-editor .mdmx-control-list-value > .mdmx-control,
+.mdmx-editor .mdmx-control-object-field > .mdmx-control {
+  width: 100%;
+  box-sizing: border-box;
+}
+.mdmx-editor .mdmx-control-list-actions {
+  display: flex;
+  gap: 2px;
+}
+.mdmx-editor .mdmx-control-list-actions button,
+.mdmx-editor .mdmx-control-list-add {
+  font: inherit;
+  font-size: 12px;
+  line-height: 1;
+  padding: 7px 6px;
+  border: 1px solid var(--mdmx-border);
+  border-radius: 6px;
+  background: var(--mdmx-surface);
+  color: var(--mdmx-fg-muted);
+  cursor: pointer;
+}
+.mdmx-editor .mdmx-control-list-actions button:hover,
+.mdmx-editor .mdmx-control-list-add:hover {
+  color: var(--mdmx-fg);
+  background: var(--mdmx-surface-2);
+}
+.mdmx-editor .mdmx-control-list-actions button:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+.mdmx-editor .mdmx-control-list-add {
+  align-self: flex-start;
+  padding: 5px 10px;
+}
+.mdmx-editor .mdmx-control-object-field {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding-left: 8px;
+  border-left: 2px solid var(--mdmx-border);
+}
+.mdmx-editor .mdmx-control-object-key {
+  font-family: var(--mdmx-mono);
+  font-size: 12px;
+  color: var(--mdmx-fg-muted);
+}
+.mdmx-editor .mdmx-control-color {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+.mdmx-editor .mdmx-control-color input[type="color"] {
+  width: 34px;
+  height: 30px;
+  padding: 2px;
+  border: 1px solid var(--mdmx-border);
+  border-radius: 6px;
+  background: var(--mdmx-surface);
+  cursor: pointer;
+}
+.mdmx-editor .mdmx-control-color .mdmx-control {
+  flex: 1;
+  min-width: 0;
+}
+
+/* -- block actions (ADR-058) -- */
+.mdmx-editor .mdmx-block-actions {
+  position: absolute;
+  z-index: 15;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 3px 4px;
+  border: 1px solid var(--mdmx-border);
+  border-radius: 8px;
+  background: var(--mdmx-surface);
+  box-shadow: var(--mdmx-shadow);
+  font-family: var(--mdmx-font);
+  transform: translateY(-50%);
+}
+.mdmx-editor .mdmx-block-actions-name {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: var(--mdmx-accent);
+  padding: 0 6px;
+}
+.mdmx-editor .mdmx-block-actions button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border: 0;
+  border-radius: 5px;
+  background: none;
+  color: var(--mdmx-fg-muted);
+  cursor: pointer;
+}
+.mdmx-editor .mdmx-block-actions button:hover {
+  background: var(--mdmx-surface-2);
+  color: var(--mdmx-fg);
+}
+.mdmx-editor .mdmx-block-actions button:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+.mdmx-editor .mdmx-block-actions button.is-danger:hover {
+  color: var(--mdmx-danger);
 }
 
 /* -- source pane -- */

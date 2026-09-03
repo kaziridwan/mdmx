@@ -1824,3 +1824,62 @@ mutation, and hidden-but-set is exactly the state an author toggling
 
 **Status.** Shipped — 0.7 M2. Registries regenerated for `examples/demo`
 and `demo-next` (20 of 39 blocks carry a preview; the rest get one in M5).
+
+## ADR-058 — Component context follows the caret; value-typed controls; block actions as pure commands; the render boundary resets on prop change
+
+**Context.** The 0.7 audit of the editor's prop panel: it showed only for a
+`NodeSelection` on a component — a caret inside a Tab's text showed the
+*frontmatter* panel — and editing a container's prop while node-selected
+collapsed the selection into its first child (ProseMirror maps a
+`NodeSelection` through `setNodeMarkup` to a caret inside), so the panel
+vanished after one edit. `controls.tsx` rendered 7 of the 13 control kinds;
+`list` and `object` fell to a bare text input whose string was stored
+verbatim, so an array prop edited in the panel became a string — the reason
+every demo wrapper faked arrays with delimited strings. Unset props showed
+`—` while the component rendered its default. No block could be deleted,
+duplicated or moved except by drag. A live render that threw stayed a
+placeholder until reload, even after the offending prop was fixed.
+
+**Decision.**
+
+- **Context** — `componentContext(state, registry)` (pure, in the headless
+  entry): the selected component, else the deepest component around the
+  caret, plus its component ancestors. The prop panel edits the target and
+  renders the chain as a breadcrumb (`Card › Tabs › Tab`; a crumb makes a
+  `NodeSelection` on that ancestor). A prop edit re-selects the edited node
+  when it was node-selected, so the context never jumps to a child.
+  The sidebar does not auto-switch to Properties on selection (Q4).
+- **Value-typed controls** — `Control.onChange` receives `JsonValue |
+  undefined`; scalars coerce inside the control, `list` renders rows
+  (add/remove/reorder, per-item `Control`), `object` one control per
+  declared field, `link` a text input with the spec's placeholder,
+  `color`/`date` native inputs. An emptied list or object unsets the prop.
+  Every edit is still one `setNodeMarkup` transaction (invariant 6).
+- **Effective defaults** — the panel shows `props[name] ?? default`, muted
+  when the value is the default; a select offers `—` only for an optional
+  prop with no default; a set prop with a default gets a reset that drops
+  the key. `showIf` is evaluated against the same effective values, so
+  `Skeleton.lines` shows while `shape` merely defaults to `text`.
+- **Block actions** — pure commands `deleteBlockAt` (leaves one paragraph
+  when a container that accepts paragraphs would empty), `duplicateBlockAt`
+  (copies the node, children included, and selects the copy),
+  `moveBlockAt(dir)` (swaps with the sibling — same parent, so every
+  constraint holds by construction), bound through `blockActionKeymap`
+  (`Mod-Shift-Backspace`, `Mod-Shift-d`, `Mod-Shift-ArrowUp/Down`) and a
+  small toolbar anchored to the target's top-right corner inside the canvas
+  wrap (measured from the NodeView's DOM on every state change, scroll and
+  resize; hidden on mobile). "Edit source" switches the sidebar to Source
+  and reveals the block's lines (M4 makes it a real editor).
+- **Boundary reset** — `RenderBoundary` retries the live render when the
+  props identity changes; a render that throws again lands back on the
+  fallback without looping.
+
+**Alternatives rejected.** Auto-switching the sidebar to Properties on
+selection (the source pane is the product thesis; it must not be pushed
+away by clicking). Keeping the string-typed `onChange` and coercing in the
+panels (composite controls can't be expressed as one string, and two
+panels already duplicated the coercion). Rewriting hidden `showIf` props
+(a panel affordance must not mutate content). Drag-only reordering (no
+keyboard path, and nested drags have no indicator yet).
+
+**Status.** Shipped — 0.7 M3.

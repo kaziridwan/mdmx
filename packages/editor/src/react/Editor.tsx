@@ -1,15 +1,19 @@
 import {
   useCallback,
   useEffect,
+  useLayoutEffect,
   useMemo,
   useRef,
   useState,
   type CSSProperties,
   type MouseEvent as ReactMouseEvent,
 } from "react";
-import { NodeSelection, Selection, type EditorState } from "prosemirror-state";
+import { Selection } from "prosemirror-state";
 import type { CollectionSpec, Registry } from "@mdmx/core";
-import { buildSchema, componentNameFromNode } from "../schema.js";
+import { buildSchema } from "../schema.js";
+import { componentContext } from "../component-context.js";
+import { deleteBlockAt, duplicateBlockAt, moveBlockAt } from "../commands.js";
+import { BlockActions } from "./BlockActions.js";
 import { Rail } from "./Rail.js";
 import { EditorSidebar, type SidebarMode } from "./EditorSidebar.js";
 import { EditorToolbar, type SaveStatus } from "./EditorToolbar.js";
@@ -67,14 +71,6 @@ export interface MDMXEditorProps {
    * editor (ADR-050). Default `mdmx-page`; pass `""` to opt out.
    */
   contentClassName?: string;
-}
-
-function isComponentSelected(state: EditorState | null, registry: Registry): boolean {
-  if (!state) return false;
-  const sel = state.selection;
-  if (!(sel instanceof NodeSelection)) return false;
-  const name = componentNameFromNode(sel.node.type.name);
-  return name != null && registry.get(name) != null;
 }
 
 function usePanelCollapsed(side: PanelSide): [boolean, () => void] {
@@ -147,6 +143,60 @@ export function MDMXEditor({
 
   const { viewport, selectViewport, canvasStyle } = useViewport(wrapRef);
   const snippets = useSnippets(view, state);
+
+  // The component being edited: selected, else the deepest around the caret
+  // (ADR-058). Drives the prop panel and the block-actions toolbar.
+  const context = useMemo(() => componentContext(state, registry), [state, registry]);
+  const [sourceReveal, setSourceReveal] = useState(0);
+
+  // Anchor the block-actions toolbar to the contextual block's top-right
+  // corner, in the canvas wrap's (scrolled) coordinate space. Re-measured on
+  // every state change, scroll, and resize; hidden when the block has no DOM.
+  const [actionsStyle, setActionsStyle] = useState<CSSProperties | null>(null);
+  useLayoutEffect(() => {
+    const wrap = wrapRef.current;
+    if (!view || !context || !wrap) {
+      setActionsStyle(null);
+      return;
+    }
+    const measure = () => {
+      const dom = view.nodeDOM(context.target.pos) as HTMLElement | null;
+      if (!dom || typeof dom.getBoundingClientRect !== "function") {
+        setActionsStyle(null);
+        return;
+      }
+      const r = dom.getBoundingClientRect();
+      const w = wrap.getBoundingClientRect();
+      setActionsStyle({ top: r.top - w.top + wrap.scrollTop, right: w.right - r.right });
+    };
+    measure();
+    wrap.addEventListener("scroll", measure, { passive: true });
+    window.addEventListener("resize", measure);
+    return () => {
+      wrap.removeEventListener("scroll", measure);
+      window.removeEventListener("resize", measure);
+    };
+  }, [view, context, viewport, railCollapsed, sidebarCollapsed, sidebarWidth]);
+
+  const runOnTarget = useCallback(
+    (make: (pos: number) => (state: import("prosemirror-state").EditorState, dispatch?: (tr: import("prosemirror-state").Transaction) => void) => boolean) => {
+      if (!view || !context) return;
+      make(context.target.pos)(view.state, view.dispatch);
+      view.focus();
+    },
+    [view, context],
+  );
+
+  const editSource = useCallback(() => {
+    setSidebarMode("source");
+    if (sidebarCollapsed) toggleSidebar();
+    setSourceReveal((n) => n + 1);
+  }, [sidebarCollapsed, toggleSidebar]);
+
+  const canMove = (dir: "up" | "down"): boolean => {
+    if (!view || !context) return false;
+    return moveBlockAt(context.target.pos, dir)(view.state);
+  };
 
   const handleSave = useCallback(async () => {
     if (!view || !onSave) return;
@@ -298,6 +348,19 @@ export function MDMXEditor({
           {view && state ? (
             <SlashMenu view={view} state={state} registry={registry} schema={schema} />
           ) : null}
+          {view && context && actionsStyle ? (
+            <BlockActions
+              name={context.target.spec.name}
+              style={actionsStyle}
+              canMoveUp={canMove("up")}
+              canMoveDown={canMove("down")}
+              onMoveUp={() => runOnTarget((pos) => moveBlockAt(pos, "up"))}
+              onMoveDown={() => runOnTarget((pos) => moveBlockAt(pos, "down"))}
+              onDuplicate={() => runOnTarget(duplicateBlockAt)}
+              onDelete={() => runOnTarget(deleteBlockAt)}
+              onEditSource={editSource}
+            />
+          ) : null}
           {media && mediaPick ? (
             <MediaLibrary
               media={media}
@@ -317,7 +380,8 @@ export function MDMXEditor({
           state={state}
           registry={registry}
           collection={collection}
-          componentSelected={isComponentSelected(state, registry)}
+          context={context}
+          sourceReveal={sourceReveal}
           onResizeStart={startResize}
         />
         <MobileFabs

@@ -9,7 +9,13 @@ import { dropCursor } from "prosemirror-dropcursor";
 import { gapCursor } from "prosemirror-gapcursor";
 import { parseMDX, type CollectionSpec, type Registry } from "@mdmx/core";
 import { componentNodeName } from "../schema.js";
-import { buildComponentNode, markKeymap, mdmxInputRules, resolveComponentDrop } from "../commands.js";
+import {
+  blockActionKeymap,
+  buildComponentNode,
+  markKeymap,
+  mdmxInputRules,
+  resolveComponentDrop,
+} from "../commands.js";
 import { fromMdast } from "../from-mdast.js";
 import { createReactNodeView } from "./react-node-view.js";
 import { makeComponentBlock } from "./ComponentBlock.js";
@@ -90,6 +96,8 @@ export function useEditorView(options: UseEditorViewOptions): EditorViewHandle {
         keymap({ "Mod-z": undo, "Mod-y": redo, "Shift-Mod-z": redo }),
         // Mark shortcuts (Mod-B / Mod-I / Mod-E / Mod-Shift-X).
         keymap(markKeymap(schema)),
+        // Block actions on the contextual component (ADR-058).
+        keymap(blockActionKeymap(registry)),
         mdmxInputRules(schema),
         keymap(baseKeymap),
         dropCursor({ class: "mdmx-dropcursor", width: 2 }),

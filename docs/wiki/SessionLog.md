@@ -47,6 +47,33 @@ initial design-and-build conversation (12 commits).
   as `<Tooltip content="A tooltip" side="top">Hover me</Tooltip>` and
   renders its trigger text; Kbd, Table (three rows), Testimonial insert
   live instead of throwing.
+- **M3 — Component editing UX** (ADR-058). Headless: `component-context.ts`
+  (`componentContext` — selected component, else the deepest around the
+  caret, with the ancestor chain) and block-action commands in
+  `commands.ts` (`deleteBlockAt` leaves a paragraph when a container would
+  empty, `duplicateBlockAt` selects the copy, `moveBlockAt` swaps siblings,
+  `blockActionKeymap`: ⌘⇧⌫ / ⌘⇧D / ⌘⇧↑↓). React: `PropPanel` takes the
+  context, renders a breadcrumb (crumb → `NodeSelection` on the ancestor),
+  shows effective defaults muted with a per-field reset, hides `showIf`-off
+  props (evaluated against effective values), and **re-selects the edited
+  node** — `setNodeMarkup` maps a `NodeSelection` to a caret inside the
+  first child, which in 0.6 made the panel vanish after one edit and would
+  now have handed the context to a nested block. `Control` is value-typed
+  (`onChange(JsonValue | undefined)`); new `list` (rows, add/remove/
+  reorder), `object` (per-field), `link` (placeholder), `color`, `date`
+  controls; `allowEmpty` for selects; `FrontmatterPanel` moved with it.
+  `BlockActions` toolbar anchored to the target's DOM rect inside
+  `.mdmx-canvas-wrap` (re-measured on state/scroll/resize; hidden on
+  mobile); "edit source" switches to Source and reveals the active lines.
+  `RenderBoundary` resets on props identity change. Tests: component-
+  context (4), block-actions (6), render-boundary (2), prop-panel (6 —
+  via a state+dispatch harness, no DOM view), controls (+6),
+  prop-controls (+2). Editor 138 → 164; total 468. Live on `blocks.mdx`:
+  caret in a Tab → `Tabs › Tab`, toolbar at the block's corner (0px off),
+  crumb → Tabs with `variant` muted at its default, select edit writes
+  one attr and reset drops it, duplicate → rename → move up → delete, the
+  keyboard pair, edit-source reveal, and a Kbd emptied to a placeholder
+  revives on the next keystroke.
 
 ### S33 — 0.6.0 release session (release/0.6.0): M1–M7, publish-ready
 - **M1 — Next 16**: demo-next on `next@16.3.4` (Turbopack by default) with

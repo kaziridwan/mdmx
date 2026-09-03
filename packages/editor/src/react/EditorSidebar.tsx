@@ -2,6 +2,7 @@ import type { MouseEvent as ReactMouseEvent } from "react";
 import type { EditorState } from "prosemirror-state";
 import type { EditorView } from "prosemirror-view";
 import type { CollectionSpec, Registry } from "@mdmx/core";
+import type { ComponentContext } from "../component-context.js";
 import { SourcePane } from "./SourcePane.js";
 import { PropPanel } from "./PropPanel.js";
 import { FrontmatterPanel } from "./FrontmatterPanel.js";
@@ -16,8 +17,10 @@ export interface EditorSidebarProps {
   state: EditorState | null;
   registry: Registry;
   collection?: CollectionSpec;
-  /** True when a component node is selected → properties shows the prop panel. */
-  componentSelected: boolean;
+  /** The component in context (selected, or around the caret) → properties shows the prop panel. */
+  context: ComponentContext | null;
+  /** Bumped by "edit source": the source pane reveals the active block. */
+  sourceReveal?: number;
   /** Begin a drag-to-resize from the sidebar's left edge (desktop). */
   onResizeStart?: (e: ReactMouseEvent) => void;
 }
@@ -35,7 +38,8 @@ export function EditorSidebar({
   state,
   registry,
   collection,
-  componentSelected,
+  context,
+  sourceReveal,
   onResizeStart,
 }: EditorSidebarProps) {
   return (
@@ -75,9 +79,9 @@ export function EditorSidebar({
       </div>
       <div className="mdmx-sidebar-body">
         {mode === "source" ? (
-          <SourcePane state={state} registry={registry} />
-        ) : componentSelected ? (
-          <PropPanel view={view} state={state} registry={registry} />
+          <SourcePane state={state} registry={registry} reveal={sourceReveal} />
+        ) : context ? (
+          <PropPanel view={view} registry={registry} context={context} />
         ) : (
           <FrontmatterPanel view={view} state={state} collection={collection} />
         )}
