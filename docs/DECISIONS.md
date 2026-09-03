@@ -1744,3 +1744,32 @@ parts than the problem deserves. Committing tarballs — binary churn in git.
 **Status.** Shipped — 0.6 M7. Smoke-tested: 8 tarballs, deps rewritten to
 `0.6.0`, the editor tarball carries `dist/styles.css`, every package packs
 `dist/` only.
+
+## ADR-056 — The dashboard's left nav collapses from the navbar; persisted panel state is a dashboard convention (amends ADR-034, ADR-051)
+
+**Context.** The entry editor renders inside the dashboard shell (ADR-034)
+beside the shell's fixed 232px left nav, so with the editor's own rail and
+sidebar the editor route was four columns wide — in a 1400px window the
+canvas got the ~536px ADR-051 measured. ADR-051 made the editor's rail and
+sidebar collapsible and persisted the choice per browser; the shell had no
+equivalent, no responsive rule, and no way to reclaim the width.
+
+**Decision.** A navbar toggle (panel-left icon beside the brand;
+`aria-expanded`, `aria-controls`) collapses the left nav, which is hidden
+entirely when collapsed (`.mdmx-dash.is-nav-collapsed .mdmx-dash-side {
+display: none }`). The state persists under `mdmx:dash-nav-collapsed`
+following ADR-051's storage pattern and is read in the shell's state
+initializer (safe: `AuthGate` never renders the shell during SSR). `Mod-\`
+toggles it from anywhere except a text editor — form fields, contenteditable
+regions (ProseMirror), CodeMirror — so the shortcut never eats a keystroke.
+The rules are pure functions in `shell/nav-state.ts`. This sets the
+dashboard convention: a panel that hides persists per browser under an
+`mdmx:` key, and a `document`-level shortcut yields to editable targets.
+
+**Alternatives rejected.** An icon rail (keeps a column; the labels *are*
+the navigation, and the point is the width). Auto-collapsing on the editor
+route (a reader who opened the nav would lose it on every entry; an
+explicit toggle persisted once is one click). A responsive breakpoint alone
+(does nothing for the 1400px case that motivated this).
+
+**Status.** Shipped — 0.7 M1.

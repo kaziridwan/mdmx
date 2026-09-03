@@ -1,15 +1,24 @@
 "use client";
-import type { ReactNode } from "react";
+import { useCallback, useEffect, useState, type ReactNode } from "react";
 import { Link } from "./link.js";
 import type { CollectionSpec } from "@mdmx/core";
 import type { Me } from "../api-client.js";
 import type { ResolvedDashboardConfig } from "../config.js";
 import { routeHref, type DashboardRoute } from "../routes.js";
+import {
+  isEditableTarget,
+  isNavToggleShortcut,
+  readStoredNavCollapsed,
+  storeNavCollapsed,
+} from "./nav-state.js";
+
+const NAV_ID = "mdmx-dash-side";
 
 /**
  * The dashboard chrome: top navbar, left nav sidebar, main content area, and
  * an optional contextual right panel supplied by the active view. Pure layout
- * — data loading lives in the views.
+ * — data loading lives in the views. The left nav collapses from the navbar
+ * (or `Mod-\`), persisted per browser (ADR-056).
  */
 export function DashboardShell({
   config,
@@ -41,9 +50,52 @@ export function DashboardShell({
         ? route.collection
         : null;
 
+  const [navCollapsed, setNavCollapsed] = useState(() => readStoredNavCollapsed() ?? false);
+  const toggleNav = useCallback(() => {
+    setNavCollapsed((current) => {
+      storeNavCollapsed(!current);
+      return !current;
+    });
+  }, []);
+
+  // Mod-\ toggles the nav from anywhere except inside a text editor.
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (!isNavToggleShortcut(e) || isEditableTarget(e.target)) return;
+      e.preventDefault();
+      toggleNav();
+    };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [toggleNav]);
+
   return (
-    <div className="mdmx-dash">
+    <div className={"mdmx-dash" + (navCollapsed ? " is-nav-collapsed" : "")}>
       <header className="mdmx-dash-nav">
+        <button
+          type="button"
+          className="mdmx-dash-nav-toggle"
+          aria-label="Toggle navigation"
+          aria-expanded={!navCollapsed}
+          aria-controls={NAV_ID}
+          title={navCollapsed ? "Show navigation (⌘\\)" : "Hide navigation (⌘\\)"}
+          onClick={toggleNav}
+        >
+          <svg
+            viewBox="0 0 24 24"
+            width={15}
+            height={15}
+            fill="none"
+            stroke="currentColor"
+            strokeWidth={2}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            aria-hidden
+          >
+            <rect x="3" y="4" width="18" height="16" rx="2" />
+            <line x1="9" y1="4" x2="9" y2="20" />
+          </svg>
+        </button>
         <Link className="mdmx-dash-brand" href={mountPath}>
           {config.title}
         </Link>
@@ -67,7 +119,7 @@ export function DashboardShell({
       </header>
 
       <div className="mdmx-dash-body">
-        <nav className="mdmx-dash-side" aria-label="Dashboard">
+        <nav id={NAV_ID} className="mdmx-dash-side" aria-label="Dashboard">
           <SideLink href={mountPath} active={route.view === "home"}>
             Home
           </SideLink>

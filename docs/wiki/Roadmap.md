@@ -88,6 +88,22 @@ Plan and decision table (Q1–Q15): `.dev-context/plans/2026-09-01-0.6-plan.md`
 | M6 — studio Tailwind handoff | ✅ | `detectTailwind` (project) → `mdmx generate` writes `.mdmx/studio-classes.txt` and drops `studio.css`; host adds `@source`; `mdmx check` warns when it's missing; dashboard skips the CDN runtime (ADR-054). Canvas/page parity now exact. |
 | M7 — distribution, docs, publish prep | ✅ | LICENSE (MIT) + `license` in all packages; versions 0.6.0 in lockstep; `pnpm pack:all` + `pnpm.overrides` for using mdmx from a checkout (guide 08, ADR-055); RELEASING.md + release notes; docs wave (README, guides index, llms.txt, wiki counts, AGENTS.md package map). Publish itself is the maintainer's step. |
 
+## Phase 2.9 — 0.7.0: editing UX — two-way source, component editing, blocks that insert usable
+
+Plan and decision table (Q1–Q11): `.dev-context/plans/2026-09-03-0.7-plan.md`
+(local, untracked). One commit per verified milestone on `release/0.7.0`
+(the renamed `release/0.6.0`; 0.6.0 is never published — 0.7.0 is the first
+npm release).
+
+| Milestone | Status | Notes |
+| --- | --- | --- |
+| M1 — Dashboard nav collapse | ✅ | Navbar toggle hides the left nav, persisted (`mdmx:dash-nav-collapsed`), `Mod-\` shortcut that yields to text editors; the editor route stops being four columns wide (ADR-056). |
+| M2 — Registry v3 | ⬜ | `preview` extracted and used to seed inserts (props + children text), `showIf`, `link.placeholder`; v2 registries load unchanged. |
+| M3 — Component editing UX | ⬜ | Prop panel follows the caret into nested blocks (breadcrumb), value-typed controls incl. `list`/`object`/`link`/`color`/`date`, effective defaults + reset, block actions (delete/duplicate/move/edit source), error boundary reset. |
+| M4 — Two-way source pane | ⬜ | CodeMirror 6 source pane with parse-gated live apply, lint gutter, focused-pane authority, canonicalize on blur. |
+| M5 — Blocks made usable | ⬜ | demo-next wrapper pass: defaults for every required prop, defensive parsing, `preview` everywhere, variant gaps, Tooltip/HoverCard interactive; deferred state write-back recorded (ADR-060). |
+| M6 — 0.7.0 release prep + docs wave | ⬜ | Versions 0.7.0 in lockstep, release notes absorb 0.6.0's, guides/README/llms.txt/SPEC/wiki, publish handoff. |
+
 ## Phase 3 — the moat
 
 | Item | Status | Notes |

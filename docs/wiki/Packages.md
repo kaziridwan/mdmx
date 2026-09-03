@@ -139,7 +139,7 @@ re-verification, conflict 409s, media type/size limits + no-clobber.
 
 ---
 
-## @mdmx/dashboard — 43 tests
+## @mdmx/dashboard — 49 tests
 
 The app layer (ADR-034): the drop-in CMS mounted with two ~3-line files
 (`app/mdmx/[[...slug]]/page.tsx` + `app/api/mdmx/[...route]/route.ts`).
@@ -159,7 +159,7 @@ wrapper (`.mdmx-dash-editor`) remains here.
 | `DashboardApp.tsx`, `context.ts` | Client root: `AuthGate` → `DashboardContext` (api, me, registry, live collections via `GET /collections`, refresh) → shell + view router. Applies the stored theme pin on load. |
 | `routes.ts` | Pure `resolveRoute(slug)` URL scheme + `routeHref`/`editorHref` (editor routes carry the full repo-relative path). |
 | `api-client.ts` | Typed same-origin client over the content API; `UnauthorizedError` drops the UI to the login screen. |
-| `shell/` | `AuthGate` (login / unreachable-API help / localMode badge), `DashboardShell` (navbar, left nav, main, contextual right slot, `search` slot), `QuickOpen` + pure `quick-open.ts` ranking (Cmd/Ctrl+K palette), `link.ts` (next/link NodeNext-CJS interop shim). |
+| `shell/` | `AuthGate` (login / unreachable-API help / localMode badge), `DashboardShell` (navbar with the left-nav toggle, left nav, main, contextual right slot, `search` slot), pure `nav-state.ts` (collapsed-state persistence + the `Mod-\` shortcut rule that yields to text editors, ADR-056), `QuickOpen` + pure `quick-open.ts` ranking (Cmd/Ctrl+K palette), `link.ts` (next/link NodeNext-CJS interop shim). |
 | `views/` | `HomeView` (collections overview), `CollectionView` (entry table via `GET /entries`, filter, conflict-safe delete), `EntryNewView` (title→slug scaffold, `expectedSha: null`), `EditorView` (embedded `MDMXEditor` via `next/dynamic` `ssr:false`, sha-refreshing saves, `MediaSource` adapter), `CollectionFormView` + pure `field-draft.ts` (create/edit field schemas; nested controls via an "advanced" escape hatch), `MediaView` (grid/upload/delete; local `media-upload.ts` helpers keep ProseMirror out of the SSR graph), `SettingsView` (session, dirs, validation, registry stats, theme pin). |
 | `scaffold.ts`, `theme.ts` | `slugify`/`scaffoldDocument` (canonical starter frontmatter from a collection's fields); theme preference persistence (`data-mdmx-theme` + localStorage). |
 

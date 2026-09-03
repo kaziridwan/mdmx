@@ -11,6 +11,23 @@ initial design-and-build conversation (12 commits).
 
 <!-- APPEND NEW ENTRIES ABOVE THIS LINE -->
 
+### S34 — 0.7.0 release session (release/0.7.0): editing UX
+- Kickoff per the plan (`.dev-context/plans/2026-09-03-0.7-plan.md`, Q1–Q11):
+  `release/0.6.0` renamed in place to `release/0.7.0` (the seven 0.6
+  milestone commits stay as history); 0.6.0 is never published — 0.7.0 is
+  the first npm release and absorbs 0.6's publish prep. Baseline before M1:
+  `pnpm verify` green, 422 tests.
+- **M1 — Dashboard nav collapse** (ADR-056). `DashboardShell` gets a navbar
+  toggle (inline panel-left icon, `aria-expanded`/`aria-controls`) that hides
+  the left nav (`.mdmx-dash.is-nav-collapsed .mdmx-dash-side { display: none
+  }`), persisted under `mdmx:dash-nav-collapsed`; `Mod-\` toggles it from
+  anywhere except a text editor. Rules are pure in `shell/nav-state.ts`
+  (`readStoredNavCollapsed`/`storeNavCollapsed`, `isNavToggleShortcut`,
+  `isEditableTarget` — form fields, contenteditable/ProseMirror, `.cm-editor`
+  ahead of M4). Tests: `nav-state.test.ts` (3) + three shell tests (toggle +
+  persistence + aria, restore on mount, shortcut yields to an input).
+  Dashboard 43 → 49 tests; total 428.
+
 ### S33 — 0.6.0 release session (release/0.6.0): M1–M7, publish-ready
 - **M1 — Next 16**: demo-next on `next@16.3.4` (Turbopack by default) with
   React 19.2 types; `@mdmx/dashboard`'s `next` devDependency bumped in step

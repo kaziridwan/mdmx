@@ -1,6 +1,6 @@
 # Testing
 
-422 tests across eight packages, all green. The suites aren't just coverage —
+428 tests across eight packages, all green. The suites aren't just coverage —
 several *are* the spec, locking guarantees that define the product.
 
 ## How to run
@@ -77,3 +77,10 @@ deliberate semver-major decision that needs a new ADR and a fixture update).
   computed-style snapshot diff guards the dashboard chrome. They live in the
   session scratchpad, not the repo — the numbers are recorded in the
   SessionLog.
+
+## 0.7 additions
+
+- **dashboard**: `nav-state.test.ts` (collapsed-state persistence, the
+  `Mod-\` rule, editable-target detection incl. ProseMirror and CodeMirror)
+  and shell tests for the navbar toggle (class + `aria-expanded` +
+  storage), restore-on-mount, and the shortcut yielding to an input.

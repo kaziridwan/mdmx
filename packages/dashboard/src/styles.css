@@ -265,6 +265,32 @@
   flex: 1;
 }
 
+/* Left-nav toggle (ADR-056): collapses the sidebar; state persisted per browser. */
+.mdmx-dash-nav-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: var(--mdmx-radius-sm);
+  color: var(--mdmx-fg-muted);
+  cursor: pointer;
+}
+
+.mdmx-dash-nav-toggle:hover {
+  background: var(--mdmx-surface-2);
+  color: var(--mdmx-fg);
+}
+
+.mdmx-dash-nav-toggle:focus-visible {
+  outline: 2px solid var(--mdmx-accent);
+  outline-offset: 1px;
+}
+
+.mdmx-dash.is-nav-collapsed .mdmx-dash-side {
+  display: none;
+}
+
 .mdmx-dash-repo {
   font-family: var(--mdmx-mono);
   font-size: 12px;
