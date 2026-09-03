@@ -104,7 +104,7 @@ initial design-and-build conversation (12 commits).
   `Range.getClientRects` so the real pane runs under jsdom. Tests:
   `source-sync.test.ts` (10), source-map (+4), editor-mount (+7, the old
   `.mdmx-source-line` reads now go through `EditorView.findFromDOM`),
-  media-library read updated. Editor 164 → 184; total 488. Bundle
+  media-library read updated. Editor 164 → 185; total 489. Bundle
   (`next build`, demo-next, raw static chunks): 1660 → 2220 KB; the
   editor's client-only chunk with CodeMirror is 779 KB raw / 256 KB gzip
   beside the 503 KB raw / 148 KB gzip ProseMirror+React chunk — loaded only

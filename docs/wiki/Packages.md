@@ -83,7 +83,7 @@ registry on change; reports `unchanged` when the content hash is identical).
 
 ---
 
-## @mdmx/editor — 184 tests
+## @mdmx/editor — 185 tests
 
 Registry→ProseMirror, converters, commands (main entry, React-free), plus the
 flat React editor UI behind the `@mdmx/editor/react` subpath.
