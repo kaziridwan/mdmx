@@ -3,7 +3,7 @@ import type { EditorState } from "prosemirror-state";
 import type { EditorView } from "prosemirror-view";
 import type { CollectionSpec, Registry } from "@mdmx/core";
 import type { ComponentContext } from "../component-context.js";
-import { SourcePane } from "./SourcePane.js";
+import { SourcePane, type SourceReveal } from "./SourcePane.js";
 import { PropPanel } from "./PropPanel.js";
 import { FrontmatterPanel } from "./FrontmatterPanel.js";
 import { CodeIcon, SlidersIcon } from "./icons.js";
@@ -19,8 +19,8 @@ export interface EditorSidebarProps {
   collection?: CollectionSpec;
   /** The component in context (selected, or around the caret) → properties shows the prop panel. */
   context: ComponentContext | null;
-  /** Bumped by "edit source": the source pane reveals the active block. */
-  sourceReveal?: number;
+  /** "Edit source" request: the source pane reveals the block at this position. */
+  sourceReveal?: SourceReveal | null;
   /** Begin a drag-to-resize from the sidebar's left edge (desktop). */
   onResizeStart?: (e: ReactMouseEvent) => void;
 }
@@ -79,7 +79,13 @@ export function EditorSidebar({
       </div>
       <div className="mdmx-sidebar-body">
         {mode === "source" ? (
-          <SourcePane state={state} registry={registry} reveal={sourceReveal} />
+          <SourcePane
+            view={view}
+            state={state}
+            registry={registry}
+            collection={collection}
+            reveal={sourceReveal}
+          />
         ) : context ? (
           <PropPanel view={view} registry={registry} context={context} />
         ) : (

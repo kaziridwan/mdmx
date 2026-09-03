@@ -147,7 +147,7 @@ export function MDMXEditor({
   // The component being edited: selected, else the deepest around the caret
   // (ADR-058). Drives the prop panel and the block-actions toolbar.
   const context = useMemo(() => componentContext(state, registry), [state, registry]);
-  const [sourceReveal, setSourceReveal] = useState(0);
+  const [sourceReveal, setSourceReveal] = useState<{ pos: number } | null>(null);
 
   // Anchor the block-actions toolbar to the contextual block's top-right
   // corner, in the canvas wrap's (scrolled) coordinate space. Re-measured on
@@ -188,10 +188,12 @@ export function MDMXEditor({
   );
 
   const editSource = useCallback(() => {
+    if (!context) return;
     setSidebarMode("source");
     if (sidebarCollapsed) toggleSidebar();
-    setSourceReveal((n) => n + 1);
-  }, [sidebarCollapsed, toggleSidebar]);
+    // A fresh object per request, so the same block can be revealed twice.
+    setSourceReveal({ pos: context.target.pos });
+  }, [context, sidebarCollapsed, toggleSidebar]);
 
   const canMove = (dir: "up" | "down"): boolean => {
     if (!view || !context) return false;

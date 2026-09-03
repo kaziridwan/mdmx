@@ -3,7 +3,30 @@ import { afterEach, describe, expect, it } from "vitest";
 import { createElement, type ReactNode } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { Registry, type CollectionSpec, type RegistrySpec } from "@mdmx/core";
+import { EditorView as CMView } from "@codemirror/view";
 import { MDMXEditor } from "../src/react/index.js";
+import { SOURCE_APPLY_DELAY } from "../src/react/SourcePane.js";
+
+/** The source pane's text (CodeMirror), or "" when the pane isn't mounted. */
+function sourceText(el: HTMLElement): string {
+  const cm = el.querySelector(".mdmx-source .cm-editor") as HTMLElement | null;
+  return cm ? (CMView.findFromDOM(cm)?.state.doc.toString() ?? "") : "";
+}
+
+/** Type into the source pane: replace `find` with `replace` as one CodeMirror change. */
+function typeInSource(el: HTMLElement, find: string, replace: string): CMView {
+  const cm = CMView.findFromDOM(el.querySelector(".mdmx-source .cm-editor") as HTMLElement)!;
+  const text = cm.state.doc.toString();
+  const at = text.indexOf(find);
+  if (at < 0) throw new Error(`source pane has no ${JSON.stringify(find)}`);
+  cm.dispatch({ changes: { from: at, to: at + find.length, insert: replace }, selection: { anchor: at } });
+  return cm;
+}
+
+const settle = async (ms = SOURCE_APPLY_DELAY + 80) => {
+  await new Promise((r) => setTimeout(r, ms));
+  for (let i = 0; i < 4; i++) await flush();
+};
 
 const collection: CollectionSpec = {
   name: "posts",
@@ -156,15 +179,8 @@ describe("MDMXEditor mount (jsdom)", () => {
 
   it("shows live canonical source matching the input byte-for-byte", async () => {
     const el = await mountEditor(SRC);
-    const source = el.querySelector(".mdmx-source-pre");
-    expect(source).not.toBeNull();
-    // Each line is its own div; blank lines render a cosmetic space placeholder.
-    // Normalize whitespace-only lines and trailing blanks, then compare.
-    const lines = Array.from(source!.querySelectorAll(".mdmx-source-line")).map((n) =>
-      (n.textContent ?? "").trim() === "" ? "" : n.textContent!,
-    );
-    const rendered = lines.join("\n").replace(/\n+$/, "");
-    expect(rendered).toBe(SRC.replace(/\n+$/, ""));
+    expect(el.querySelector(".mdmx-source .cm-editor")).not.toBeNull();
+    expect(sourceText(el)).toBe(SRC);
   });
 });
 
@@ -175,7 +191,7 @@ describe("unified sidebar (source ⇄ properties)", () => {
     expect(tabs).toHaveLength(2);
 
     // Default: source visible, no properties panel.
-    expect(el.querySelector(".mdmx-source-pre")).not.toBeNull();
+    expect(el.querySelector(".mdmx-source .cm-editor")).not.toBeNull();
     expect(el.querySelector(".mdmx-props")).toBeNull();
     expect(
       el.querySelector('.mdmx-sidebar-tab[aria-label="Source"]')!.getAttribute("aria-selected"),
@@ -183,7 +199,7 @@ describe("unified sidebar (source ⇄ properties)", () => {
 
     // Toggle to properties: the document panel appears, source is gone.
     await switchSidebar(el, "Properties");
-    expect(el.querySelector(".mdmx-source-pre")).toBeNull();
+    expect(el.querySelector(".mdmx-source .cm-editor")).toBeNull();
     expect(el.querySelector(".mdmx-props")).not.toBeNull();
     expect(
       el.querySelector('.mdmx-sidebar-tab[aria-label="Properties"]')!.getAttribute("aria-selected"),
@@ -191,7 +207,7 @@ describe("unified sidebar (source ⇄ properties)", () => {
 
     // Back to source.
     await switchSidebar(el, "Source");
-    expect(el.querySelector(".mdmx-source-pre")).not.toBeNull();
+    expect(el.querySelector(".mdmx-source .cm-editor")).not.toBeNull();
     expect(el.querySelector(".mdmx-props")).toBeNull();
   });
 
@@ -241,12 +257,12 @@ describe("mobile layout (floating panels)", () => {
     expect(root.classList.contains("is-sidebar-open")).toBe(true);
     // Properties mode → the document/prop panel is shown, not the source pane.
     expect(el.querySelector(".mdmx-props")).not.toBeNull();
-    expect(el.querySelector(".mdmx-source-pre")).toBeNull();
+    expect(el.querySelector(".mdmx-source .cm-editor")).toBeNull();
 
     (el.querySelector('[aria-label="Open source"]') as HTMLButtonElement).click();
     for (let i = 0; i < 2; i++) await flush();
     expect(root.classList.contains("is-sidebar-open")).toBe(true);
-    expect(el.querySelector(".mdmx-source-pre")).not.toBeNull();
+    expect(el.querySelector(".mdmx-source .cm-editor")).not.toBeNull();
     expect(el.querySelector(".mdmx-props")).toBeNull();
   });
 });
@@ -267,9 +283,7 @@ describe("snippets (insert saved HTML)", () => {
     for (let i = 0; i < 4; i++) await flush();
 
     // Default sidebar is source; the inserted Html block serializes there.
-    const source = Array.from(el.querySelectorAll(".mdmx-source-line"))
-      .map((n) => n.textContent)
-      .join("\n");
+    const source = sourceText(el);
     expect(source).toContain("<Html");
     expect(source).toContain("saved card");
     localStorage.clear();
@@ -304,9 +318,7 @@ status: draft
     for (let i = 0; i < 4; i++) await flush();
 
     await switchSidebar(el, "Source");
-    const source = Array.from(el.querySelectorAll(".mdmx-source-line"))
-      .map((n) => n.textContent)
-      .join("\n");
+    const source = sourceText(el);
     expect(source).toContain("status: published");
     expect(source).not.toContain("status: draft");
   });
@@ -338,9 +350,7 @@ describe("nested editing (TwoColumn)", () => {
 
   it("keeps the nested structure in the live source", async () => {
     const el = await mountEditor(NESTED);
-    const source = Array.from(el.querySelectorAll(".mdmx-source-line"))
-      .map((n) => n.textContent)
-      .join("\n");
+    const source = sourceText(el);
     expect(source).toContain("<TwoColumn>");
     expect(source).toContain("<Column>");
     expect(source).toContain("Left text.");
@@ -424,5 +434,87 @@ describe("collapsible panels (desktop; ADR-051)", () => {
     const el = await mountEditor(SRC);
     expect((el.querySelector(".mdmx-editor") as HTMLElement).classList.contains("is-sidebar-collapsed")).toBe(true);
     localStorage.clear();
+  });
+});
+
+describe("two-way source pane (ADR-059)", () => {
+  it("typed source applies to the canvas after the debounce", async () => {
+    const el = await mountEditor(SRC);
+    typeInSource(el, "Hello **world**.", "Hello **there**.");
+    // Not yet: the apply is debounced.
+    expect(el.querySelector(".ProseMirror strong")?.textContent).toBe("world");
+    await settle();
+    expect(el.querySelector(".ProseMirror strong")?.textContent).toBe("there");
+    // The author's text stays as typed (no canonical push while the pane owns it).
+    expect(sourceText(el)).toContain("Hello **there**.");
+  });
+
+  it("a syntax error keeps the last applied canvas and shows the strip", async () => {
+    const el = await mountEditor(SRC);
+    typeInSource(el, "<Stat value=\"42\" />", "<Stat value=\"42\"");
+    await settle();
+    expect(el.querySelector('[data-role="stat"]')?.textContent).toBe("42");
+    const strip = el.querySelector(".mdmx-source-status.is-error");
+    expect(strip).not.toBeNull();
+    expect(strip!.textContent).toMatch(/Syntax error, line \d+/);
+    // Fixing it clears the strip and applies.
+    typeInSource(el, "<Stat value=\"42\"", "<Stat value=\"43\" />");
+    await settle();
+    expect(el.querySelector(".mdmx-source-status.is-error")).toBeNull();
+    expect(el.querySelector('[data-role="stat"]')?.textContent).toBe("43");
+  });
+
+  it("Mod-Enter applies immediately", async () => {
+    const el = await mountEditor(SRC);
+    const cm = typeInSource(el, "# Hi", "# Hello");
+    cm.contentDOM.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", ctrlKey: true, bubbles: true, cancelable: true }));
+    for (let i = 0; i < 3; i++) await flush();
+    expect(el.querySelector(".ProseMirror h1")?.textContent).toBe("Hello");
+  });
+
+  it("frontmatter typed in the pane lands in the document panel", async () => {
+    const POST = "---\ntitle: Hi\nstatus: draft\n---\n\n# Hi\n";
+    const el = await mountEditor(POST, collection);
+    typeInSource(el, "status: draft", "status: published");
+    await settle();
+    await switchSidebar(el, "Properties");
+    const select = el.querySelector('[aria-label="Document"] select') as HTMLSelectElement;
+    expect(select.value).toBe("published");
+  });
+
+  it("an unknown component becomes a raw block, verbatim", async () => {
+    const el = await mountEditor(SRC);
+    typeInSource(el, "<Stat value=\"42\" />", "<Mystery x=\"1\"   y={2} />");
+    await settle();
+    expect(el.querySelector(".ProseMirror .mdmx-raw")).not.toBeNull();
+    expect(el.querySelector('[data-mdmx-component="Stat"]')).toBeNull();
+    // Blur snaps the pane to canonical text — the raw region prints canonically.
+    const cm = CMView.findFromDOM(el.querySelector(".mdmx-source .cm-editor") as HTMLElement)!;
+    cm.contentDOM.dispatchEvent(new FocusEvent("blur"));
+    for (let i = 0; i < 3; i++) await flush();
+    expect(sourceText(el)).toContain("<Mystery x=\"1\" y={2} />");
+  });
+
+  it("blur snaps non-canonical text to the canonical serialization", async () => {
+    const el = await mountEditor(SRC);
+    const cm = typeInSource(el, "Hello **world**.", "Hello __world__.");
+    await settle();
+    expect(sourceText(el)).toContain("Hello __world__.");
+    cm.contentDOM.dispatchEvent(new FocusEvent("blur"));
+    for (let i = 0; i < 3; i++) await flush();
+    expect(sourceText(el)).toContain("Hello **world**.");
+    expect(sourceText(el)).not.toContain("__world__");
+  });
+
+  it("canvas edits keep flowing into the pane", async () => {
+    const el = await mountEditor(SRC);
+    await switchSidebar(el, "Properties");
+    const select = el.querySelector('[aria-label="Document"] select');
+    expect(select).toBeNull(); // no collection: the document panel is empty
+    await switchSidebar(el, "Source");
+    // A prop edit through the panel is a canvas-side transaction.
+    (el.querySelector('[aria-label="Toggle sidebar"]') as HTMLButtonElement).click();
+    for (let i = 0; i < 2; i++) await flush();
+    expect(sourceText(el)).toBe(SRC);
   });
 });

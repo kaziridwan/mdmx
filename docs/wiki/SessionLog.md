@@ -74,6 +74,48 @@ initial design-and-build conversation (12 commits).
   one attr and reset drops it, duplicate → rename → move up → delete, the
   keyboard pair, edit-source reveal, and a Kbd emptied to a placeholder
   revives on the next keystroke.
+- **M4 — Two-way source pane** (ADR-059). `@mdmx/editor` gains CodeMirror 6
+  (`@codemirror/state`, `view`, `language`, `commands`, `lint`,
+  `lang-markdown`, `lang-javascript`, `@lezer/highlight`, pinned `~`;
+  `@codemirror/view` at `~6.43.10` because 6.43.11 is inside the
+  workspace's `minimumReleaseAge` window and pnpm resolved the other
+  CodeMirror packages to 6.43.10 — one copy, not two). Headless
+  `source-sync.ts`: `applySourceText` (text → `parseMDX` → `fromMdast` →
+  one `replaceWith` + frontmatter-attr transaction with meta
+  `mdmx-source`; a parse error returns its position and nothing to
+  dispatch; identical text is a no-op; the selection lands on the block
+  under the cursor line — a `NodeSelection` for a component) and
+  `lintSource` (validator diagnostics + the syntax error as markers,
+  frontmatter against the collection). `source-map.ts`: `blockLineMap`
+  walks the canonical text sequentially so duplicate blocks get their own
+  ranges (the `indexOf` bug), `blockIndexAtLine` (line → block),
+  `blockLineAt` (a nested block's first line, for "edit source" on a Tab).
+  `SourcePane` hosts the `EditorView` (created once per PM view/registry):
+  markdown + JSX highlighting through token *classes* colored by new
+  `--mdmx-code-*` tokens, line numbers, lint gutter, history, `Mod-Enter`
+  applies now; canvas → pane pushes canonical text under an `external`
+  annotation; pane → canvas debounces 300 ms; the pane recognizes its own
+  applies by the doc identity it produced and skips the push-back; blur
+  flushes the apply and snaps to canonical only when the text parses; the
+  block under the pane cursor gets `.mdmx-source-target` and scrolls into
+  view; a status strip reports the syntax error. `raw` regions print
+  canonically on the snap (to-mdast re-parses them; invariants 1/3
+  untouched). Editor `vitest.config.ts` + `tests/setup.ts` polyfill
+  `Range.getClientRects` so the real pane runs under jsdom. Tests:
+  `source-sync.test.ts` (10), source-map (+4), editor-mount (+7, the old
+  `.mdmx-source-line` reads now go through `EditorView.findFromDOM`),
+  media-library read updated. Editor 164 → 184; total 488. Bundle
+  (`next build`, demo-next, raw static chunks): 1660 → 2220 KB; the
+  editor's client-only chunk with CodeMirror is 779 KB raw / 256 KB gzip
+  beside the 503 KB raw / 148 KB gzip ProseMirror+React chunk — loaded only
+  on the editor route via `next/dynamic`, never SSR'd. Build still 0
+  warnings. Live on `blocks.mdx` (19/19): type a prop → canvas in ~350 ms
+  with the pane keeping the typed text; break a tag → strip "Syntax error,
+  line 24", gutter marker, canvas unchanged; fix → clears; ⌘⏎ immediate;
+  frontmatter → document panel; `<Mystery />` → raw block + MDMX001
+  marker; extra spaces stay while focused and snap on blur; ⌘Z reverts
+  exactly the last apply; "edit source" on a nested Tab focuses the pane
+  on `<Tab title="Overview">` and outlines the block on the canvas.
 
 ### S33 — 0.6.0 release session (release/0.6.0): M1–M7, publish-ready
 - **M1 — Next 16**: demo-next on `next@16.3.4` (Turbopack by default) with

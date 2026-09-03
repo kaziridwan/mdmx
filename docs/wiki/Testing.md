@@ -1,6 +1,6 @@
 # Testing
 
-468 tests across eight packages, all green. The suites aren't just coverage —
+488 tests across eight packages, all green. The suites aren't just coverage —
 several *are* the spec, locking guarantees that define the product.
 
 ## How to run
@@ -29,6 +29,7 @@ cd packages/<name> && pnpm exec vitest run   # one package (rebuild core first i
 | `localMode`: no-OAuth read/write, identity, CSRF + prefix still enforced, malformed→400 | `api.test.ts` ("localMode") | next |
 | Type inference → control taxonomy | `cli.test.ts` | cli |
 | Editor load→serialize is a fixed point (live source pane) | `source-map.test.ts` | editor |
+| Source-pane text applies through the load path; a parse error dispatches nothing; frontmatter/raw regions land as a load would | `source-sync.test.ts`, `editor-mount.test.ts` | editor |
 | React editor mounts; `contentDOM` lands in the component's render; live source matches | `editor-mount.test.ts` (jsdom) | editor |
 | Prop-control value coercion (number/json/multiselect/empty→drop) | `prop-controls.test.ts` | editor |
 | Canonical frontmatter YAML is a fixed point; field ordering; MDMX008/009 | `frontmatter.test.ts` | core |
@@ -106,3 +107,13 @@ deliberate semver-major decision that needs a new ADR and a fixture update).
   effective values, list rows as one transaction per edit, and the edited
   block staying selected; `controls.test.tsx` value-typed scalars, select
   `allowEmpty`, link/color/date, list and object composition.
+- **editor (M4)**: `source-sync.test.ts` (valid text → one transaction
+  that re-serializes identically; identical text → no-op; parse error →
+  position, nothing dispatched; frontmatter → doc attr; unknown component →
+  raw block; selection on the block under the cursor line; `lintSource`
+  codes/positions, the syntax error as one marker, frontmatter against the
+  collection, MDMX010; `parseError` fallbacks); `source-map.test.ts`
+  duplicates + `blockIndexAtLine` + frontmatter offset; `editor-mount.test.ts`
+  drives the real CodeMirror pane under jsdom (a `Range.getClientRects`
+  polyfill in `tests/setup.ts`): debounce apply, syntax-error strip + fix,
+  Mod-Enter, frontmatter → panel, unknown → raw, blur snap, canvas → pane.

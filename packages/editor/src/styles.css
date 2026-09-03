@@ -32,6 +32,13 @@
   --mdmx-code-fg: #d7d9e3;
   --mdmx-code-muted: #6f748a;
   --mdmx-code-active: rgba(154, 103, 0, 0.16);
+  --mdmx-code-selection: rgba(122, 146, 255, 0.28);
+  --mdmx-code-heading: #e0af68;
+  --mdmx-code-tag: #7dcfff;
+  --mdmx-code-attr: #c0a8ff;
+  --mdmx-code-string: #9ece6a;
+  --mdmx-code-keyword: #ff9e64;
+  --mdmx-code-link: #7aa2f7;
   --mdmx-shadow: 0 1px 2px rgba(0, 0, 0, 0.05), 0 4px 16px rgba(0, 0, 0, 0.06);
   --mdmx-radius: 8px;
   --mdmx-radius-sm: 5px;
@@ -80,6 +87,13 @@
   --mdmx-code-fg: #d7d9e3;
   --mdmx-code-muted: #6f748a;
   --mdmx-code-active: rgba(154, 103, 0, 0.16);
+  --mdmx-code-selection: rgba(122, 146, 255, 0.28);
+  --mdmx-code-heading: #e0af68;
+  --mdmx-code-tag: #7dcfff;
+  --mdmx-code-attr: #c0a8ff;
+  --mdmx-code-string: #9ece6a;
+  --mdmx-code-keyword: #ff9e64;
+  --mdmx-code-link: #7aa2f7;
   --mdmx-shadow: 0 1px 2px rgba(0, 0, 0, 0.05), 0 4px 16px rgba(0, 0, 0, 0.06);
 }
 
@@ -923,23 +937,176 @@ body.mdmx-resizing {
   color: var(--mdmx-code-muted);
   padding: 14px 18px 8px;
 }
-.mdmx-editor .mdmx-source-pre {
-  margin: 0;
-  padding: 0 0 200px;
+.mdmx-editor .mdmx-source {
+  display: flex;
+  flex-direction: column;
+  min-height: 100%;
 }
-.mdmx-editor .mdmx-source-pre code {
+.mdmx-editor .mdmx-source-label {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+.mdmx-editor .mdmx-source-hint {
+  font-size: 11px;
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--mdmx-code-muted);
+}
+/* The CodeMirror editor (ADR-059). Chrome only: the syntax colors are token
+   classes from `SourcePane`'s highlight style, colored by the tokens below. */
+.mdmx-editor .mdmx-source-editor {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+.mdmx-editor .mdmx-source-editor .cm-editor {
+  flex: 1;
+  min-height: 0;
+  background: var(--mdmx-code-bg);
+  color: var(--mdmx-code-fg);
+}
+.mdmx-editor .mdmx-source-editor .cm-editor.cm-focused {
+  outline: none;
+}
+.mdmx-editor .mdmx-source-editor .cm-scroller {
   font-family: var(--mdmx-mono);
   font-size: 13px;
   line-height: 1.6;
 }
-.mdmx-editor .mdmx-source-line {
-  padding: 0 18px;
-  white-space: pre-wrap;
-  word-break: break-word;
+.mdmx-editor .mdmx-source-editor .cm-content {
+  padding: 4px 0 200px;
+  caret-color: var(--mdmx-code-fg);
 }
-.mdmx-editor .mdmx-source-line.is-active {
+.mdmx-editor .mdmx-source-editor .cm-line {
+  padding: 0 18px 0 6px;
+}
+.mdmx-editor .mdmx-source-editor .cm-gutters {
+  background: var(--mdmx-code-bg);
+  color: var(--mdmx-code-muted);
+  border-right: 0;
+}
+.mdmx-editor .mdmx-source-editor .cm-lineNumbers .cm-gutterElement {
+  padding: 0 4px 0 12px;
+  min-width: 34px;
+}
+.mdmx-editor .mdmx-source-editor .cm-activeLineGutter {
+  background: transparent;
+}
+.mdmx-editor .mdmx-source-editor .cm-cursor,
+.mdmx-editor .mdmx-source-editor .cm-dropCursor {
+  border-left-color: var(--mdmx-code-fg);
+}
+.mdmx-editor .mdmx-source-editor .cm-editor .cm-selectionBackground,
+.mdmx-editor .mdmx-source-editor .cm-editor.cm-focused .cm-selectionBackground {
+  background: var(--mdmx-code-selection);
+}
+.mdmx-editor .mdmx-source-editor .mdmx-source-active {
   background: var(--mdmx-code-active);
   box-shadow: inset 2px 0 0 var(--mdmx-warn);
+}
+.mdmx-editor .mdmx-source-editor .cm-lintRange-error {
+  background-image: none;
+  border-bottom: 2px solid var(--mdmx-danger);
+}
+.mdmx-editor .mdmx-source-editor .cm-lintRange-warning {
+  background-image: none;
+  border-bottom: 2px dotted var(--mdmx-warn);
+}
+.mdmx-editor .mdmx-source-editor .cm-tooltip {
+  font-family: var(--mdmx-font);
+  font-size: 12.5px;
+  background: var(--mdmx-surface);
+  color: var(--mdmx-fg);
+  border: 1px solid var(--mdmx-border);
+  border-radius: 8px;
+  box-shadow: var(--mdmx-shadow);
+}
+.mdmx-editor .mdmx-source-editor .cm-tooltip-lint {
+  padding: 4px 0;
+}
+.mdmx-editor .mdmx-source-editor .cm-diagnostic {
+  padding: 4px 10px;
+  border-left-width: 3px;
+}
+.mdmx-editor .mdmx-source-editor .cm-diagnostic-error {
+  border-left-color: var(--mdmx-danger);
+}
+.mdmx-editor .mdmx-source-editor .cm-diagnostic-warning {
+  border-left-color: var(--mdmx-warn);
+}
+.mdmx-editor .mdmx-source-editor .cm-diagnosticSource {
+  font-family: var(--mdmx-mono);
+  font-size: 11px;
+  opacity: 0.8;
+}
+.mdmx-editor .mdmx-source-editor .cm-lint-marker {
+  width: 0.8em;
+  height: 0.8em;
+}
+/* Tokens */
+.mdmx-editor .mdmx-tok-heading {
+  color: var(--mdmx-code-heading);
+  font-weight: 600;
+}
+.mdmx-editor .mdmx-tok-tag {
+  color: var(--mdmx-code-tag);
+}
+.mdmx-editor .mdmx-tok-attr {
+  color: var(--mdmx-code-attr);
+}
+.mdmx-editor .mdmx-tok-string {
+  color: var(--mdmx-code-string);
+}
+.mdmx-editor .mdmx-tok-keyword {
+  color: var(--mdmx-code-keyword);
+}
+.mdmx-editor .mdmx-tok-meta {
+  color: var(--mdmx-code-muted);
+}
+.mdmx-editor .mdmx-tok-link {
+  color: var(--mdmx-code-link);
+  text-decoration: underline;
+  text-decoration-color: color-mix(in srgb, var(--mdmx-code-link) 40%, transparent);
+}
+.mdmx-editor .mdmx-tok-emphasis {
+  font-style: italic;
+}
+.mdmx-editor .mdmx-tok-strong {
+  font-weight: 700;
+}
+.mdmx-editor .mdmx-tok-code {
+  color: var(--mdmx-code-string);
+}
+/* Apply status */
+.mdmx-editor .mdmx-source-status {
+  position: sticky;
+  bottom: 0;
+  font-family: var(--mdmx-font);
+  font-size: 12.5px;
+  padding: 8px 18px;
+  background: var(--mdmx-code-bg);
+  border-top: 1px solid var(--mdmx-code-muted);
+  color: var(--mdmx-code-fg);
+}
+.mdmx-editor .mdmx-source-status.is-error {
+  color: var(--mdmx-danger);
+}
+.mdmx-editor .mdmx-source-status-detail {
+  display: block;
+  color: var(--mdmx-code-muted);
+  font-family: var(--mdmx-mono);
+  font-size: 11.5px;
+  margin-top: 2px;
+  white-space: pre-wrap;
+}
+/* The canvas block under the pane's cursor */
+.mdmx-editor .mdmx-source-target {
+  outline: 1px dashed var(--mdmx-warn);
+  outline-offset: 4px;
+  border-radius: 6px;
 }
 
 /* -- ProseMirror cursors -- */

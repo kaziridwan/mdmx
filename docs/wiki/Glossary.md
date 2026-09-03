@@ -137,3 +137,11 @@ so nesting constraints hold by construction (ADR-058).
 `default`, muted; a set value gets a reset that drops the key so the
 default applies again. `showIf` rules read these effective values
 (ADR-058).
+
+**Source sync** — the two-way link between the source pane and the canvas
+(ADR-059). Canvas → pane: every document change streams in as canonical
+text. Pane → canvas: typed text applies live (debounced, parse-gated) as
+one document transaction through the same `parseMDX` → `fromMdast` path a
+file load uses. The focused pane is authoritative (its own applies are not
+re-serialized under the cursor); on blur it snaps to canonical text once.
+Validation diagnostics are lint markers, never blockers.

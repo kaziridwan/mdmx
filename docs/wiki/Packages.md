@@ -83,7 +83,7 @@ registry on change; reports `unchanged` when the content hash is identical).
 
 ---
 
-## @mdmx/editor — 164 tests
+## @mdmx/editor — 184 tests
 
 Registry→ProseMirror, converters, commands (main entry, React-free), plus the
 flat React editor UI behind the `@mdmx/editor/react` subpath.
@@ -101,15 +101,15 @@ flat React editor UI behind the `@mdmx/editor/react` subpath.
 | `react/viewport.ts`, `panels.ts`, `sidebar-resize.ts` | Pure, unit-tested state helpers: `fit` + device modes and `canvasZoom` (ADR-036/051), collapsible rail/sidebar persistence, sidebar width clamping/persistence. |
 | `react/EditorToolbar.tsx`, `MobileFabs.tsx` | The sticky toolbar (back link, title, viewport switch, panel toggles, insert image, snippet save, save status) and the mobile floating controls. |
 | `styles.css` (→ `@mdmx/editor/styles.css`) | The reference chrome stylesheet: tokens at `:where(:root)`, chrome rooted at `.mdmx-editor`, canvas fallbacks + host-independence pins in `@layer base` (ADR-049/050). Imported by the dashboard and the playground. |
-| `react/Rail.tsx`, `SlashMenu.tsx`, `PropPanel.tsx`, `BlockActions.tsx`, `SourcePane.tsx`, `EditorSidebar.tsx` | Chrome: component palette, `/`-menu, props editor for the component context (breadcrumb, effective defaults + reset, `showIf`; one tx per edit; ADR-058), the block-actions toolbar anchored to the contextual block, live canonical source with active-block marking, and the unified right sidebar that toggles Source ⇄ Properties (ADR-030). |
+| `react/Rail.tsx`, `SlashMenu.tsx`, `PropPanel.tsx`, `BlockActions.tsx`, `SourcePane.tsx`, `EditorSidebar.tsx` | Chrome: component palette, `/`-menu, props editor for the component context (breadcrumb, effective defaults + reset, `showIf`; one tx per edit; ADR-058), the block-actions toolbar anchored to the contextual block, the **two-way source pane** — a CodeMirror 6 editor with parse-gated live apply, lint gutter, active-block marking and canonicalize-on-blur (ADR-059) — and the unified right sidebar that toggles Source ⇄ Properties (ADR-030). |
 | `react/Editor.tsx` (`onSave`/`docTitle`/`collection`) | Optional save toolbar (dirty/saving/saved/error); serializes the doc via `serializeDoc` and hands canonical MDMX to the host. Used by the Next mount page. |
 | `react/FrontmatterPanel.tsx`, `controls.tsx` | Document-level panel editing a collection's typed frontmatter; writes canonical YAML to the doc attr in one tx. `Control` is the shared value-typed input (`onChange(JsonValue \| undefined)`) covering all 13 control kinds — `list` rows and `object` fields compose it recursively (ADR-058). |
 | `react/media.ts`, `MediaLibrary.tsx`, `media-context.ts` | Media library: `MediaSource` adapter (API-agnostic `list`/`upload`), pure upload helpers (`fileToUpload`/`safeFilename`/`bytesToBase64`), `insertImage` command, the modal browser/uploader, and `MediaPickerContext`/`useMediaPicker` (one modal routed to the toolbar + `image` controls). Wired via the editor's `media` prop (ADR-027, ADR-029). |
-| `react/slash-plugin.ts`, `source-map.ts`, `prop-controls.ts` | Slash trigger plugin; doc→canonical serialization + active-block line mapping; prop value coercion, `effectiveProps`, `emptyValueFor` (pure, unit-tested). |
+| `react/slash-plugin.ts`, `source-map.ts`, `source-sync.ts`, `prop-controls.ts` | Slash trigger plugin; doc→canonical serialization + `blockLineMap` (blocks ↔ lines, duplicates resolved sequentially); `applySourceText` (text → one document transaction through the load path, or a positioned parse error) + `lintSource` (validator diagnostics as pane markers) — pure, no CodeMirror; prop value coercion, `effectiveProps`, `emptyValueFor` (pure, unit-tested). |
 | `sanitize-html.ts`, `snippets.ts` | Pure best-effort `sanitizeHtml` (for the demo `<Html>` block; build-time safe) + the localStorage snippet store (`save`/`list`/`delete`) backing "save as snippet" (ADR-032). |
 
 `@mdmx/editor` main export stays React-free (Invariant 9); React imports come
-from `@mdmx/editor/react`. The interactive design **spec** remains
+from `@mdmx/editor/react`. CodeMirror 6 is the React entry's dependency alone. The interactive design **spec** remains
 `examples/editor-prototype.html`; the runnable harness is
 `examples/editor-playground`. Nested editing (TwoColumn) and the media library
 have landed; remaining polish is nested drop indicators + per-region slash.

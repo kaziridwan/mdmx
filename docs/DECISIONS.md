@@ -1883,3 +1883,69 @@ panels already duplicated the coercion). Rewriting hidden `showIf` props
 keyboard path, and nested drags have no indicator yet).
 
 **Status.** Shipped — 0.7 M3.
+
+## ADR-059 — The source pane is an editor: CodeMirror 6, parse-gated live apply, focused-pane authority, canonicalize on blur (supersedes the read-only pane's rationale in `examples/DESIGN_NOTES.txt`)
+
+**Context.** The right-hand pane has shown the canonical MDMX since the
+prototype — the product thesis made visible — but as a read-only `<pre>`
+re-rendered from the document on every state change. Hands-on configuration
+of MDX components is exactly what a text pane is for, the Studio already
+edits source in a `<textarea>` with a preview, and text → document already
+existed as the load path (`parseMDX` + `fromMdast`). The pane also located
+the active block with an `indexOf` of its own serialization, so two
+identical blocks highlighted the first one twice.
+
+**Decision.** The pane hosts a CodeMirror 6 `EditorView` (`@codemirror/
+state`, `view`, `language`, `commands`, `lint`, `lang-markdown`,
+`lang-javascript`, `@lezer/highlight`, pinned `~`; `@mdmx/editor` only —
+core stays dependency-light, invariant 9). Markdown highlighting with JSX
+code blocks stands in for an MDX grammar (follow-up). The rules:
+
+- **Text applies through the load path.** `applySourceText` (headless,
+  `source-sync.ts`) parses the pane text with `parseMDX`, converts with
+  `fromMdast(… { source: text })`, and dispatches one transaction
+  (`replaceWith` + the frontmatter attr, meta `mdmx-source`). Whatever the
+  pane shows is what a load of that text would show; an unknown component
+  becomes a raw block. Nothing in the converters or the canonical
+  serializer changed (invariants 1, 3).
+- **Live, debounced, parse-gated.** Edits apply 300 ms after the last
+  keystroke, only when the text parses; ⌘/Ctrl-Enter applies now. A parse
+  error shows a status strip ("Syntax error, line N — canvas shows the last
+  applied version") and the canvas keeps the last applied state.
+  Validation diagnostics (MDMX001–010, plus the syntax error itself) are
+  lint-gutter markers with their codes — informational, never a blocker.
+- **The focused pane is authoritative.** After a pane-originated apply the
+  canonical re-serialization is *not* pushed back (quotes flipping under
+  the cursor is disorienting); the pane recognizes its own applies by the
+  document identity it produced. On blur the pane snaps to canonical text
+  once — unless the text does not parse, in which case it stays, with its
+  error, so the fix is still possible. Canvas edits always stream into an
+  unfocused pane.
+- **Line map, both directions.** `blockLineMap` serializes each top-level
+  block and walks the canonical text sequentially, so duplicates get their
+  own ranges; the active canvas block is marked in the pane, and while the
+  pane is focused the block under its cursor is outlined on the canvas
+  and scrolled into view — the ProseMirror selection is not moved by
+  cursor movement, only by an apply (which selects the block under the
+  cursor: a component gets a `NodeSelection`).
+- **Undo.** Each apply is one ProseMirror history event; CodeMirror keeps
+  its own text history.
+- **Edit source** (block action) switches the sidebar to Source, puts the
+  cursor on the block's first line, and focuses the pane. Mobile uses the
+  same instance inside the existing sheet.
+
+Theme: token *classes* from a `HighlightStyle`, colored by `--mdmx-code-*`
+tokens in the editor stylesheet, so dark mode follows the dashboard without
+a JS theme.
+
+**Alternatives rejected.** Apply on blur/explicit only (the loop guard is
+the hard part either way, and live apply is what makes "type a prop, watch
+the canvas" work). Pushing canonical text back after every apply (the
+cursor jumps; the round-trip is better seen once, on blur). A structural
+patch of the document from a text diff (the load path is the contract; a
+parallel converter would drift). Keeping the `<pre>` and adding a modal
+text editor (two source surfaces).
+
+**Status.** Shipped — 0.7 M4. Verified live and in jsdom (CodeMirror
+mounts under jsdom with a `Range.getClientRects` polyfill in the editor's
+vitest setup).
