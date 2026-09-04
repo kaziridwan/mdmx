@@ -13,6 +13,7 @@ import {
   ModeResolutionError,
   resolveMode,
   validateConfig,
+  detectTailwind,
   type MDMXConfig,
 } from "../src/index.js";
 
@@ -155,5 +156,30 @@ describe("registry loading", () => {
   it("points at `mdmx generate` when the registry is missing", () => {
     expect(() => loadRegistrySpec(root, DEFAULT_CONFIG)).toThrow(MissingRegistryError);
     expect(() => loadRegistrySpec(root, DEFAULT_CONFIG)).toThrow(/mdmx generate/);
+  });
+});
+
+describe("detectTailwind (ADR-054)", () => {
+  it("is false for a project without Tailwind", async () => {
+    await writeFile(join(root, "package.json"), JSON.stringify({ name: "app" }));
+    expect(detectTailwind(root)).toBe(false);
+  });
+
+  it("is true when tailwindcss resolves from the project root", async () => {
+    await mkdir(join(root, "node_modules", "tailwindcss"), { recursive: true });
+    await writeFile(
+      join(root, "node_modules", "tailwindcss", "package.json"),
+      JSON.stringify({ name: "tailwindcss", version: "4.0.0" }),
+    );
+    await writeFile(join(root, "package.json"), JSON.stringify({ name: "app" }));
+    expect(detectTailwind(root)).toBe(true);
+  });
+
+  it("falls back to the dependency lists when node_modules is absent", async () => {
+    await writeFile(
+      join(root, "package.json"),
+      JSON.stringify({ name: "app", devDependencies: { tailwindcss: "^4" } }),
+    );
+    expect(detectTailwind(root)).toBe(true);
   });
 });

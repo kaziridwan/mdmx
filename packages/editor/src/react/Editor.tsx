@@ -1,74 +1,43 @@
 import {
   useCallback,
   useEffect,
+  useLayoutEffect,
   useMemo,
   useRef,
   useState,
-  type ComponentType,
   type CSSProperties,
   type MouseEvent as ReactMouseEvent,
-  type ReactNode,
 } from "react";
-import { EditorState, NodeSelection, Selection } from "prosemirror-state";
-import { EditorView } from "prosemirror-view";
-import type { NodeViewConstructor } from "prosemirror-view";
-import { history, redo, undo } from "prosemirror-history";
-import { keymap } from "prosemirror-keymap";
-import { baseKeymap } from "prosemirror-commands";
-import { dropCursor } from "prosemirror-dropcursor";
-import { gapCursor } from "prosemirror-gapcursor";
-import { parseMDX, type CollectionSpec, type Registry } from "@mdmx/core";
-import { buildSchema, componentNodeName, componentNameFromNode } from "../schema.js";
-import {
-  markKeymap,
-  mdmxInputRules,
-  initialProps,
-  resolveComponentDrop,
-} from "../commands.js";
-import { fromMdast } from "../from-mdast.js";
-import { createReactNodeView } from "./react-node-view.js";
-import { makeComponentBlock } from "./ComponentBlock.js";
-import { slashPlugin } from "./slash-plugin.js";
-import { Rail, MDMX_DRAG_MIME } from "./Rail.js";
+import { Selection } from "prosemirror-state";
+import type { CollectionSpec, Registry } from "@mdmx/core";
+import { buildSchema } from "../schema.js";
+import { componentContext } from "../component-context.js";
+import { deleteBlockAt, duplicateBlockAt, moveBlockAt } from "../commands.js";
+import { BlockActions } from "./BlockActions.js";
+import { Rail } from "./Rail.js";
 import { EditorSidebar, type SidebarMode } from "./EditorSidebar.js";
+import { EditorToolbar, type SaveStatus } from "./EditorToolbar.js";
+import { MobileFabs } from "./MobileFabs.js";
+import { SlashMenu } from "./SlashMenu.js";
+import { MediaLibrary } from "./MediaLibrary.js";
+import { insertImage, type MediaItem, type MediaSource } from "./media.js";
+import { MediaPickerContext, type RequestMedia } from "./media-context.js";
+import { serializeDoc } from "./source-map.js";
+import { useEditorView, type ComponentMap } from "./use-editor-view.js";
+import { useViewport } from "./use-viewport.js";
+import { useSnippets } from "./use-snippets.js";
+import { readStoredCollapsed, storeCollapsed, type PanelSide } from "./panels.js";
 import {
   DEFAULT_SIDEBAR_WIDTH,
   clampSidebarWidth,
   readStoredWidth,
   storeSidebarWidth,
 } from "./sidebar-resize.js";
-import { SlashMenu } from "./SlashMenu.js";
-import {
-  CodeIcon,
-  SlidersIcon,
-  LayersIcon,
-  SmartphoneIcon,
-  TabletIcon,
-  MonitorIcon,
-} from "./icons.js";
-import {
-  VIEWPORT_MODES,
-  VIEWPORT_WIDTHS,
-  DEFAULT_VIEWPORT,
-  canvasZoom,
-  readStoredViewport,
-  storeViewport,
-  type ViewportMode,
-} from "./viewport.js";
-import { MediaLibrary } from "./MediaLibrary.js";
-import {
-  insertImage,
-  imageFromClipboard,
-  pastedImageUpload,
-  type MediaItem,
-  type MediaSource,
-} from "./media.js";
-import { MediaPickerContext, type RequestMedia } from "./media-context.js";
-import { listSnippets, saveSnippet, type Snippet } from "../snippets.js";
-import { serializeDoc } from "./source-map.js";
 
-/** Map of component name → the author's React component, for live rendering. */
-export type ComponentMap = Record<string, ComponentType<any>>;
+export type { ComponentMap } from "./use-editor-view.js";
+
+/** The content class the canvas carries when the host names none (ADR-050). */
+export const DEFAULT_CONTENT_CLASS = "mdmx-page";
 
 export interface MDMXEditorProps {
   registry: Registry;
@@ -96,40 +65,23 @@ export interface MDMXEditorProps {
   media?: MediaSource;
   /** Media directory uploads are written under (default: `public/media`). */
   mediaDir?: string;
+  /**
+   * Class placed on the canvas content root — the same class the site puts on
+   * its article wrapper — so the site's own content styles apply in the
+   * editor (ADR-050). Default `mdmx-page`; pass `""` to opt out.
+   */
+  contentClassName?: string;
 }
 
-type SaveStatus = "idle" | "saving" | "saved" | "error";
-
-function buildNodeViews(
-  registry: Registry,
-  components: ComponentMap | undefined,
-): Record<string, NodeViewConstructor> {
-  const nv: Record<string, NodeViewConstructor> = {};
-  for (const spec of registry.components) {
-    nv[componentNodeName(spec.name)] = createReactNodeView(
-      makeComponentBlock(spec, components?.[spec.name]),
-      { hasContent: spec.children.policy !== "none" },
-    );
-  }
-  return nv;
-}
-
-function isComponentSelected(state: EditorState | null, registry: Registry): boolean {
-  if (!state) return false;
-  const sel = state.selection;
-  if (!(sel instanceof NodeSelection)) return false;
-  const name = componentNameFromNode(sel.node.type.name);
-  return name != null && registry.get(name) != null;
-}
-
-/** The `code` of a selected `<Html>` component node, or null. */
-function selectedHtmlCode(state: EditorState | null): string | null {
-  if (!state) return null;
-  const sel = state.selection;
-  if (!(sel instanceof NodeSelection)) return null;
-  if (componentNameFromNode(sel.node.type.name) !== "Html") return null;
-  const code = (sel.node.attrs.props as Record<string, unknown> | undefined)?.code;
-  return typeof code === "string" ? code : "";
+function usePanelCollapsed(side: PanelSide): [boolean, () => void] {
+  const [collapsed, setCollapsed] = useState(() => readStoredCollapsed(side) ?? false);
+  const toggle = useCallback(() => {
+    setCollapsed((current) => {
+      storeCollapsed(side, !current);
+      return !current;
+    });
+  }, [side]);
+  return [collapsed, toggle];
 }
 
 export function MDMXEditor({
@@ -143,152 +95,110 @@ export function MDMXEditor({
   backLabel = "Back",
   media,
   mediaDir = "public/media",
+  contentClassName = DEFAULT_CONTENT_CLASS,
 }: MDMXEditorProps) {
   const schema = useMemo(() => buildSchema(registry), [registry]);
+  const rootRef = useRef<HTMLDivElement>(null);
+  const wrapRef = useRef<HTMLDivElement>(null);
   const mountRef = useRef<HTMLDivElement>(null);
-  const [view, setView] = useState<EditorView | null>(null);
-  const [state, setState] = useState<EditorState | null>(null);
+
   const [dirty, setDirty] = useState(false);
   const [saveStatus, setSaveStatus] = useState<SaveStatus>("idle");
   const [saveError, setSaveError] = useState<string | null>(null);
-  // The callback awaiting a media pick; non-null ⇒ the library modal is open.
-  const [mediaPick, setMediaPick] = useState<((item: MediaItem) => void) | null>(null);
-  const [sidebarMode, setSidebarMode] = useState<SidebarMode>("source");
-  const [snippets, setSnippets] = useState<Snippet[]>(() => listSnippets());
-  const [snippetName, setSnippetName] = useState<string | null>(null);
-  const [sidebarWidth, setSidebarWidth] = useState<number>(
-    () => readStoredWidth() ?? DEFAULT_SIDEBAR_WIDTH,
-  );
-  const rootRef = useRef<HTMLDivElement>(null);
-  // Latest media config, read by the (long-lived) paste handler without making
-  // it a dependency of the view-creation effect (which would rebuild the editor).
-  const mediaRef = useRef(media);
-  const mediaDirRef = useRef(mediaDir);
-  const collectionRef = useRef(collection);
-  mediaRef.current = media;
-  mediaDirRef.current = mediaDir;
-  collectionRef.current = collection;
-  // Mobile: which off-canvas sheet is open (desktop ignores this; FABs are
-  // hidden by CSS and the rail/sidebar are normal columns).
-  const [mobilePanel, setMobilePanel] = useState<"palette" | "sidebar" | null>(null);
-  // Responsive preview: canvas renders at the mode's device width, zoomed to
-  // fit the pane (see viewport.ts).
-  const [viewport, setViewport] = useState<ViewportMode>(
-    () => readStoredViewport() ?? DEFAULT_VIEWPORT,
-  );
-  const wrapRef = useRef<HTMLDivElement>(null);
-  const [paneWidth, setPaneWidth] = useState<number | null>(null);
 
+  const { view, state } = useEditorView({
+    mountRef,
+    schema,
+    registry,
+    components,
+    source,
+    contentClassName,
+    media,
+    mediaDir,
+    collection,
+    onDocChanged: () => {
+      setDirty(true);
+      setSaveStatus("idle");
+    },
+  });
+
+  // A fresh view is a clean document.
   useEffect(() => {
-    const wrap = wrapRef.current;
-    if (!wrap || typeof ResizeObserver === "undefined") return;
-    const observer = new ResizeObserver((entries) => {
-      const w = entries[0]?.contentRect.width;
-      if (w != null) setPaneWidth(w);
-    });
-    observer.observe(wrap);
-    return () => observer.disconnect();
-  }, []);
-
-  const selectViewport = useCallback((mode: ViewportMode) => {
-    setViewport(mode);
-    storeViewport(mode);
-  }, []);
-
-  useEffect(() => {
-    const mount = mountRef.current;
-    if (!mount) return;
-
-    const doc =
-      source != null
-        ? fromMdast(parseMDX(source), { schema, registry, source })
-        : undefined;
-
-    const initial = EditorState.create({
-      schema,
-      doc,
-      plugins: [
-        history(),
-        keymap({ "Mod-z": undo, "Mod-y": redo, "Shift-Mod-z": redo }),
-        // Mark shortcuts. `markCommands` existed since the command layer
-        // landed but was never wired to a keymap, so the editor shipped
-        // without Mod-B/Mod-I — the shortcuts every writer reaches for first.
-        keymap(markKeymap(schema)),
-        mdmxInputRules(schema),
-        keymap(baseKeymap),
-        dropCursor({ class: "mdmx-dropcursor", width: 2 }),
-        gapCursor(),
-        slashPlugin(),
-      ],
-    });
-
-    const editorView = new EditorView(mount, {
-      state: initial,
-      nodeViews: buildNodeViews(registry, components),
-      dispatchTransaction(tr) {
-        const next = editorView.state.apply(tr);
-        editorView.updateState(next);
-        setState(next);
-        if (tr.docChanged) {
-          setDirty(true);
-          setSaveStatus("idle");
-        }
-      },
-      handlePaste(view, event) {
-        const adapter = mediaRef.current;
-        const data = (event as ClipboardEvent).clipboardData;
-        if (!adapter || !data) return false;
-        const file = imageFromClipboard(data);
-        if (!file) return false;
-        // We own this paste: stop the browser from also inserting a data-URL.
-        event.preventDefault();
-        const collectionName = collectionRef.current?.name;
-        void (async () => {
-          try {
-            const upload = await pastedImageUpload(file, mediaDirRef.current, collectionName);
-            const item = await adapter.upload(upload);
-            insertImage(view, { src: item.url, alt: "" });
-            view.focus();
-          } catch (err) {
-            console.error("mdmx: pasted image upload failed", err);
-          }
-        })();
-        return true;
-      },
-      handleDrop(view, event, _slice, moved) {
-        if (moved) return false; // internal block move: let ProseMirror handle it
-        const name = (event as DragEvent).dataTransfer?.getData(MDMX_DRAG_MIME);
-        if (!name) return false;
-        const spec = registry.get(name);
-        const type = view.state.schema.nodes[componentNodeName(name)];
-        if (!spec || !type) return false;
-        const coords = view.posAtCoords({
-          left: (event as DragEvent).clientX,
-          top: (event as DragEvent).clientY,
-        });
-        if (!coords) return false;
-        const node = type.createAndFill({ props: initialProps(spec) });
-        if (!node) return false;
-        // Resolve the drop into the deepest valid container (e.g. inside a
-        // Column); reject it if the schema or `allowedParents` forbids it there.
-        const at = resolveComponentDrop(registry, view.state.schema, view.state.doc, coords.pos, name);
-        if (at == null) return false;
-        view.dispatch(view.state.tr.insert(at, node).scrollIntoView());
-        return true;
-      },
-    });
-
-    setView(editorView);
-    setState(editorView.state);
     setDirty(false);
     setSaveStatus("idle");
     setSaveError(null);
-    return () => {
-      editorView.destroy();
-      setView(null);
-      setState(null);
+  }, [view]);
+
+  // The callback awaiting a media pick; non-null ⇒ the library modal is open.
+  const [mediaPick, setMediaPick] = useState<((item: MediaItem) => void) | null>(null);
+  const [sidebarMode, setSidebarMode] = useState<SidebarMode>("source");
+  const [sidebarWidth, setSidebarWidth] = useState<number>(
+    () => readStoredWidth() ?? DEFAULT_SIDEBAR_WIDTH,
+  );
+  // Desktop: collapsible rail/sidebar (ADR-051). Mobile: which off-canvas
+  // sheet is open (desktop ignores this; FABs are hidden by CSS).
+  const [railCollapsed, toggleRail] = usePanelCollapsed("rail");
+  const [sidebarCollapsed, toggleSidebar] = usePanelCollapsed("sidebar");
+  const [mobilePanel, setMobilePanel] = useState<"palette" | "sidebar" | null>(null);
+
+  const { viewport, selectViewport, canvasStyle } = useViewport(wrapRef);
+  const snippets = useSnippets(view, state);
+
+  // The component being edited: selected, else the deepest around the caret
+  // (ADR-058). Drives the prop panel and the block-actions toolbar.
+  const context = useMemo(() => componentContext(state, registry), [state, registry]);
+  const [sourceReveal, setSourceReveal] = useState<{ pos: number } | null>(null);
+
+  // Anchor the block-actions toolbar to the contextual block's top-right
+  // corner, in the canvas wrap's (scrolled) coordinate space. Re-measured on
+  // every state change, scroll, and resize; hidden when the block has no DOM.
+  const [actionsStyle, setActionsStyle] = useState<CSSProperties | null>(null);
+  useLayoutEffect(() => {
+    const wrap = wrapRef.current;
+    if (!view || !context || !wrap) {
+      setActionsStyle(null);
+      return;
+    }
+    const measure = () => {
+      const dom = view.nodeDOM(context.target.pos) as HTMLElement | null;
+      if (!dom || typeof dom.getBoundingClientRect !== "function") {
+        setActionsStyle(null);
+        return;
+      }
+      const r = dom.getBoundingClientRect();
+      const w = wrap.getBoundingClientRect();
+      setActionsStyle({ top: r.top - w.top + wrap.scrollTop, right: w.right - r.right });
     };
-  }, [schema, registry, components, source]);
+    measure();
+    wrap.addEventListener("scroll", measure, { passive: true });
+    window.addEventListener("resize", measure);
+    return () => {
+      wrap.removeEventListener("scroll", measure);
+      window.removeEventListener("resize", measure);
+    };
+  }, [view, context, viewport, railCollapsed, sidebarCollapsed, sidebarWidth]);
+
+  const runOnTarget = useCallback(
+    (make: (pos: number) => (state: import("prosemirror-state").EditorState, dispatch?: (tr: import("prosemirror-state").Transaction) => void) => boolean) => {
+      if (!view || !context) return;
+      make(context.target.pos)(view.state, view.dispatch);
+      view.focus();
+    },
+    [view, context],
+  );
+
+  const editSource = useCallback(() => {
+    if (!context) return;
+    setSidebarMode("source");
+    if (sidebarCollapsed) toggleSidebar();
+    // A fresh object per request, so the same block can be revealed twice.
+    setSourceReveal({ pos: context.target.pos });
+  }, [context, sidebarCollapsed, toggleSidebar]);
+
+  const canMove = (dir: "up" | "down"): boolean => {
+    if (!view || !context) return false;
+    return moveBlockAt(context.target.pos, dir)(view.state);
+  };
 
   const handleSave = useCallback(async () => {
     if (!view || !onSave) return;
@@ -306,26 +216,29 @@ export function MDMXEditor({
 
   // Drag the sidebar's left edge: width = distance from the editor's right edge
   // to the cursor, clamped, persisted on release.
-  const startResize = useCallback((e: ReactMouseEvent) => {
-    e.preventDefault();
-    const root = rootRef.current;
-    if (!root) return;
-    let latest = sidebarWidth;
-    const onMove = (ev: MouseEvent) => {
-      const rect = root.getBoundingClientRect();
-      latest = clampSidebarWidth(rect.right - ev.clientX);
-      setSidebarWidth(latest);
-    };
-    const onUp = () => {
-      window.removeEventListener("mousemove", onMove);
-      window.removeEventListener("mouseup", onUp);
-      document.body.classList.remove("mdmx-resizing");
-      storeSidebarWidth(latest);
-    };
-    window.addEventListener("mousemove", onMove);
-    window.addEventListener("mouseup", onUp);
-    document.body.classList.add("mdmx-resizing");
-  }, [sidebarWidth]);
+  const startResize = useCallback(
+    (e: ReactMouseEvent) => {
+      e.preventDefault();
+      const root = rootRef.current;
+      if (!root) return;
+      let latest = sidebarWidth;
+      const onMove = (ev: MouseEvent) => {
+        const rect = root.getBoundingClientRect();
+        latest = clampSidebarWidth(rect.right - ev.clientX);
+        setSidebarWidth(latest);
+      };
+      const onUp = () => {
+        window.removeEventListener("mousemove", onMove);
+        window.removeEventListener("mouseup", onUp);
+        document.body.classList.remove("mdmx-resizing");
+        storeSidebarWidth(latest);
+      };
+      window.addEventListener("mousemove", onMove);
+      window.addEventListener("mouseup", onUp);
+      document.body.classList.add("mdmx-resizing");
+    },
+    [sidebarWidth],
+  );
 
   // Open the library, remembering who asked so its pick is routed back to them.
   const requestMedia = useCallback<RequestMedia>((onPick) => {
@@ -341,30 +254,6 @@ export function MDMXEditor({
     },
     [view],
   );
-
-  // Insert a saved snippet as an <Html> block carrying its HTML as `code`.
-  const insertSnippet = useCallback(
-    (snippet: Snippet) => {
-      if (!view) return;
-      const type = view.state.schema.nodes[componentNodeName("Html")];
-      const node = type?.createAndFill({ props: { code: snippet.html } });
-      if (!node) return;
-      view.dispatch(view.state.tr.replaceSelectionWith(node).scrollIntoView());
-      view.focus();
-    },
-    [view],
-  );
-
-  const htmlCode = selectedHtmlCode(state);
-  const commitSnippet = useCallback(() => {
-    if (snippetName == null) return;
-    const code = selectedHtmlCode(view?.state ?? null);
-    if (code != null) {
-      saveSnippet(snippetName, code);
-      setSnippets(listSnippets());
-    }
-    setSnippetName(null);
-  }, [snippetName, view]);
 
   // Clicking the canvas padding below (or above) the content lands on the mount
   // element itself, never on the ProseMirror editable child, so ProseMirror's
@@ -402,211 +291,120 @@ export function MDMXEditor({
     [view],
   );
 
-  // The viewport switch lives in the toolbar, so it always renders now.
-  const zoom = canvasZoom(viewport, paneWidth ?? VIEWPORT_WIDTHS[viewport]);
-
-  const viewportIcons: Record<ViewportMode, ReactNode> = {
-    mobile: <SmartphoneIcon size={14} />,
-    tablet: <TabletIcon size={14} />,
-    desktop: <MonitorIcon size={14} />,
-  };
+  const rootClass =
+    "mdmx-editor" +
+    (railCollapsed ? " is-rail-collapsed" : "") +
+    (sidebarCollapsed ? " is-sidebar-collapsed" : "") +
+    (mobilePanel === "palette" ? " is-palette-open" : "") +
+    (mobilePanel === "sidebar" ? " is-sidebar-open" : "");
 
   return (
     <MediaPickerContext.Provider value={media ? requestMedia : null}>
-    <div
-      className={
-        "mdmx-editor" +
-        (mobilePanel === "palette" ? " is-palette-open" : "") +
-        (mobilePanel === "sidebar" ? " is-sidebar-open" : "")
-      }
-      ref={rootRef}
-      style={{ ["--mdmx-sidebar-width"]: `${sidebarWidth}px` } as CSSProperties}
-    >
-      <Rail
-        registry={registry}
-        schema={schema}
-        view={view}
-        onAfterInsert={() => setMobilePanel(null)}
-        snippets={snippets}
-        onInsertSnippet={insertSnippet}
-      />
-      <div className="mdmx-canvas-wrap" ref={wrapRef}>
-        {
-          <div className="mdmx-toolbar">
-            {backHref ? (
-              <a className="mdmx-toolbar-back" href={backHref}>
-                ← {backLabel}
-              </a>
-            ) : null}
-            <span className="mdmx-toolbar-title">{docTitle ?? "Untitled"}</span>
-            <div
-              className="mdmx-viewport-switch"
-              role="group"
-              aria-label="Preview viewport"
-            >
-              {VIEWPORT_MODES.map((mode) => (
-                <button
-                  key={mode}
-                  type="button"
-                  className="mdmx-viewport-btn"
-                  title={`${mode.charAt(0).toUpperCase()}${mode.slice(1)} preview (${VIEWPORT_WIDTHS[mode]}px)`}
-                  aria-label={`${mode} preview`}
-                  aria-pressed={viewport === mode}
-                  onClick={() => selectViewport(mode)}
-                >
-                  {viewportIcons[mode]}
-                </button>
-              ))}
-            </div>
-            {media ? (
-              <button
-                type="button"
-                className="mdmx-toolbar-image"
-                onClick={() => requestMedia(insertPickedImage)}
-                disabled={!view}
-              >
-                Insert image
-              </button>
-            ) : null}
-            {htmlCode != null ? (
-              snippetName == null ? (
-                <button
-                  type="button"
-                  className="mdmx-toolbar-snippet"
-                  onClick={() => setSnippetName("")}
-                >
-                  Save as snippet
-                </button>
-              ) : (
-                <span className="mdmx-snippet-save">
-                  <input
-                    className="mdmx-snippet-input"
-                    type="text"
-                    autoFocus
-                    placeholder="Snippet name"
-                    aria-label="Snippet name"
-                    value={snippetName}
-                    onChange={(e) => setSnippetName(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter") commitSnippet();
-                      if (e.key === "Escape") setSnippetName(null);
-                    }}
-                  />
-                  <button
-                    type="button"
-                    className="mdmx-snippet-confirm"
-                    onClick={commitSnippet}
-                    disabled={snippetName.trim() === ""}
-                  >
-                    Save
-                  </button>
-                </span>
-              )
-            ) : null}
-            {onSave ? (
-              <>
-                <span className="mdmx-toolbar-status" data-status={saveStatus}>
-                  {saveStatus === "saving"
-                    ? "Saving…"
-                    : saveStatus === "saved" && !dirty
-                      ? "Saved"
-                      : saveStatus === "error"
-                        ? (saveError ?? "Save failed")
-                        : dirty
-                          ? "Unsaved changes"
-                          : ""}
-                </span>
-                <button
-                  type="button"
-                  className="mdmx-toolbar-save"
-                  onClick={handleSave}
-                  disabled={saveStatus === "saving" || (!dirty && saveStatus !== "error")}
-                >
-                  Save
-                </button>
-              </>
-            ) : null}
-          </div>
-        }
-        <div
-          className="mdmx-canvas"
-          ref={mountRef}
-          onMouseDown={handleCanvasPointerDown}
-          data-viewport={viewport}
-          style={
-            {
-              ["--mdmx-canvas-w"]: `${VIEWPORT_WIDTHS[viewport]}px`,
-              ["--mdmx-canvas-zoom"]: zoom,
-            } as CSSProperties
-          }
+      <div
+        className={rootClass}
+        ref={rootRef}
+        style={{ ["--mdmx-sidebar-width"]: `${sidebarWidth}px` } as CSSProperties}
+      >
+        <Rail
+          registry={registry}
+          schema={schema}
+          view={view}
+          onAfterInsert={() => setMobilePanel(null)}
+          snippets={snippets.snippets}
+          onInsertSnippet={snippets.insertSnippet}
         />
-        {view && state ? <SlashMenu view={view} state={state} registry={registry} schema={schema} /> : null}
-        {media && mediaPick ? (
-          <MediaLibrary
-            media={media}
-            mediaDir={mediaDir}
-            onPick={(item) => {
-              mediaPick(item);
-              setMediaPick(null);
+        <div className="mdmx-canvas-wrap" ref={wrapRef}>
+          <EditorToolbar
+            backHref={backHref}
+            backLabel={backLabel}
+            docTitle={docTitle}
+            viewport={viewport}
+            onViewportChange={selectViewport}
+            railCollapsed={railCollapsed}
+            sidebarCollapsed={sidebarCollapsed}
+            onToggleRail={toggleRail}
+            onToggleSidebar={toggleSidebar}
+            onInsertImage={media ? () => requestMedia(insertPickedImage) : undefined}
+            insertImageDisabled={!view}
+            snippet={{
+              canSave: snippets.canSave,
+              name: snippets.snippetName,
+              onStart: () => snippets.setSnippetName(""),
+              onNameChange: snippets.setSnippetName,
+              onCommit: snippets.commitSnippet,
+              onCancel: () => snippets.setSnippetName(null),
             }}
-            onClose={() => setMediaPick(null)}
+            save={
+              onSave
+                ? { status: saveStatus, dirty, error: saveError, onSave: handleSave }
+                : undefined
+            }
           />
-        ) : null}
-      </div>
-      <EditorSidebar
-        mode={sidebarMode}
-        onModeChange={setSidebarMode}
-        view={view}
-        state={state}
-        registry={registry}
-        collection={collection}
-        componentSelected={isComponentSelected(state, registry)}
-        onResizeStart={startResize}
-      />
-
-      {/* Mobile-only floating controls (hidden on desktop via CSS). */}
-      <div className="mdmx-mobile-fabs mdmx-fabs-left">
-        <button
-          type="button"
-          className="mdmx-fab"
-          aria-label="Open components"
-          onClick={() => setMobilePanel((p) => (p === "palette" ? null : "palette"))}
-        >
-          <LayersIcon size={20} />
-        </button>
-      </div>
-      <div className="mdmx-mobile-fabs mdmx-fabs-right">
-        <button
-          type="button"
-          className="mdmx-fab"
-          aria-label="Open source"
-          onClick={() => {
+          <div
+            className="mdmx-canvas"
+            ref={mountRef}
+            onMouseDown={handleCanvasPointerDown}
+            data-viewport={viewport}
+            style={canvasStyle}
+          />
+          {view && state ? (
+            <SlashMenu view={view} state={state} registry={registry} schema={schema} />
+          ) : null}
+          {view && context && actionsStyle ? (
+            <BlockActions
+              name={context.target.spec.name}
+              style={actionsStyle}
+              canMoveUp={canMove("up")}
+              canMoveDown={canMove("down")}
+              onMoveUp={() => runOnTarget((pos) => moveBlockAt(pos, "up"))}
+              onMoveDown={() => runOnTarget((pos) => moveBlockAt(pos, "down"))}
+              onDuplicate={() => runOnTarget(duplicateBlockAt)}
+              onDelete={() => runOnTarget(deleteBlockAt)}
+              onEditSource={editSource}
+            />
+          ) : null}
+          {media && mediaPick ? (
+            <MediaLibrary
+              media={media}
+              mediaDir={mediaDir}
+              onPick={(item) => {
+                mediaPick(item);
+                setMediaPick(null);
+              }}
+              onClose={() => setMediaPick(null)}
+            />
+          ) : null}
+        </div>
+        <EditorSidebar
+          mode={sidebarMode}
+          onModeChange={setSidebarMode}
+          view={view}
+          state={state}
+          registry={registry}
+          collection={collection}
+          context={context}
+          sourceReveal={sourceReveal}
+          onResizeStart={startResize}
+        />
+        <MobileFabs
+          onOpenPalette={() => setMobilePanel((p) => (p === "palette" ? null : "palette"))}
+          onOpenSource={() => {
             setSidebarMode("source");
             setMobilePanel("sidebar");
           }}
-        >
-          <CodeIcon size={20} />
-        </button>
-        <button
-          type="button"
-          className="mdmx-fab"
-          aria-label="Open properties"
-          onClick={() => {
+          onOpenProperties={() => {
             setSidebarMode("properties");
             setMobilePanel("sidebar");
           }}
-        >
-          <SlidersIcon size={20} />
-        </button>
-      </div>
-      {mobilePanel ? (
-        <div
-          className="mdmx-mobile-backdrop"
-          aria-hidden="true"
-          onClick={() => setMobilePanel(null)}
         />
-      ) : null}
-    </div>
+        {mobilePanel ? (
+          <div
+            className="mdmx-mobile-backdrop"
+            aria-hidden="true"
+            onClick={() => setMobilePanel(null)}
+          />
+        ) : null}
+      </div>
     </MediaPickerContext.Provider>
   );
 }

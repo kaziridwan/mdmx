@@ -69,6 +69,7 @@ async function main(): Promise<number> {
     if (output) console.log(output);
     if (result.staleRegistry) console.error(`mdmx: ${result.staleRegistry}`);
     if (result.setupWarning) console.error(`mdmx: warning — ${result.setupWarning}`);
+    if (result.studioWarning) console.error(`mdmx: warning — ${result.studioWarning}`);
     console.log(
       `mdmx: ${result.errorCount} error(s), ${result.warningCount} warning(s)`,
     );

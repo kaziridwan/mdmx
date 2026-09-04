@@ -1,5 +1,6 @@
 node_modules/
 dist/
+tarballs/
 *.tsbuildinfo
 .DS_Store
 .claude/

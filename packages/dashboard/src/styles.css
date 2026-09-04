@@ -110,6 +110,82 @@
   --mdmx-shadow: 0 1px 2px rgba(0, 0, 0, 0.4), 0 6px 20px rgba(0, 0, 0, 0.35);
 }
 
+/* -- host independence ------------------------------------------------------
+   The dashboard mounts inside the host app and inherits whatever global
+   stylesheet that app ships: Tailwind's preflight (a shadcn app), another
+   reset, or nothing at all. Everything the chrome used to take from UA
+   defaults is pinned here so it renders the same in every host.
+
+   Why `@layer base`: Tailwind puts preflight in `base`, so these rules beat
+   it (same layer, higher specificity) while still losing to utilities (a
+   later layer — a studio template's `font-semibold` must win) and to every
+   unlayered rule in this file. In a host without layers they simply beat
+   the UA stylesheet. Verified by a computed-style diff of every dashboard
+   screen before/after preflight. */
+@layer base {
+  .mdmx-dash,
+  .mdmx-dash-gate {
+    line-height: normal;
+  }
+  .mdmx-dash h1:not(.mdmx-canvas *), .mdmx-dash-gate h1:not(.mdmx-canvas *) { font-size: 2em; font-weight: 700; margin: 0.67em 0; }
+  .mdmx-dash h2:not(.mdmx-canvas *), .mdmx-dash-gate h2:not(.mdmx-canvas *) { font-size: 1.5em; font-weight: 700; margin: 0.83em 0; }
+  .mdmx-dash h3:not(.mdmx-canvas *), .mdmx-dash-gate h3:not(.mdmx-canvas *) { font-size: 1.17em; font-weight: 700; margin: 1em 0; }
+  .mdmx-dash h4:not(.mdmx-canvas *), .mdmx-dash-gate h4:not(.mdmx-canvas *),
+  .mdmx-dash h5:not(.mdmx-canvas *), .mdmx-dash-gate h5:not(.mdmx-canvas *),
+  .mdmx-dash h6:not(.mdmx-canvas *), .mdmx-dash-gate h6:not(.mdmx-canvas *) { font-weight: 700; margin: 1.33em 0; }
+  .mdmx-dash p:not(.mdmx-canvas *), .mdmx-dash-gate p:not(.mdmx-canvas *),
+  .mdmx-dash pre:not(.mdmx-canvas *), .mdmx-dash-gate pre:not(.mdmx-canvas *),
+  .mdmx-dash blockquote:not(.mdmx-canvas *), .mdmx-dash-gate blockquote:not(.mdmx-canvas *),
+  .mdmx-dash ul:not(.mdmx-canvas *), .mdmx-dash-gate ul:not(.mdmx-canvas *),
+  .mdmx-dash ol:not(.mdmx-canvas *), .mdmx-dash-gate ol:not(.mdmx-canvas *) {
+    margin: 1em 0;
+  }
+  .mdmx-dash ul:not(.mdmx-canvas *), .mdmx-dash-gate ul:not(.mdmx-canvas *),
+  .mdmx-dash ol:not(.mdmx-canvas *), .mdmx-dash-gate ol:not(.mdmx-canvas *) {
+    padding-left: 40px;
+  }
+  .mdmx-dash ul:not(.mdmx-canvas *), .mdmx-dash-gate ul:not(.mdmx-canvas *) { list-style: disc; }
+  .mdmx-dash ol:not(.mdmx-canvas *), .mdmx-dash-gate ol:not(.mdmx-canvas *) { list-style: decimal; }
+  .mdmx-dash code:not(.mdmx-canvas *), .mdmx-dash-gate code:not(.mdmx-canvas *),
+  .mdmx-dash kbd:not(.mdmx-canvas *), .mdmx-dash-gate kbd:not(.mdmx-canvas *),
+  .mdmx-dash samp:not(.mdmx-canvas *), .mdmx-dash-gate samp:not(.mdmx-canvas *),
+  .mdmx-dash pre:not(.mdmx-canvas *), .mdmx-dash-gate pre:not(.mdmx-canvas *) {
+    font-family: var(--mdmx-mono);
+  }
+  .mdmx-dash button:not(.mdmx-canvas *), .mdmx-dash-gate button:not(.mdmx-canvas *),
+  .mdmx-dash input:not(.mdmx-canvas *), .mdmx-dash-gate input:not(.mdmx-canvas *),
+  .mdmx-dash select:not(.mdmx-canvas *), .mdmx-dash-gate select:not(.mdmx-canvas *),
+  .mdmx-dash textarea:not(.mdmx-canvas *), .mdmx-dash-gate textarea:not(.mdmx-canvas *) {
+    font: inherit;
+    /* A control inside a bold label must not inherit the label's weight. */
+    font-weight: 400;
+    color: inherit;
+    margin: 0;
+  }
+  .mdmx-dash button:not(.mdmx-canvas *), .mdmx-dash-gate button:not(.mdmx-canvas *) {
+    padding: 0;
+    border: 0;
+    background: transparent;
+  }
+  .mdmx-dash fieldset:not(.mdmx-canvas *), .mdmx-dash-gate fieldset:not(.mdmx-canvas *) {
+    margin: 0;
+    padding: 0;
+    border: 0;
+    min-inline-size: 0;
+  }
+  .mdmx-dash a:not(.mdmx-canvas *), .mdmx-dash-gate a:not(.mdmx-canvas *) {
+    color: inherit;
+    text-decoration: none;
+  }
+  .mdmx-dash img:not(.mdmx-canvas *), .mdmx-dash-gate img:not(.mdmx-canvas *),
+  .mdmx-dash svg:not(.mdmx-canvas *), .mdmx-dash-gate svg:not(.mdmx-canvas *),
+  .mdmx-dash video:not(.mdmx-canvas *), .mdmx-dash-gate video:not(.mdmx-canvas *) {
+    display: block;
+    vertical-align: middle;
+    max-width: 100%;
+  }
+}
+
 /* -- auth gate / login ---------------------------------------------------- */
 
 .mdmx-dash-gate {
@@ -187,6 +263,32 @@
 
 .mdmx-dash-nav-spacer {
   flex: 1;
+}
+
+/* Left-nav toggle (ADR-056): collapses the sidebar; state persisted per browser. */
+.mdmx-dash-nav-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: var(--mdmx-radius-sm);
+  color: var(--mdmx-fg-muted);
+  cursor: pointer;
+}
+
+.mdmx-dash-nav-toggle:hover {
+  background: var(--mdmx-surface-2);
+  color: var(--mdmx-fg);
+}
+
+.mdmx-dash-nav-toggle:focus-visible {
+  outline: 2px solid var(--mdmx-accent);
+  outline-offset: 1px;
+}
+
+.mdmx-dash.is-nav-collapsed .mdmx-dash-side {
+  display: none;
 }
 
 .mdmx-dash-repo {
@@ -581,6 +683,7 @@
 
 .mdmx-dash-view-sub a {
   color: var(--mdmx-accent);
+  text-decoration: underline;
 }
 
 /* -- entry table ---------------------------------------------------------------- */
@@ -667,6 +770,10 @@
 }
 
 /* -- embedded editor -------------------------------------------------------------- */
+/* The editor's chrome is `@mdmx/editor/styles.css` (imported alongside this
+   file by `next/index.ts`); it reads the same --mdmx-* tokens, so the
+   dashboard's theme — including the data-mdmx-theme pin — applies to it by
+   inheritance. Only the mount wrapper lives here. */
 
 .mdmx-dash-editor {
   height: 100%;
@@ -904,840 +1011,10 @@
   font-size: 13.5px;
 }
 
-/* ==========================================================================
-   Embedded editor chrome (@mdmx/editor/react inside the dashboard).
-   Scoped under .mdmx-dash-editor so a standalone editor mount elsewhere in
-   the consumer's app stays headless. Ported from the demo's reference
-   stylesheet onto the --mdmx-* tokens.
-   ========================================================================== */
-
-.mdmx-dash-editor .mdmx-editor {
-  display: grid;
-  grid-template-columns: 220px minmax(0, 1fr) var(--mdmx-sidebar-width, 380px);
-  height: 100%;
-  background: var(--mdmx-bg);
-  color: var(--mdmx-fg);
-}
-
-/* -- unified right sidebar (Source ⇄ Properties) -- */
-.mdmx-dash-editor .mdmx-sidebar {
-  grid-column: 3;
-  position: relative;
-  border-left: 1px solid var(--mdmx-border);
-  display: flex;
-  flex-direction: column;
-  min-height: 0;
-  overflow: hidden;
-}
-.mdmx-dash-editor .mdmx-sidebar-resize {
-  position: absolute;
-  left: -3px;
-  top: 0;
-  bottom: 0;
-  width: 7px;
-  cursor: col-resize;
-  z-index: 5;
-}
-.mdmx-dash-editor .mdmx-sidebar-resize:hover,
-body.mdmx-resizing .mdmx-dash-editor .mdmx-sidebar-resize {
-  background: linear-gradient(
-    to right,
-    transparent 2px,
-    var(--mdmx-accent) 2px,
-    var(--mdmx-accent) 5px,
-    transparent 5px
-  );
-}
-body.mdmx-resizing {
-  cursor: col-resize;
-  user-select: none;
-}
-.mdmx-dash-editor .mdmx-sidebar-tabs {
-  display: flex;
-  border-bottom: 1px solid var(--mdmx-border);
-  background: var(--mdmx-surface);
-}
-.mdmx-dash-editor .mdmx-sidebar-tab {
-  flex: 1;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  font: inherit;
-  font-size: 13px;
-  padding: 10px 8px;
-  border: 0;
-  border-bottom: 2px solid transparent;
-  background: transparent;
-  color: var(--mdmx-fg-muted);
-  cursor: pointer;
-}
-.mdmx-dash-editor .mdmx-sidebar-tab[aria-selected="true"] {
-  color: var(--mdmx-fg);
-  border-bottom-color: var(--mdmx-accent);
-}
-.mdmx-dash-editor .mdmx-sidebar-body {
-  flex: 1;
-  min-height: 0;
-  overflow: auto;
-  display: flex;
-  flex-direction: column;
-}
-.mdmx-dash-editor .mdmx-sidebar-body > .mdmx-source,
-.mdmx-dash-editor .mdmx-sidebar-body > .mdmx-props {
-  flex: 1;
-  min-height: 100%;
-}
-
-/* -- mobile: floating controls + off-canvas sheets -- */
-.mdmx-dash-editor .mdmx-mobile-fabs {
-  display: none;
-}
-.mdmx-dash-editor .mdmx-mobile-backdrop {
-  display: none;
-}
-@media (max-width: 860px) {
-  .mdmx-dash-editor .mdmx-editor {
-    grid-template-columns: 1fr;
-  }
-  .mdmx-dash-editor .mdmx-canvas-wrap {
-    grid-column: 1;
-  }
-  .mdmx-dash-editor .mdmx-rail {
-    position: fixed;
-    top: 0;
-    bottom: 0;
-    left: 0;
-    width: min(360px, 86vw);
-    transform: translateX(-100%);
-    transition: transform 0.22s ease;
-    z-index: 40;
-    background: var(--mdmx-bg);
-    overflow-y: auto;
-    box-shadow: 0 0 40px rgba(0, 0, 0, 0.18);
-  }
-  .mdmx-dash-editor .mdmx-editor.is-palette-open .mdmx-rail {
-    transform: none;
-  }
-  .mdmx-dash-editor .mdmx-sidebar {
-    position: fixed;
-    top: 0;
-    bottom: 0;
-    right: 0;
-    left: auto;
-    width: min(440px, 92vw);
-    transform: translateX(100%);
-    transition: transform 0.22s ease;
-    z-index: 40;
-    background: var(--mdmx-bg);
-    box-shadow: 0 0 40px rgba(0, 0, 0, 0.18);
-  }
-  .mdmx-dash-editor .mdmx-editor.is-sidebar-open .mdmx-sidebar {
-    transform: none;
-  }
-  .mdmx-dash-editor .mdmx-sidebar-resize {
-    display: none;
-  }
-  .mdmx-dash-editor .mdmx-mobile-backdrop {
-    display: block;
-    position: fixed;
-    inset: 0;
-    background: rgba(0, 0, 0, 0.32);
-    z-index: 35;
-  }
-  .mdmx-dash-editor .mdmx-mobile-fabs {
-    display: flex;
-    position: fixed;
-    bottom: 16px;
-    z-index: 45;
-    gap: 10px;
-  }
-  .mdmx-dash-editor .mdmx-fabs-left {
-    left: 16px;
-  }
-  .mdmx-dash-editor .mdmx-fabs-right {
-    right: 16px;
-    flex-direction: column;
-  }
-  .mdmx-dash-editor .mdmx-editor.is-palette-open .mdmx-mobile-fabs,
-  .mdmx-dash-editor .mdmx-editor.is-sidebar-open .mdmx-mobile-fabs {
-    display: none;
-  }
-  .mdmx-dash-editor .mdmx-fab {
-    width: 48px;
-    height: 48px;
-    border-radius: 999px;
-    border: 1px solid var(--mdmx-border);
-    background: var(--mdmx-surface);
-    color: var(--mdmx-fg);
-    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.16);
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-  }
-}
-
-/* -- rail -- */
-.mdmx-dash-editor .mdmx-rail {
-  border-right: 1px solid var(--mdmx-border);
-  padding: 18px 14px;
-  overflow-y: auto;
-  grid-column: 1;
-}
-.mdmx-dash-editor .mdmx-rail-title {
-  font-size: 12px;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--mdmx-fg-muted);
-  margin-bottom: 14px;
-}
-.mdmx-dash-editor .mdmx-rail-filter {
-  width: 100%;
-  font: inherit;
-  font-size: 13px;
-  padding: 7px 10px;
-  margin-bottom: 8px;
-  border: 1px solid var(--mdmx-border);
-  border-radius: var(--mdmx-radius);
-  background: var(--mdmx-surface);
-  color: var(--mdmx-fg);
-}
-.mdmx-dash-editor .mdmx-rail-empty {
-  color: var(--mdmx-fg-muted);
-  font-size: 13px;
-  padding: 8px 4px;
-}
-.mdmx-dash-editor .mdmx-rail-group-label {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  width: 100%;
-  font: inherit;
-  font-size: 11px;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  color: var(--mdmx-fg-muted);
-  background: transparent;
-  border: 0;
-  cursor: pointer;
-  margin: 14px 0 6px;
-  padding: 0 4px;
-}
-.mdmx-dash-editor .mdmx-rail-group-static {
-  cursor: default;
-}
-.mdmx-dash-editor .mdmx-rail-group-chevron {
-  font-size: 9px;
-  width: 10px;
-}
-.mdmx-dash-editor .mdmx-rail-item {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  width: 100%;
-  padding: 8px 10px;
-  border: 1px solid var(--mdmx-border);
-  border-radius: var(--mdmx-radius);
-  background: var(--mdmx-surface);
-  color: var(--mdmx-fg);
-  font: inherit;
-  font-size: 14px;
-  text-align: left;
-  cursor: grab;
-  margin-bottom: 6px;
-}
-.mdmx-dash-editor .mdmx-rail-item:hover {
-  border-color: var(--mdmx-accent);
-  background: var(--mdmx-accent-wash);
-}
-.mdmx-dash-editor .mdmx-rail-icon {
-  width: 16px;
-  height: 16px;
-  border-radius: 4px;
-  background: var(--mdmx-accent);
-  opacity: 0.5;
-  flex: none;
-}
-
-/* -- canvas -- */
-.mdmx-dash-editor .mdmx-canvas-wrap {
-  grid-column: 2;
-  position: relative;
-  overflow-y: auto;
-}
-/* Responsive preview: the editor sets --mdmx-canvas-w to the device width of
-   the selected viewport mode and --mdmx-canvas-zoom to fit it into the pane.
-   `zoom` (not transform) so layout height tracks visual height. The canvas is
-   a named inline-size container: author components respond to it with
-   container queries (window media queries can't see the canvas width). */
-.mdmx-dash-editor .mdmx-canvas {
-  box-sizing: border-box;
-  width: var(--mdmx-canvas-w, 720px);
-  max-width: none;
-  margin: 0 auto;
-  padding: 48px 40px 240px;
-  zoom: var(--mdmx-canvas-zoom, 1);
-  container: mdmx-canvas / inline-size;
-}
-.mdmx-dash-editor .mdmx-canvas[data-viewport="mobile"],
-.mdmx-dash-editor .mdmx-canvas[data-viewport="tablet"] {
-  border-left: 1px dashed var(--mdmx-border);
-  border-right: 1px dashed var(--mdmx-border);
-}
-.mdmx-dash-editor .mdmx-canvas .ProseMirror {
-  outline: none;
-  font-family: var(--mdmx-content-font);
-  font-size: 18px;
-  line-height: 1.7;
-  color: var(--mdmx-fg);
-}
-.mdmx-dash-editor .mdmx-canvas .ProseMirror > * + * {
-  margin-top: 0.85em;
-}
-.mdmx-dash-editor .mdmx-canvas h1,
-.mdmx-dash-editor .mdmx-canvas h2,
-.mdmx-dash-editor .mdmx-canvas h3 {
-  font-family: var(--mdmx-font);
-  font-weight: 600;
-}
-.mdmx-dash-editor .mdmx-canvas h1 {
-  font-size: 2em;
-}
-.mdmx-dash-editor .mdmx-canvas h2 {
-  font-size: 1.5em;
-}
-.mdmx-dash-editor .mdmx-canvas h3 {
-  font-size: 1.2em;
-}
-.mdmx-dash-editor .mdmx-canvas blockquote {
-  border-left: 3px solid var(--mdmx-accent);
-  margin: 0;
-  padding-left: 16px;
-  color: var(--mdmx-fg-muted);
-}
-.mdmx-dash-editor .mdmx-canvas code {
-  font-family: var(--mdmx-mono);
-  font-size: 0.86em;
-  background: var(--mdmx-accent-wash);
-  padding: 1px 5px;
-  border-radius: 4px;
-}
-.mdmx-dash-editor .mdmx-canvas a {
-  color: var(--mdmx-accent);
-}
-
-/* -- component NodeViews -- */
-.mdmx-dash-editor .mdmx-nodeview {
-  margin: 0.85em 0;
-}
-.mdmx-dash-editor .mdmx-component {
-  border: 1px solid var(--mdmx-border);
-  border-radius: 10px;
-  padding: 4px;
-  transition: border-color 0.12s;
-}
-.mdmx-dash-editor .mdmx-component.is-selected,
-.mdmx-dash-editor .mdmx-nodeview.mdmx-selected .mdmx-component {
-  border-color: var(--mdmx-accent);
-  box-shadow: 0 0 0 3px var(--mdmx-accent-wash);
-}
-.mdmx-dash-editor .mdmx-content {
-  font-family: var(--mdmx-content-font);
-  /* Layout-transparent editable hole: a container component's flex/grid must
-     see the child blocks as direct items (FeatureGrid, PricingTable, …), not
-     one wrapper that swallows the whole layout into a single cell. Both the
-     React hole and the PM-managed contentDOM inside it must be transparent. */
-  display: contents;
-}
-.mdmx-dash-editor .mdmx-contentdom {
-  display: contents;
-}
-.mdmx-dash-editor .mdmx-placeholder {
-  border: 1px dashed var(--mdmx-border);
-  border-radius: var(--mdmx-radius);
-  padding: 12px 16px;
-  background: var(--mdmx-bg);
-}
-.mdmx-dash-editor .mdmx-placeholder-head {
-  display: flex;
-  gap: 10px;
-  align-items: baseline;
-  font-family: var(--mdmx-font);
-}
-.mdmx-dash-editor .mdmx-placeholder-name {
-  font-weight: 600;
-  color: var(--mdmx-accent);
-}
-.mdmx-dash-editor .mdmx-placeholder-props {
-  font-family: var(--mdmx-mono);
-  font-size: 12px;
-  color: var(--mdmx-fg-muted);
-}
-.mdmx-dash-editor .mdmx-component .twocol {
-  display: flex;
-  gap: 16px;
-}
-/* Both content wrappers are display:contents, so the real flex items are the
-   child NodeView roots two levels down. */
-.mdmx-dash-editor .mdmx-component .twocol > .mdmx-content > .mdmx-contentdom > * {
-  flex: 1;
-  min-width: 0;
-}
-.mdmx-dash-editor .mdmx-component .col {
-  border: 1px dashed var(--mdmx-border);
-  border-radius: var(--mdmx-radius);
-  padding: 8px 12px;
-}
-/* Stack columns in the mobile preview (canvas is the container). */
-@container mdmx-canvas (max-width: 640px) {
-  .mdmx-dash-editor .mdmx-component .twocol {
-    flex-direction: column;
-  }
-}
-
-/* -- slash menu -- */
-.mdmx-dash-editor .mdmx-slash {
-  position: absolute;
-  z-index: 20;
-  min-width: 240px;
-  max-height: 320px;
-  overflow-y: auto;
-  background: var(--mdmx-surface);
-  border: 1px solid var(--mdmx-border);
-  border-radius: 10px;
-  box-shadow: var(--mdmx-shadow);
-  padding: 6px;
-}
-.mdmx-dash-editor .mdmx-slash-group-label {
-  font-size: 10px;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  color: var(--mdmx-fg-muted);
-  padding: 8px 12px 2px;
-}
-.mdmx-dash-editor .mdmx-slash-item {
-  display: flex;
-  flex-direction: column;
-  width: 100%;
-  border: 0;
-  background: none;
-  text-align: left;
-  font: inherit;
-  padding: 7px 10px;
-  border-radius: 7px;
-  cursor: pointer;
-  color: var(--mdmx-fg);
-}
-.mdmx-dash-editor .mdmx-slash-item.is-active {
-  background: var(--mdmx-accent-wash);
-}
-.mdmx-dash-editor .mdmx-slash-item-label {
-  font-size: 14px;
-}
-.mdmx-dash-editor .mdmx-slash-item-desc {
-  font-size: 12px;
-  color: var(--mdmx-fg-muted);
-}
-
-/* -- prop panel -- */
-.mdmx-dash-editor .mdmx-props {
-  padding: 18px 16px;
-}
-.mdmx-dash-editor .mdmx-props-label {
-  font-size: 12px;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--mdmx-fg-muted);
-  margin-bottom: 14px;
-}
-.mdmx-dash-editor .mdmx-props-empty {
-  color: var(--mdmx-fg-muted);
-  font-size: 14px;
-}
-.mdmx-dash-editor .mdmx-prop-field {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  margin-bottom: 14px;
-}
-.mdmx-dash-editor .mdmx-prop-name {
-  font-size: 13px;
-  font-weight: 500;
-}
-.mdmx-dash-editor .mdmx-prop-req {
-  color: var(--mdmx-accent);
-}
-.mdmx-dash-editor .mdmx-prop-desc {
-  font-size: 12px;
-  color: var(--mdmx-fg-muted);
-}
-.mdmx-dash-editor .mdmx-control {
-  font-family: var(--mdmx-mono);
-  font-size: 13px;
-  padding: 6px 8px;
-  border: 1px solid var(--mdmx-border);
-  border-radius: 6px;
-  background: var(--mdmx-surface);
-  color: var(--mdmx-fg);
-}
-.mdmx-dash-editor .mdmx-control:focus {
-  outline: none;
-  border-color: var(--mdmx-accent);
-}
-.mdmx-dash-editor .mdmx-control-checkbox {
-  width: 16px;
-  height: 16px;
-}
-.mdmx-dash-editor .mdmx-control-textarea {
-  resize: vertical;
-}
-.mdmx-dash-editor .mdmx-control-image {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 8px;
-}
-.mdmx-dash-editor .mdmx-control-image .mdmx-control {
-  flex: 1;
-  min-width: 120px;
-}
-.mdmx-dash-editor .mdmx-control-browse {
-  font: inherit;
-  font-size: 13px;
-  padding: 6px 12px;
-  border: 1px solid var(--mdmx-border);
-  border-radius: var(--mdmx-radius);
-  background: var(--mdmx-surface);
-  color: var(--mdmx-fg);
-  cursor: pointer;
-}
-.mdmx-dash-editor .mdmx-control-preview {
-  width: 100%;
-  max-height: 120px;
-  object-fit: contain;
-  background: var(--mdmx-surface-2);
-  border-radius: var(--mdmx-radius);
-}
-
-/* -- source pane -- */
-.mdmx-dash-editor .mdmx-source {
-  background: var(--mdmx-code-bg);
-  color: var(--mdmx-code-fg);
-}
-.mdmx-dash-editor .mdmx-source-label {
-  position: sticky;
-  top: 0;
-  background: var(--mdmx-code-bg);
-  font-size: 11px;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--mdmx-code-muted);
-  padding: 14px 18px 8px;
-}
-.mdmx-dash-editor .mdmx-source-pre {
-  margin: 0;
-  padding: 0 0 200px;
-}
-.mdmx-dash-editor .mdmx-source-pre code {
-  font-family: var(--mdmx-mono);
-  font-size: 13px;
-  line-height: 1.6;
-}
-.mdmx-dash-editor .mdmx-source-line {
-  padding: 0 18px;
-  white-space: pre-wrap;
-  word-break: break-word;
-}
-.mdmx-dash-editor .mdmx-source-line.is-active {
-  background: var(--mdmx-code-active);
-  box-shadow: inset 2px 0 0 var(--mdmx-warn);
-}
-
-/* -- ProseMirror cursors -- */
-.mdmx-dash-editor .mdmx-dropcursor {
-  background: var(--mdmx-accent);
-}
-.mdmx-dash-editor .ProseMirror-gapcursor {
-  display: none;
-  pointer-events: none;
-  position: absolute;
-}
-.mdmx-dash-editor .ProseMirror-gapcursor::after {
-  content: "";
-  display: block;
-  position: absolute;
-  top: -2px;
-  width: 20px;
-  border-top: 1px solid var(--mdmx-fg);
-  animation: mdmx-dash-pm-blink 1.1s steps(2, start) infinite;
-}
-@keyframes mdmx-dash-pm-blink {
-  to {
-    visibility: hidden;
-  }
-}
-.mdmx-dash-editor .ProseMirror-focused .ProseMirror-gapcursor {
-  display: block;
-}
-
-/* -- editor toolbar -- */
-.mdmx-dash-editor .mdmx-toolbar {
-  position: sticky;
-  top: 0;
-  z-index: 15;
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 10px 40px;
-  background: color-mix(in srgb, var(--mdmx-bg) 90%, transparent);
-  backdrop-filter: blur(6px);
-  border-bottom: 1px solid var(--mdmx-border);
-}
-.mdmx-dash-editor .mdmx-toolbar-back {
-  font-family: var(--mdmx-font);
-  font-size: 13px;
-  color: var(--mdmx-accent);
-  text-decoration: none;
-  white-space: nowrap;
-}
-.mdmx-dash-editor .mdmx-toolbar-title {
-  font-family: var(--mdmx-mono);
-  font-size: 13px;
-  color: var(--mdmx-fg-muted);
-}
-.mdmx-dash-editor .mdmx-viewport-switch {
-  display: inline-flex;
-  border: 1px solid var(--mdmx-border);
-  border-radius: var(--mdmx-radius);
-  overflow: hidden;
-}
-.mdmx-dash-editor .mdmx-viewport-btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 32px;
-  height: 26px;
-  border: 0;
-  background: var(--mdmx-surface);
-  color: var(--mdmx-fg-muted);
-  cursor: pointer;
-}
-.mdmx-dash-editor .mdmx-viewport-btn + .mdmx-viewport-btn {
-  border-left: 1px solid var(--mdmx-border);
-}
-.mdmx-dash-editor .mdmx-viewport-btn:hover {
-  color: var(--mdmx-fg);
-}
-.mdmx-dash-editor .mdmx-viewport-btn[aria-pressed="true"] {
-  background: var(--mdmx-accent-wash);
-  color: var(--mdmx-accent);
-}
-.mdmx-dash-editor .mdmx-toolbar-status {
-  margin-left: auto;
-  font-size: 13px;
-  color: var(--mdmx-fg-muted);
-}
-.mdmx-dash-editor .mdmx-toolbar-status[data-status="error"] {
-  color: var(--mdmx-danger);
-}
-.mdmx-dash-editor .mdmx-toolbar-save {
-  font: inherit;
-  font-size: 14px;
-  font-weight: 500;
-  padding: 7px 18px;
-  border: 0;
-  border-radius: var(--mdmx-radius);
-  background: var(--mdmx-accent);
-  color: var(--mdmx-accent-fg);
-  cursor: pointer;
-}
-.mdmx-dash-editor .mdmx-toolbar-save:disabled {
-  background: var(--mdmx-border);
-  color: var(--mdmx-fg-muted);
-  cursor: default;
-}
-.mdmx-dash-editor .mdmx-toolbar-image,
-.mdmx-dash-editor .mdmx-toolbar-snippet {
-  margin-left: auto;
-  font: inherit;
-  font-size: 14px;
-  padding: 7px 14px;
-  border: 1px solid var(--mdmx-border);
-  border-radius: var(--mdmx-radius);
-  background: var(--mdmx-surface);
-  color: var(--mdmx-fg);
-  cursor: pointer;
-}
-.mdmx-dash-editor .mdmx-toolbar-image:disabled {
-  color: var(--mdmx-fg-muted);
-  cursor: default;
-}
-.mdmx-dash-editor .mdmx-toolbar-image + .mdmx-toolbar-status,
-.mdmx-dash-editor .mdmx-toolbar-snippet + .mdmx-toolbar-status {
-  margin-left: 0;
-}
-.mdmx-dash-editor .mdmx-snippet-save {
-  margin-left: auto;
-  display: inline-flex;
-  gap: 6px;
-}
-.mdmx-dash-editor .mdmx-snippet-input {
-  font: inherit;
-  font-size: 14px;
-  padding: 6px 10px;
-  border: 1px solid var(--mdmx-border);
-  border-radius: var(--mdmx-radius);
-  background: var(--mdmx-surface);
-  color: var(--mdmx-fg);
-}
-.mdmx-dash-editor .mdmx-snippet-confirm {
-  font: inherit;
-  font-size: 14px;
-  padding: 6px 12px;
-  border: 0;
-  border-radius: var(--mdmx-radius);
-  background: var(--mdmx-accent);
-  color: var(--mdmx-accent-fg);
-  cursor: pointer;
-}
-.mdmx-dash-editor .mdmx-snippet-confirm:disabled {
-  background: var(--mdmx-border);
-  color: var(--mdmx-fg-muted);
-}
-
-/* -- media library modal -- */
-.mdmx-dash-editor .mdmx-media-overlay {
-  position: fixed;
-  inset: 0;
-  z-index: 50;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: rgba(0, 0, 0, 0.35);
-}
-.mdmx-dash-editor .mdmx-media-modal {
-  width: min(720px, 92vw);
-  max-height: 80vh;
-  display: flex;
-  flex-direction: column;
-  background: var(--mdmx-surface);
-  border-radius: 14px;
-  box-shadow: var(--mdmx-shadow);
-  overflow: hidden;
-}
-.mdmx-dash-editor .mdmx-media-header {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 14px 16px;
-  border-bottom: 1px solid var(--mdmx-border);
-}
-.mdmx-dash-editor .mdmx-media-search {
-  flex: 1;
-  font: inherit;
-  font-size: 14px;
-  padding: 7px 12px;
-  border: 1px solid var(--mdmx-border);
-  border-radius: var(--mdmx-radius);
-  background: var(--mdmx-surface);
-  color: var(--mdmx-fg);
-}
-.mdmx-dash-editor .mdmx-media-upload {
-  font: inherit;
-  font-size: 14px;
-  padding: 7px 14px;
-  border: 0;
-  border-radius: var(--mdmx-radius);
-  background: var(--mdmx-accent);
-  color: var(--mdmx-accent-fg);
-  cursor: pointer;
-}
-.mdmx-dash-editor .mdmx-media-close {
-  font-size: 22px;
-  line-height: 1;
-  width: 32px;
-  height: 32px;
-  border: 0;
-  border-radius: var(--mdmx-radius);
-  background: transparent;
-  color: var(--mdmx-fg-muted);
-  cursor: pointer;
-}
-.mdmx-dash-editor .mdmx-media-body {
-  overflow: auto;
-  padding: 16px;
-}
-.mdmx-dash-editor .mdmx-media-empty {
-  padding: 36px;
-  text-align: center;
-  color: var(--mdmx-fg-muted);
-}
-.mdmx-dash-editor .mdmx-media-error {
-  padding: 12px 16px;
-  color: var(--mdmx-danger);
-  font-size: 14px;
-}
-.mdmx-dash-editor .mdmx-media-grid {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
-  gap: 12px;
-}
-.mdmx-dash-editor .mdmx-media-item {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  width: 100%;
-  padding: 8px;
-  border: 1px solid var(--mdmx-border);
-  border-radius: 10px;
-  background: var(--mdmx-surface);
-  cursor: pointer;
-}
-.mdmx-dash-editor .mdmx-media-item:hover {
-  border-color: var(--mdmx-accent);
-}
-.mdmx-dash-editor .mdmx-media-thumb {
-  width: 100%;
-  height: 88px;
-  object-fit: contain;
-  background: var(--mdmx-surface-2);
-  border-radius: 6px;
-}
-.mdmx-dash-editor .mdmx-media-fileicon {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  height: 88px;
-  font-size: 28px;
-  color: var(--mdmx-fg-muted);
-  background: var(--mdmx-surface-2);
-  border-radius: 6px;
-}
-.mdmx-dash-editor .mdmx-media-name {
-  font-size: 12px;
-  color: var(--mdmx-fg-muted);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-.mdmx-dash-editor .mdmx-loading {
-  padding: 48px 40px;
-  color: var(--mdmx-fg-muted);
-  font-family: var(--mdmx-font);
-}
-
 /* -- reduced motion -- */
 @media (prefers-reduced-motion: reduce) {
   .mdmx-dash-spinner {
     animation: none;
-  }
-  .mdmx-dash-editor .mdmx-rail,
-  .mdmx-dash-editor .mdmx-sidebar {
-    transition: none;
   }
 }
 
@@ -1746,9 +1023,7 @@ body.mdmx-resizing {
 .mdmx-dash a:focus-visible,
 .mdmx-dash button:focus-visible,
 .mdmx-dash-gate a:focus-visible,
-.mdmx-dash-gate button:focus-visible,
-.mdmx-dash-editor button:focus-visible,
-.mdmx-dash-editor a:focus-visible {
+.mdmx-dash-gate button:focus-visible {
   outline: 2px solid var(--mdmx-accent);
   outline-offset: 2px;
   border-radius: var(--mdmx-radius-sm);

@@ -11,6 +11,384 @@ initial design-and-build conversation (12 commits).
 
 <!-- APPEND NEW ENTRIES ABOVE THIS LINE -->
 
+### S34 — 0.7.0 release session (release/0.7.0): editing UX
+- Kickoff per the plan (`.dev-context/plans/2026-09-03-0.7-plan.md`, Q1–Q11):
+  `release/0.6.0` renamed in place to `release/0.7.0` (the seven 0.6
+  milestone commits stay as history); 0.6.0 is never published — 0.7.0 is
+  the first npm release and absorbs 0.6's publish prep. Baseline before M1:
+  `pnpm verify` green, 422 tests.
+- **M1 — Dashboard nav collapse** (ADR-056). `DashboardShell` gets a navbar
+  toggle (inline panel-left icon, `aria-expanded`/`aria-controls`) that hides
+  the left nav (`.mdmx-dash.is-nav-collapsed .mdmx-dash-side { display: none
+  }`), persisted under `mdmx:dash-nav-collapsed`; `Mod-\` toggles it from
+  anywhere except a text editor. Rules are pure in `shell/nav-state.ts`
+  (`readStoredNavCollapsed`/`storeNavCollapsed`, `isNavToggleShortcut`,
+  `isEditableTarget` — form fields, contenteditable/ProseMirror, `.cm-editor`
+  ahead of M4). Tests: `nav-state.test.ts` (3) + three shell tests (toggle +
+  persistence + aria, restore on mount, shortcut yields to an input).
+  Dashboard 43 → 49 tests; total 428. Live: 12/12 nav checks, 16/16
+  surfaces clean, editor canvas 568 → 800px with the nav collapsed.
+- **M2 — Registry v3** (ADR-057). Core: `ComponentSpec.preview` (insert-time
+  props + `children` text), `PropSpec.showIf` (`{ prop, eq? }`),
+  `link.placeholder`, `MDMX_REGISTRY_VERSION` 3, `isPropVisible` (the one
+  visibility rule). CLI: `preview` extracted from the `defineMDMX` literal
+  via static-eval and validated (undeclared keys / children text on a leaf
+  → warning + dropped), `showIf` checked against declared props (unknown or
+  self-referencing → warning + dropped), `link` takes the `placeholder`
+  override; the `mdmx init` starter Callout carries a `preview`. Editor:
+  `initialProps` = `preview` over `default`s in declaration order,
+  `previewChildren` seeds the first paragraph's text (rich-text and
+  blocks), and the rail drop goes through `buildComponentNode` like a
+  palette insert (it used to seed defaults only, no children). SPEC §5
+  (preview, showIf, taxonomy) and §8 (v3, v1/v2 read unchanged). Registries
+  regenerated: demo-next v3 with 20 previews. Tests: core
+  `registry-v3.test.ts` (+7), CLI fixture Chart/Poll gain showIf/preview/
+  link cases (+4), editor commands (+3). Total 442. Live: Tooltip inserts
+  as `<Tooltip content="A tooltip" side="top">Hover me</Tooltip>` and
+  renders its trigger text; Kbd, Table (three rows), Testimonial insert
+  live instead of throwing.
+- **M3 — Component editing UX** (ADR-058). Headless: `component-context.ts`
+  (`componentContext` — selected component, else the deepest around the
+  caret, with the ancestor chain) and block-action commands in
+  `commands.ts` (`deleteBlockAt` leaves a paragraph when a container would
+  empty, `duplicateBlockAt` selects the copy, `moveBlockAt` swaps siblings,
+  `blockActionKeymap`: ⌘⇧⌫ / ⌘⇧D / ⌘⇧↑↓). React: `PropPanel` takes the
+  context, renders a breadcrumb (crumb → `NodeSelection` on the ancestor),
+  shows effective defaults muted with a per-field reset, hides `showIf`-off
+  props (evaluated against effective values), and **re-selects the edited
+  node** — `setNodeMarkup` maps a `NodeSelection` to a caret inside the
+  first child, which in 0.6 made the panel vanish after one edit and would
+  now have handed the context to a nested block. `Control` is value-typed
+  (`onChange(JsonValue | undefined)`); new `list` (rows, add/remove/
+  reorder), `object` (per-field), `link` (placeholder), `color`, `date`
+  controls; `allowEmpty` for selects; `FrontmatterPanel` moved with it.
+  `BlockActions` toolbar anchored to the target's DOM rect inside
+  `.mdmx-canvas-wrap` (re-measured on state/scroll/resize; hidden on
+  mobile); "edit source" switches to Source and reveals the active lines.
+  `RenderBoundary` resets on props identity change. Tests: component-
+  context (4), block-actions (6), render-boundary (2), prop-panel (6 —
+  via a state+dispatch harness, no DOM view), controls (+6),
+  prop-controls (+2). Editor 138 → 164; total 468. Live on `blocks.mdx`:
+  caret in a Tab → `Tabs › Tab`, toolbar at the block's corner (0px off),
+  crumb → Tabs with `variant` muted at its default, select edit writes
+  one attr and reset drops it, duplicate → rename → move up → delete, the
+  keyboard pair, edit-source reveal, and a Kbd emptied to a placeholder
+  revives on the next keystroke.
+- **M4 — Two-way source pane** (ADR-059). `@mdmx/editor` gains CodeMirror 6
+  (`@codemirror/state`, `view`, `language`, `commands`, `lint`,
+  `lang-markdown`, `lang-javascript`, `@lezer/highlight`, pinned `~`;
+  `@codemirror/view` at `~6.43.10` because 6.43.11 is inside the
+  workspace's `minimumReleaseAge` window and pnpm resolved the other
+  CodeMirror packages to 6.43.10 — one copy, not two). Headless
+  `source-sync.ts`: `applySourceText` (text → `parseMDX` → `fromMdast` →
+  one `replaceWith` + frontmatter-attr transaction with meta
+  `mdmx-source`; a parse error returns its position and nothing to
+  dispatch; identical text is a no-op; the selection lands on the block
+  under the cursor line — a `NodeSelection` for a component) and
+  `lintSource` (validator diagnostics + the syntax error as markers,
+  frontmatter against the collection). `source-map.ts`: `blockLineMap`
+  walks the canonical text sequentially so duplicate blocks get their own
+  ranges (the `indexOf` bug), `blockIndexAtLine` (line → block),
+  `blockLineAt` (a nested block's first line, for "edit source" on a Tab).
+  `SourcePane` hosts the `EditorView` (created once per PM view/registry):
+  markdown + JSX highlighting through token *classes* colored by new
+  `--mdmx-code-*` tokens, line numbers, lint gutter, history, `Mod-Enter`
+  applies now; canvas → pane pushes canonical text under an `external`
+  annotation; pane → canvas debounces 300 ms; the pane recognizes its own
+  applies by the doc identity it produced and skips the push-back; blur
+  flushes the apply and snaps to canonical only when the text parses; the
+  block under the pane cursor gets `.mdmx-source-target` and scrolls into
+  view; a status strip reports the syntax error. `raw` regions print
+  canonically on the snap (to-mdast re-parses them; invariants 1/3
+  untouched). Editor `vitest.config.ts` + `tests/setup.ts` polyfill
+  `Range.getClientRects` so the real pane runs under jsdom. Tests:
+  `source-sync.test.ts` (10), source-map (+4), editor-mount (+7, the old
+  `.mdmx-source-line` reads now go through `EditorView.findFromDOM`),
+  media-library read updated. Editor 164 → 185; total 489. Bundle
+  (`next build`, demo-next, raw static chunks): 1660 → 2220 KB; the
+  editor's client-only chunk with CodeMirror is 779 KB raw / 256 KB gzip
+  beside the 503 KB raw / 148 KB gzip ProseMirror+React chunk — loaded only
+  on the editor route via `next/dynamic`, never SSR'd. Build still 0
+  warnings. Live on `blocks.mdx` (19/19): type a prop → canvas in ~350 ms
+  with the pane keeping the typed text; break a tag → strip "Syntax error,
+  line 24", gutter marker, canvas unchanged; fix → clears; ⌘⏎ immediate;
+  frontmatter → document panel; `<Mystery />` → raw block + MDMX001
+  marker; extra spaces stay while focused and snap on blur; ⌘Z reverts
+  exactly the last apply; "edit source" on a nested Tab focuses the pane
+  on `<Tab title="Overview">` and outlines the block on the canvas.
+- **M5 — Blocks made usable** (ADR-053 note, ADR-060). All 39 demo-next
+  wrappers revisited. Rule: a registry `default` is the *component's own
+  default parameter* (the panel's effective default and the page agree, and
+  `<Table />` never crashes), so the 24 required-without-default props
+  became optional-with-default in TS + config. Defensive parsing in Kbd,
+  Table, Tabs, LogoCloud, Testimonial. True arrays are real lists —
+  `Kbd.keys: string[]`, `Table.columns: string[]` + `rows: string[][]`,
+  `Tabs.tabs`, `LogoCloud.names` — edited as `list` controls (nested for
+  rows); `blocks.mdx` and `marketing.mdx` updated where the shapes changed
+  (the only content edits) and `blocks.mdx` canonicalized after the
+  printer wrapped the longer tags; `layout.mdx`/`team-notes.mdx` were
+  already non-canonical before this session (a missing final newline, a
+  long PromoCard line) and were left alone. Explicit `select` controls keep
+  the author's option order (Tooltip, Badge, Button, Avatar, Item, Toggle,
+  Spinner, Skeleton, ratios, columns). `showIf`: `Skeleton.lines`,
+  `Hero.*Href`, `PricingTier.ctaHref`, `Avatar.alt`, `Separator.label`.
+  Variant gaps: `Badge.href` + `link` variant, `Item.size`/`href`,
+  `Separator.orientation`, `Tabs.orientation`/`defaultTab`,
+  `Tooltip.align`/`sideOffset`, `HoverCard.side`/`align`, `TwoColumn.ratio`
+  (`1:1 | 1:2 | 2:1`), `columns` on PricingTable and StatsBand; Stat gets
+  placeholders, defaults, an ordered `trend` select and a `delta` step —
+  but no `allowedParents` (welcome/team-notes use it standalone).
+  Tooltip/HoverCard set `render.interactive` so the popup previews on
+  hover. `blocks.mdx` showcases the new props. Registry: 30/39 with a
+  `preview` (none for Accordion, Column, FAQ, FeatureGrid, PricingTable, Separator, Skeleton, StatsBand, TwoColumn — containers seeded by their
+  children, or blocks whose defaults already render), 6 `showIf`
+  rules, 5 list props, 2 interactive. `mdmx check` 0/0.
+  Live: every top-level block (34 of the 40 rail items; 6 are child-only)
+  inserts with no placeholder card and zero lint markers afterwards; the
+  Tooltip popup previews on hover and Alt-click puts it in context; Table
+  rows add from the list control and the canvas grows a row; parity
+  (`parity.mjs`, 21 computed properties per element, root margins read
+  from the wrapper, height excluded because the editor seeds a caret
+  paragraph in empty containers) — layout 0/3, welcome 0/5, marketing
+  0/18, blocks 0/25 blocks differ; sweep 16/16 clean.
+- **M6 — 0.7.0 release prep + docs wave.** Versions 0.7.0 in lockstep
+  (eight packages + root; AGENTS.md package map row for the editor and the
+  lockstep line; RELEASING.md tag/branch/release commands; guide 08's
+  ranges and tarball names). `docs/releases/0.7.0.md` written to absorb
+  0.6.0's notes (that file deleted): four 0.7 themes, registry v3, the
+  demo pass, dashboard, a "From 0.6 (never published)" section,
+  compatibility (v1/v2 registries read unchanged; props stay static JSON,
+  ADR-060; CodeMirror ~256 KB gzipped on the editor route only). Guides:
+  02 (defaults mirror the component — the example `Callout` now defaults
+  `variant`; `preview` as the insert-time seed; `showIf` section; `link`
+  placeholder; explicit select order), 04 (an "Editing" section: the
+  source pane's rules, properties follow the caret, block actions +
+  shortcuts, making room; the Alt-click sentence corrected), 07 (the
+  syntax-error strip). README (the source is an editor; roadmap phases
+  0.6 folded into 0.7, 0.7 ✅, next; 489 tests), llms.txt (0.7 paragraph,
+  ADR-001…060), wiki Home (v0.7.0 on `release/0.7.0`, the 0.7 bullet),
+  Roadmap (phase 2.8 header notes the unpublished 0.6.0; M6 ✅; "immediate
+  next" rewritten as the 0.7 deferred list), Architecture (the editor row
+  no longer says "ships no CSS"; ADR-058/059), Testing (the 0.7 live
+  scripts). `PROJECT_STATUS.md` (stale at 0.4.1) reduced to a pointer at
+  the wiki. `packages/editor/DESIGN_NOTES.txt` gets a 0.7 addendum (ADR-059
+  supersedes its read-only-pane rationale). SPEC unchanged since M2 (§5
+  and §8 already carry v3).
+  Gate: `pnpm verify` green (489 tests: core 61, project 16, studio 32,
+  cli 44, editor 185, next 90, dashboard 49, provider-github 12); sweep
+  16/16 surfaces clean; demo-next `next build` 0 warnings (client chunks
+  2224 KB raw); `npm pack --dry-run` in all eight packages lists `dist/`
+  only. Publish is the maintainer's step (RELEASING.md).
+- **State after S34**: `release/0.7.0` holds six milestone commits on top
+  of the seven 0.6 ones; 0.7.0 is the first npm release. ADR-056–060
+  added; SPEC §5/§8 at registry v3; wiki Home/Roadmap/Packages/Testing/
+  Glossary/Architecture synced. Verification scripts stayed in the session
+  scratchpad (see Testing → "Live verification (0.7)").
+
+### S33 — 0.6.0 release session (release/0.6.0): M1–M7, publish-ready
+- **M1 — Next 16**: demo-next on `next@16.3.4` (Turbopack by default) with
+  React 19.2 types; `@mdmx/dashboard`'s `next` devDependency bumped in step
+  so one copy resolves (its `next/link.js`/`next/dynamic.js` shims are typed
+  and bundled against the same version the app runs). Package peer ranges
+  stay `next >=15`. Next rewrote demo-next's `tsconfig.json` (`jsx:
+  react-jsx`, `.next/dev/types`) — kept. Its new habit of writing
+  `AGENTS.md`/`CLAUDE.md` into the app on every `next dev` is off
+  (`agentRules: false`): the repo keeps its hand-curated pair at the root.
+- **Turbopack fallout** (the reason M1 is its own milestone): `next dev` and
+  every surface were clean on the first run — home, three posts, the private
+  post, dashboard home/collection/edit/new, three editors, media, studio,
+  studio component, settings (16 pages, 0 console errors, 0 failed requests),
+  plus the edit→save loop (one-line diff, second save via the sha handoff).
+  `next build` was not: six "Dynamic filesystem access causes tracing of the
+  whole project" warnings pointing into `@mdmx/project` `config.ts`
+  (`join`/`existsSync`/`readFileSync`/`resolve`/dynamic `import()`) and
+  `@mdmx/dashboard` `next/index.ts` (registry read). Consumers bundle these
+  same files (`transpilePackages`), so the fix is in-source:
+  `/* turbopackIgnore: true */` at each call (+ `webpackIgnore` on the
+  `.mjs` config import, which no bundler should try to resolve). Build now
+  reports 0 warnings. Recorded as an AGENTS.md sharp edge.
+- **M2 — Tailwind v4 + shadcn foundation**: demo-next gets `tailwindcss` +
+  `@tailwindcss/postcss` (`postcss.config.mjs`, `@import "tailwindcss"` at
+  the top of `globals.css`), `@/*` alias, then `shadcn init -d` (style
+  `base-nova` on Base UI, neutral, CSS variables — the current defaults, the
+  same thing a fresh `create-next-app` + `shadcn init` gives) and
+  `shadcn add --all`: **61 components** in `components/ui/`, `lib/utils.ts`,
+  `hooks/use-mobile.ts`, `TooltipProvider` around the layout. `mdmx
+  generate` still sees exactly the 17 author components (its glob is
+  `components/mdmx/**`). Two collisions handled: shadcn's `--muted`
+  (a near-white *background* token) overwrote the app's `--muted` *text*
+  color — renamed to `--ink-muted` (15 usages); init also wired Geist via
+  `next/font` and `html { font-sans }`, inert for now because `body` and the
+  dashboard set their own families (typography is unified in M5).
+- **Preflight hardening, measured**: a playwright script snapshots the
+  computed style of every element on all 15 surfaces; diffing before/after
+  Tailwind showed 998 changed elements. Real regressions: 1.5 line-height
+  across the chrome, headings collapsing (700→400, sizes → body), inputs
+  inheriting **bold** from `.mdmx-dash-field` labels, hint paragraphs and
+  canvas paragraphs losing their margins, `code` losing monospace, UA
+  underline/blue gone. Fix: a *host independence* section in the dashboard
+  stylesheet and a prose-defaults block for `.mdmx-page`, both in
+  `@layer base` at element specificity (ADR-049 — the first, unlayered
+  attempt beat Tailwind utilities too and turned a studio template's
+  `font-semibold` into 700). Diff after: 243, all intended pins or accepted
+  improvements. Bonus: the editor's viewport switch had been clipped to one
+  button by UA padding since 0.4.1; it now shows all three.
+- Verified: 16 surfaces clean, `next build` 0 warnings (Tailwind through
+  PostCSS), demo-next typechecks with all 61 components under TS 5.5.4,
+  `pnpm verify` green.
+- **M3 — canvas parity + editor structure** (ADR-050, ADR-051). The editor
+  now owns its chrome: `@mdmx/editor/styles.css` (tokens at
+  `:where(:root)`, chrome rooted at `.mdmx-editor`, host-independence pins
+  and canvas fallbacks in `@layer base`); the dashboard imports it and its
+  stylesheet went 2094 → 1266 lines, the playground's 659 → 63. The move
+  was verified as a pure refactor: the snapshot diff of all 15 screens was
+  **0 changed elements**. Then the canvas became the page: the ProseMirror
+  root carries the host's content class (`contentClassName`, default
+  `mdmx-page`, through `DashboardConfig`), the canvas element is layout only,
+  block wrappers add no geometry (selection/hover are outlines), the content
+  hole no longer forces a font, and every bare-element canvas rule is a
+  zero-specificity layered fallback. The 0.5 corruption rules
+  (`.mdmx-dash-editor .mdmx-canvas h1/a/code …`) are gone with it.
+- **Measured parity** (`parity.mjs`: every element of every block, public
+  page vs. desktop preview at zoom 1, panels collapsed): `layout` 0/9
+  differ, `welcome` 1/16, `marketing` 4/101 — the four are the demo's
+  `Stat` figure styling (M5). Along the way the script caught two things
+  worth knowing: the demo's `.mdmx-page` relied on `body` for its color, so
+  the canvas inherited the dashboard's — the content class now carries its
+  own color/background (guide 04 says why); and a `.mdmx-nodeview { margin:
+  0 }` I had added out-ranked the page's `> * + *` rhythm rule — the wrapper
+  now has no rule at all.
+- **`fit` is the default viewport** (real size, zoom 1); mobile/tablet/
+  desktop are framed device previews. **Rail and sidebar collapse** on
+  desktop from toolbar toggles (persisted). **Editor.tsx split**: 612 → 344
+  lines; `useEditorView`, `useViewport`, `useSnippets`, `EditorToolbar`,
+  `MobileFabs`, `panels.ts`. Tests: viewport (fit/zoom/persistence),
+  panels, dashboard `resolveConfig`, and mount tests for the content class,
+  fit default, device switch, panel toggles + restore.
+- Verified: 16 surfaces clean, edit→save loop (two saves), `next build` 0
+  warnings, playground builds against the shipped stylesheet, `pnpm verify`
+  green.
+- **M4 — interactivity** (ADR-052). The React NodeView gained `stopEvent`
+  with routing **by target**: events on `button`/`input`/`select`/`textarea`/
+  `label`/`summary`/media/editable regions/interactive `role`s reach the
+  component; everything else selects the block; the editable hole is always
+  the editor's. `render.interactive: true | false` overrides per component —
+  `defineMDMX` → CLI extraction → registry (schema **v2**; `MDMX_REGISTRY_VERSION`
+  is now its own counter instead of aliasing `MDMX_SPEC_VERSION`, which the
+  0.5 CLI had been writing) → SPEC §5/§8 → editor. `true` keeps Alt-click as
+  the way to select the block. **Links never navigate** in the canvas
+  (`handleDOMEvents.click`; ⌘/Ctrl-click opens a new tab) — the "click
+  navigates *and* selects" bug from the grilling evidence is gone. Both
+  policies are pure (`routeEvent`, `linkClickAction`) and unit-tested; a
+  mounted-editor test covers the live link policy; a round-trip test pins
+  that `render.interactive` never touches content. CLI fixture app gains
+  `Poll` (`render: { interactive: true }`).
+- Verified live on demo-next: the Hero's "Get started" link selects the
+  block without navigating, ⌘-click opens a tab, typing into the
+  Newsletter's input works without selecting the block, and clicking the
+  block's heading selects it; `mdmx generate` writes `mdmxRegistryVersion: 2`.
+- **M5 — shadcn blocks + content** (ADR-053). demo-next now registers **39**
+  author components: the 17 marketing components rebuilt on shadcn
+  primitives and utilities with their names and props unchanged (content
+  untouched; `mdmx check` 0/0), plus **22 shadcn components as blocks** in a
+  new `UI` palette category (Accordion/AccordionItem, Alert, AspectRatio,
+  Avatar, Badge, Button, Card, Collapsible, Empty, HoverCard, Item, Kbd,
+  Progress, Separator, Skeleton, Spinner, Table, Tabs/Tab, Toggle, Tooltip).
+  The rules that decide what can be a block came out of building them: no
+  React context across blocks (each nested block is its own React root —
+  Accordion items are self-contained collapsibles, Tabs broadcasts the
+  active tab as a scoped CSS rule), containers are grids that never size
+  items with `> *` (the editor's TwoColumn flex patch is gone), editable
+  regions stay mounted (`keepMounted`), popup bodies are props with the
+  trigger as the rich-text child. Carousel and ButtonGroup stay installed but
+  unregistered for those reasons. `mk-*`, `.site-*`, `.twocol` CSS deleted;
+  fonts via `next/font` as the theme's `--font-sans/serif/mono`; primary is
+  the demo's indigo; new `posts/blocks.mdx` shows one of each.
+- **Parity, measured again** with the rebuilt components: `layout` 0/9,
+  `welcome`, `marketing`, `blocks` differ only in `border-radius` (plus
+  `animate-pulse` timing) — and every radius diff has one cause: the
+  studio's CDN Tailwind runtime compiles the same utilities with the
+  *default* radius scale and loads after the app's stylesheet. That is the
+  evidence M6 (studio Tailwind handoff) acts on. Two demo-side lessons
+  became content-class guidance (guide 04, ADR-050): sibling rhythm in
+  `rem` (a wrapper inherits the article's font size) and `flex w-fit`
+  rather than `inline-flex` for shrink-wrapped blocks. Also reverted the
+  canvas to `white-space: normal` (M3 had followed ProseMirror's `pre-wrap`
+  suggestion; markdown collapses soft breaks, and the page is the truth).
+- Verified live: 18 surfaces clean (two new: `/posts/blocks` and its
+  editor), 12/12 interactivity checks (Tabs switch, accordions open, the
+  newsletter input types — all inside the editor), `next build` 0 warnings,
+  `pnpm verify` green. demo-next README rewritten for what the app is now.
+- **M6 — studio Tailwind handoff** (ADR-054, amends ADR-042).
+  `detectTailwind(root)` in `@mdmx/project` (an explicit `node_modules`
+  ancestor walk — not `require.resolve`, whose global folders made a bare
+  temp dir look like a Tailwind host in the first test run — with the
+  package.json dependency lists as fallback). `mdmx generate` in a Tailwind
+  host writes `.mdmx/studio-classes.txt` (one class per line), removes any
+  stale `studio.css`, and emits `server.ts` without the CSS import; other
+  hosts are unchanged. `mdmx check` warns when a Tailwind host with studio
+  components has no stylesheet referencing the manifest. The dashboard page
+  resolves `tailwindRuntime` from the same detection (config overrides) and
+  the browser runtime stays off; the studio editor's hint says a new class
+  styles after save + regenerate. demo-next adds the one `@source` line.
+  Tests: project +3, cli +5 (handoff in both directions, the check warning
+  clearing once the line exists).
+- **Parity residue gone**: with one Tailwind on the page, canvas and page
+  agree on every measured property (`marketing`, `blocks`, `welcome` at 0
+  differing elements apart from `animate-pulse` timing); PromoCard renders
+  styled on the public page, in the canvas, and in the studio preview with
+  no CDN script anywhere. Sweep 18/18, `next build` 0 warnings, `pnpm
+  verify` green.
+- **M7 — distribution, docs, publish prep** (ADR-055). `LICENSE` (MIT,
+  Kazi Ridwan) and `"license": "MIT"` in all nine package.jsons; versions
+  bumped to **0.6.0** in lockstep. `pnpm pack:all` (`scripts/pack.sh`)
+  packs the eight packages and prints the `pnpm.overrides` snippet — guide
+  08 documents using mdmx from a checkout; smoke-tested (deps rewritten,
+  editor tarball ships `dist/styles.css`, `npm pack --dry-run` shows `dist/`
+  only everywhere). `RELEASING.md` is the checklist Kazi runs (create the
+  `mdmx` org, `npm login`, `pnpm -r publish --access public`, tag, merge,
+  GitHub Release with the tarballs); `docs/releases/0.6.0.md` is the release
+  notes. Docs wave: README (0.6 themes, package rows, roadmap, license),
+  guides index (guide 08, Next 15+), llms.txt, Testing (422 + the 0.6
+  suites), Packages counts, Roadmap (the missing 0.5.0 section, M7, next
+  milestone), Home, AGENTS.md (package map now lists all eight).
+- **Housekeeping**: a Next 15 dev server left on :3456 by the grilling
+  session was killed. pnpm 11's `minimumReleaseAge` wrote
+  `minimumReleaseAgeExclude` entries for `next@16.3.4` into
+  `pnpm-workspace.yaml`; committed as-is so the install stays reproducible
+  inside the window.
+- Noted for M3 (Next 16 now forwards browser console output to the terminal):
+  ProseMirror warns the canvas lacks `white-space: pre-wrap`.
+- Files/packages changed: examples/demo-next (package.json, next.config.mjs,
+  tsconfig.json, postcss.config.mjs, components.json, app/globals.css,
+  app/layout.tsx, components/ui/*, lib/, hooks/), examples/editor-playground
+  (styles.css), packages/project (config.ts), packages/dashboard
+  (package.json, next/index.ts, styles.css, config.ts, views/EditorView.tsx),
+  packages/editor (styles.css, package.json, react/Editor.tsx + new hooks/
+  components, viewport.ts, panels.ts, icons.tsx), pnpm-lock.yaml,
+  pnpm-workspace.yaml.
+- ADRs: ADR-049 (dashboard stylesheet host-independence in `@layer base`),
+  ADR-050 (the canvas is the page), ADR-051 (`fit` default + collapsible
+  panels), ADR-052 (event routing, `render.interactive`, canvas link policy),
+  ADR-053 (shadcn blocks: the rules, and why Carousel/ButtonGroup aren't),
+  ADR-054 (studio Tailwind handoff: manifest + `@source`, runtime off),
+  ADR-055 (distribution before/between releases: tarballs + overrides).
+- Tests: 389 → 422 (+22 editor, +2 dashboard, +6 cli, +3 project), `pnpm
+  verify` green.
+- Wiki pages touched: SessionLog, Roadmap (new Phase 2.8 — 0.6.0 milestone
+  table), Home (status line), Packages (editor files + stylesheet, dashboard
+  stylesheet, core types), Glossary (Canvas, Content class, Fit mode,
+  Interactive routing, Class manifest), Architecture (`.mdmx/` artifacts),
+  DECISIONS, SPEC (§5 registry v2 + event routing, §7 studio styling, §8),
+  guide 01 (artifacts table), guide 02 (`render`), guide 04 (theming,
+  `contentClassName`, manual mounts, interactivity), guide 05 (studio CSS
+  handoff), guide 07, AGENTS.md.
+- Follow-ups: **the publish itself** (RELEASING.md — Kazi's step); the CLI
+  extractor should honor tsconfig `paths` so prop types imported through
+  `@/` infer (0.7 candidate, ADR-053); Carousel/ButtonGroup as blocks need a
+  wrapper-aware layout contract (0.7); a from-npm smoke app in CI (guide 08
+  against a fresh `create-next-app`).
+
 ### S32 — repo hygiene: attribution scrub, root `start` script
 - **History rewrite**: every `Co-Authored-By: Claude …` trailer removed from
   all 64 commits across all branches (`git filter-branch --msg-filter`);

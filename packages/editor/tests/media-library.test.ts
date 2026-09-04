@@ -2,6 +2,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { createElement } from "react";
 import { createRoot, type Root } from "react-dom/client";
+import { EditorView as CMView } from "@codemirror/view";
 import { Registry, type RegistrySpec } from "@mdmx/core";
 import { MDMXEditor } from "../src/react/index.js";
 import { MediaLibrary } from "../src/react/MediaLibrary.js";
@@ -163,10 +164,8 @@ describe("MDMXEditor media integration (jsdom)", () => {
     // The library closed and an image node now lives in the canvas + source.
     expect(el.querySelector(".mdmx-media-overlay")).toBeNull();
     expect(el.querySelector(".ProseMirror img")).not.toBeNull();
-    const source = Array.from(el.querySelectorAll(".mdmx-source-line"))
-      .map((n) => n.textContent)
-      .join("\n");
-    expect(source).toContain("![](/media/logo.png)");
+    const cm = CMView.findFromDOM(el.querySelector(".mdmx-source .cm-editor") as HTMLElement)!;
+    expect(cm.state.doc.toString()).toContain("![](/media/logo.png)");
   });
 
   it("shows no image button when no media source is provided", async () => {

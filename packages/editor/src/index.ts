@@ -23,8 +23,15 @@ export {
   canInsertComponent,
   resolveComponentDrop,
   initialProps,
+  previewChildren,
   slashItems,
   slashItemsFor,
   groupSlashItems,
+  deleteBlockAt,
+  duplicateBlockAt,
+  moveBlockAt,
+  blockActionKeymap,
 } from "./commands.js";
 export type { SlashItem } from "./commands.js";
+export { componentContext, contextChain } from "./component-context.js";
+export type { ComponentContext, ComponentContextEntry } from "./component-context.js";

@@ -3,6 +3,8 @@ import type { PropSpec } from "@mdmx/core";
 import {
   coerceControlValue,
   displayControlValue,
+  effectiveProps,
+  emptyValueFor,
   setPropValue,
 } from "../src/react/prop-controls.js";
 
@@ -67,14 +69,40 @@ describe("displayControlValue", () => {
 describe("setPropValue", () => {
   const spec: PropSpec = { name: "title", required: false, control: { type: "text" } };
 
-  it("drops keys whose value coerces to undefined", () => {
-    expect(setPropValue({ title: "x" }, spec, "")).toEqual({});
+  it("drops keys whose value is undefined", () => {
+    expect(setPropValue({ title: "x" }, spec, undefined)).toEqual({});
   });
 
-  it("sets values without mutating the input", () => {
+  it("sets values (any JSON) without mutating the input", () => {
     const original = { variant: "info" };
     const next = setPropValue(original, spec, "Heads up");
     expect(next).toEqual({ variant: "info", title: "Heads up" });
     expect(original).toEqual({ variant: "info" });
+    expect(setPropValue({}, { ...spec, name: "rows" }, [["a", 1]])).toEqual({ rows: [["a", 1]] });
+  });
+});
+
+describe("effectiveProps / emptyValueFor (ADR-058)", () => {
+  it("overlays content values on the spec defaults", () => {
+    const component = {
+      name: "X",
+      children: { policy: "none" as const },
+      props: [
+        { name: "a", required: false, control: { type: "text" as const }, default: "A" },
+        { name: "b", required: false, control: { type: "number" as const } },
+      ],
+    };
+    expect(effectiveProps(component, {})).toEqual({ a: "A" });
+    expect(effectiveProps(component, { a: "set", b: 2 })).toEqual({ a: "set", b: 2 });
+  });
+
+  it("seeds composite members with a value of the item's kind", () => {
+    expect(emptyValueFor({ type: "text" })).toBe("");
+    expect(emptyValueFor({ type: "number" })).toBe(0);
+    expect(emptyValueFor({ type: "boolean" })).toBe(false);
+    expect(emptyValueFor({ type: "select", options: ["x", "y"] })).toBe("x");
+    expect(emptyValueFor({ type: "list", item: { type: "text" } })).toEqual([]);
+    expect(emptyValueFor({ type: "object", fields: {} })).toEqual({});
+    expect(emptyValueFor({ type: "json" })).toBeNull();
   });
 });

@@ -127,7 +127,7 @@ metadata is inferred from TypeScript types and overlaid with explicit config
 
 ```jsonc
 {
-  "mdmxRegistryVersion": 1,
+  "mdmxRegistryVersion": 3,
   "generatedAt": "ISO-8601",
   "hash": "16-hex content hash of the component specs",
   "components": [{
@@ -143,10 +143,18 @@ metadata is inferred from TypeScript types and overlaid with explicit config
       "required": true,
       "control": { /* see control taxonomy */ },
       "default": "info",                // JSON value, optional
-      "description": "…"                // optional (JSDoc-derived)
+      "description": "…",               // optional (JSDoc-derived)
+      "showIf": { "prop": "…", "eq": … } // optional; panel visibility (below)
     }],
     "constraints": { "allowedParents": null | ["…"], "allowedChildren": null | ["…"] },
-    "render": { "mode": "live" | "placeholder" | "static" }
+    "render": {
+      "mode": "live" | "placeholder" | "static",
+      "interactive": true | false     // optional; editor event routing (below)
+    },
+    "preview": {                        // optional; insert-time seed (below)
+      "variant": "info",               // declared props only, JSON values
+      "children": "Sample text"        // first-paragraph text, when children ≠ none
+    }
   }],
   "collections": [{                       // optional; omitted when none configured
     "name": "posts",                      // unique
@@ -185,9 +193,36 @@ file. The record⇄array derivation is canonical in `@mdmx/core`
 match `^[a-z0-9][a-z0-9_-]*$`, and a collection's `dir` must live under the
 configured content dir.
 
-**Control taxonomy** (discriminated union on `type`): `text` / `textarea`
-(`placeholder?`), `number` (`min?`, `max?`, `step?`), `boolean`, `select` /
-`multiselect` (`options`), `color`, `date`, `image`, `link`, `json`,
+**Event routing in the editor** (`render.interactive`, registry v2): a
+live-rendered block receives DOM events from the editor canvas under one of
+three policies. Unset (the default) routes **by target**: events whose
+target is an interactive element — `button`, `input`, `select`, `textarea`,
+`label`, `summary`, media elements, editable regions, or an element with an
+interactive `role` (`button`, `tab`, `switch`, `checkbox`, `radio`, `slider`,
+`menuitem`, `option`, `combobox`, `textbox`, `spinbutton`) — reach the
+component; every other event selects the block. `true` routes every event to
+the component (Alt/Option-click still selects the block); `false` routes
+every event to the editor. A rich-text/blocks component's editable children
+are always the editor's, whatever the policy. Links are never interactive:
+a click on `<a href>` anywhere in the canvas selects the block and does not
+navigate; ⌘/Ctrl-click opens the target in a new tab.
+
+**Insert-time preview** (`preview`, registry v3): what a block holds the
+moment it is inserted from the palette, so it never lands failing MDMX006 or
+rendering nothing. Keys are declared props (the CLI rejects others) with
+JSON values, applied over the props' `default`s; `children` is the text of
+the seeded first paragraph for a `rich-text` or `blocks` component (ignored
+for `none`). `preview` is editor-only: it never touches validation or
+content already written.
+
+**Conditional visibility** (`showIf` on a prop, registry v3): the panel
+shows the prop's control only when `prop` holds `eq` — or, with `eq`
+omitted, any truthy value. Panel-only: a hidden prop keeps its value, is
+still validated, and still serializes; the rule never rewrites content.
+
+**Control taxonomy** (discriminated union on `type`): `text` / `textarea` /
+`link` (`placeholder?`), `number` (`min?`, `max?`, `step?`), `boolean`,
+`select` / `multiselect` (`options`), `color`, `date`, `image`, `json`,
 `list` (`item: Control`), `object` (`fields: Record<string, Control>`).
 Inference: `string`→text, `number`→number, `boolean`→boolean, string-literal
 union→select, `T[]`→list of inferred `T`, other objects/unions→json.
@@ -259,16 +294,23 @@ the definition out as a real `defineMDMX` TSX file; the JSON stays valid until
 the next `mdmx generate` promotes the code version, at which point the merge
 rule shadows it.
 
-Styling: class names in a definition are extracted at build time and compiled
-into `<outDir>/studio.css` (ADR-042). Public pages must not depend on a
-browser-side CSS runtime.
+Styling: class names in a definition are extracted at build time. A host
+that runs Tailwind gets them as a class manifest, `<outDir>/studio-classes.txt`
+(one class per line), for its own build to scan via `@source` (ADR-054); any
+other host gets them compiled into `<outDir>/studio.css` (ADR-042). Public
+pages must not depend on a browser-side CSS runtime.
 
 ## 8. Versioning
 
 - Documents may declare the spec they target (`mdmx: 1` in frontmatter or a
   repo-level config); absent means "current".
-- `mdmxRegistryVersion` (registry schema) and `MDMX_SPEC_VERSION` (grammar)
-  are distinct counters and must not be conflated.
+- `mdmxRegistryVersion` (registry schema; `MDMX_REGISTRY_VERSION`, currently
+  3 — v2 added `render.interactive`; v3 added `preview`, `showIf`, and
+  `link.placeholder`) and `MDMX_SPEC_VERSION` (grammar, currently 1) are
+  distinct counters and must not be conflated. Every registry field added
+  since v1 is optional: a v1 registry reads as v3 with no routing overrides,
+  a v2 registry with no insert-time previews or visibility rules. Run
+  `mdmx generate` once to pick the new fields up.
 - The registry carries `mdmxRegistryVersion` and a content `hash`; editors
   must detect hash drift between a loaded document's session and the current
   registry. Generated artifacts carry no timestamp, so identical inputs

@@ -1426,3 +1426,571 @@ package now has `files: ["dist"]`, and `cli`/`provider-github` gained
 `exports` maps. `@mdmx/next` also gained a barrel-contract test — the
 published surface asserted as a list, closing the "entry points are never
 exercised" blind spot the prune made urgent.
+
+## ADR-049 — The shipped dashboard stylesheet pins its host-independence in `@layer base`
+
+**Context.** `@mdmx/dashboard/styles.css` is imported into the host app and
+rendered under whatever global CSS that app ships. Until 0.6 the chrome
+silently took ~40 values from the UA stylesheet — root `line-height`,
+heading sizes/weights and block margins, control fonts/padding/borders, link
+color and decoration, `code` monospace. 0.6 turns demo-next into a Tailwind
+v4 + shadcn app, whose preflight replaces every one of them. A computed-style
+diff of all 15 screens before/after preflight showed 998 element-level
+changes: inputs inherited **bold** from their labels, hint paragraphs lost
+their margins, `code` lost monospace, the whole chrome got 1.5 line-height —
+and, in the other direction, the editor's viewport switch rendered all three
+buttons for the first time (UA button padding had been overflowing the
+fixed-width buttons and the group clipped two of them).
+
+**Decision.** The stylesheet gains a *host independence* section that pins
+every UA-derived value, written in `@layer base` with element-level
+specificity (`.mdmx-dash h1`, `.mdmx-dash button`, …). The cascade contract:
+
+- beats Tailwind's preflight (same layer, higher specificity) and the UA
+  stylesheet (any author rule does), so the chrome looks the same in a
+  shadcn app, under another reset, or with no global CSS at all;
+- loses to utilities (a later layer) — a studio template's `font-semibold`
+  or `text-2xl` must win over the dashboard's defaults;
+- loses to every unlayered rule in the same file, so the existing chrome
+  rules stay authoritative and nothing had to be rewritten.
+
+The demo's own `.mdmx-page` prose defaults follow the identical contract in
+`app/globals.css`; M3 extends it to the editor canvas (plan Q8), which is
+why this is a stylesheet-wide convention and not a one-off fix.
+
+**Alternatives rejected.** Unlayered pins at `:where()` specificity — the
+first attempt: they beat preflight but also beat utilities (measured:
+`h2.font-semibold` became 700, `text-2xl` became 27px). `@layer base` with
+`:where()` — loses to preflight's own element selectors inside the same
+layer. Asking hosts to scope preflight away from the dashboard — puts the
+burden on every consumer and does nothing for hosts without Tailwind.
+
+**Status.** Shipped — 0.6 M2. The diff went 998 → 243 changed elements; the
+remainder are the pins themselves and accepted improvements (controls
+inheriting the page font, the canvas `figure` now matching the public page).
+Method kept for later milestones: `snapshot.mjs` + `snapdiff.mjs` in the
+session scratchpad — snapshot every surface, change the stylesheet, diff.
+
+## ADR-050 — The canvas is the page: content class on the ProseMirror root, layered fallbacks, and the editor owns its stylesheet (amends ADR-036)
+
+**Context.** ADR-036 made the canvas a device-width, container-query-aware
+column, but its prose came from the dashboard: `.mdmx-dash-editor
+.mdmx-canvas h1 / a / code …` at (0,3,1) out-specified every author
+component's own styles. Measured live (2026-08-26): the Hero title rendered
+in the UI font at 36/600 instead of Space Grotesk 46/700; button labels were
+invisible (accent on accent); every block sat in a 1px border + 4px padding
+wrapper; the editable hole forced the content font onto component children.
+The chrome itself was a copy of the playground's reference stylesheet ported
+into the dashboard, so a manual `MDMXEditor` mount was unstyled and the
+canvas rules could not be reasoned about on their own.
+
+**Decision.** Four parts, one principle — the editor adds nothing inside the
+canvas that the page doesn't have:
+
+1. **The ProseMirror root carries the host's content class.** `MDMXEditor`
+   takes `contentClassName` (default `mdmx-page`, the class the scaffolded
+   public pages give their article; the dashboard passes its config's value
+   through). It goes on the ProseMirror element — the same role the
+   article has, the direct parent of the blocks — so the page's padding,
+   max-width, typography, and `> * + *` rhythm apply verbatim, and container
+   queries measure the same inline size as on the page.
+2. **The canvas element is layout only**: preview width and zoom
+   (viewport.ts), the `mdmx-canvas` inline-size container, room below the
+   page to click into. Block wrappers have no margin, border, or padding;
+   selection and hover are outlines; the content hole sets no font.
+3. **Every bare-element canvas rule is a layered, zero-specificity
+   fallback** — `@layer base { :where(.mdmx-editor .mdmx-canvas) :where(h1)
+   … }` — for hosts with no content styles at all. It loses to any host rule,
+   a reset included: the canvas can only ever look like the page would.
+4. **`@mdmx/editor` ships `styles.css`.** Tokens default at
+   `:where(:root)` (the dashboard's `.mdmx-dash` values win by inheritance);
+   chrome is unlayered and rooted at `.mdmx-editor`; its own
+   host-independence pins (ADR-049) exclude the canvas, as the dashboard's
+   now do. The dashboard imports it and keeps only its mount wrapper; the
+   playground imports it and drops its 600-line copy.
+
+Verified with a computed-style comparison of every element of every block
+on the public page versus the canvas in the desktop preview at zoom 1
+(`parity.mjs`, panels collapsed): `layout` 0 of 9 elements differ,
+`welcome` 1 of 16, `marketing` 4 of 101 — all four being the demo's
+`Stat` figure (`.mdmx-page figure { display: inline-block; margin: 0 }`,
+rebuilt in M5). The stylesheet move itself diffed at 0 changed elements.
+
+One structural limit remains and is the price of NodeView wrappers: the
+page's sibling-rhythm rule lands on the wrapper, not on the block's root.
+Two consequences, both for the content class to accommodate: a root-level
+margin override on the page (`figure { margin: 0 }`) is not mirrored, and an
+`em`-based rhythm computes against the wrapper's inherited font size rather
+than the block's own — so the rhythm rule should use `rem` (the demo's does,
+since M5). Likewise a block root that is `inline-*` behaves as an inline box
+inside its wrapper where a grid or flex page would have blockified it; use
+`flex w-fit` for a shrink-wrapped block. Everything else about a block —
+typography, color, padding, borders, layout, width — is identical.
+
+**Alternatives rejected.** An iframe (ADR-036's reasoning stands). Putting
+the content class on the canvas element instead of the ProseMirror root —
+the page's rhythm rule and padding would not reach the blocks and the
+container would include the page padding. Keeping the chrome scoped under
+`.mdmx-dash-editor` — manual mounts stay unstyled and the file stays at 2k
+lines. Zero-specificity fallbacks left unlayered — they beat utilities
+(measured in M2).
+
+**Status.** Shipped — 0.6 M3. Follow-up: M5 removes the `.twocol` flex
+patch that still lives in the editor stylesheet for the demo's TwoColumn.
+
+## ADR-051 — `fit` is the default preview; the rail and sidebar collapse (amends ADR-036)
+
+**Context.** ADR-036 defaulted the canvas to the 1280px desktop preview.
+In a 1400px window the canvas pane is ~536px, so the default editing
+surface was drawn at `zoom: 0.419`: 18px body text at ~7.5px, the caret,
+selection handles, and buttons at 42%. The zoom exists so a narrow pane can
+show a desktop layout — it should be something an author asks for, not the
+state they type in.
+
+**Decision.** A `fit` mode — canvas width = pane width, zoom 1 — is added
+first in the switch and made the default. Mobile/tablet/desktop stay as
+explicit device previews, now framed by dashed edges so a zoomed frame reads
+as a frame. To give device previews room, the rail and the sidebar collapse
+on desktop from two toolbar toggles, persisted per browser
+(`mdmx:rail-collapsed`, `mdmx:sidebar-collapsed`); mobile keeps its
+off-canvas sheets. Persisted `mdmx:viewport` choices are honored — only an
+explicit click was ever stored, so nobody is silently kept on the old
+default.
+
+**Alternatives rejected.** A focus mode that hides panels while writing
+(fixes size by hiding the palette). Leaving desktop as the default
+(miniature text stays the first impression).
+
+**Status.** Shipped — 0.6 M3, with the Editor.tsx split it needed
+(`useEditorView`, `useViewport`, `useSnippets`, `EditorToolbar`,
+`MobileFabs`; Editor.tsx 612 → 344 lines).
+
+## ADR-052 — Editor event routing by target; `render.interactive` as the registry-level override; links never navigate in the canvas
+
+**Context.** The React NodeView (ADR-023) had no `stopEvent`, so every DOM
+event inside a live block reached ProseMirror: clicking a Hero button both
+navigated (a `#` landed in the URL) *and* selected the block; typing into a
+component's `<input>` was impossible; a component's tabs could not be
+switched. Now that the canvas renders the page's real components (ADR-050),
+components with real controls are the norm, not the exception.
+
+**Decision.**
+- **Routing by target (the default).** `NodeView.stopEvent` hands an event
+  to the component when its target is an interactive element — `button`,
+  `input`, `select`, `textarea`, `label`, `summary`, media, editable regions,
+  or an element with an interactive `role` (the list is `INTERACTIVE_SELECTOR`
+  and SPEC §5) — and lets ProseMirror handle everything else, which is how a
+  block gets selected. The editable hole of a rich-text/blocks component is
+  always the editor's. This is the policy TipTap converged on, and it makes
+  the common case need no configuration.
+- **`render.interactive` overrides per component**, in the registry and
+  SPEC (registry schema v2; `MDMX_REGISTRY_VERSION` is finally a counter of
+  its own instead of aliasing the grammar version): `true` — every event is
+  the component's (Alt/Option-click still selects the block, the documented
+  escape hatch); `false` — every event selects the block. Authored in
+  `defineMDMX({ render: { interactive } })`, extracted by the CLI, honored by
+  the editor. Absent from the registry when unset, so v1 registries read as
+  v2 unchanged.
+- **Links never navigate in the canvas.** A `handleDOMEvents.click` on the
+  view suppresses clicks on any `<a href>` — in components and link marks —
+  and ⌘/Ctrl-click opens the target in a new tab. Links are deliberately
+  not "interactive": clicking one selects the block, as on the old canvas,
+  minus the navigation.
+
+Both policies are pure functions (`routeEvent`, `linkClickAction`) with unit
+tests; the mounted-editor test covers the live link policy, and a round-trip
+test pins that `render.interactive` never touches content.
+
+**Alternatives rejected.** Making links interactive (a component's CTA would
+then be unselectable by click and would navigate away from the editor).
+Selecting blocks with a drag handle instead of by click (more chrome in the
+canvas, the thing ADR-050 just removed). Routing by policy only, no
+per-target default (every component with a button would need config).
+
+**Status.** Shipped — 0.6 M4.
+
+## ADR-053 — shadcn blocks: the rules a component must follow to be a block, and why three shadcn components aren't
+
+**Context.** 0.6 turns demo-next into a Tailwind v4 + shadcn app (M2) and
+makes the canvas render the page's real components (M3/M4). The plan's
+draft block set was ~24 content-shaped shadcn components registered as
+blocks, with the 17 marketing components rebuilt on shadcn primitives. Doing
+it surfaced the constraints that decide what *can* be a block — they are
+properties of the editor's architecture, not of shadcn.
+
+**Decision — the rules.**
+1. **Props are the contract; markup is free.** The marketing components keep
+   their names and props exactly (content round-trips untouched; `mdmx
+   check` on the demo content is the proof) while every one of them is
+   rebuilt on shadcn primitives and utilities. The `mk-*` stylesheet is
+   gone.
+2. **No React context across blocks.** Every nested block is its own React
+   root in the editor (ADR-023), so a parent block cannot provide context to
+   its children. Parent/child pairs are therefore context-free: `Accordion`
+   is a divider list and `AccordionItem` a self-contained collapsible;
+   `Tabs` owns the tab list and broadcasts the active tab as a scoped CSS
+   rule that `Tab` panels (plain `data-tab-panel` divs) obey. Both render
+   identically on the page, where they *are* one tree.
+3. **Containers use grid, and style items by their own class.** A
+   container's child blocks are the editor's wrappers; grid auto-placement
+   treats them as items with nothing to configure per child, whereas a flex
+   container sizing items with `> *` never reaches them. TwoColumn,
+   FeatureGrid, PricingTable, StatsBand are grids; the editor's TwoColumn
+   flex patch (ADR-050 follow-up) is deleted.
+4. **Editable regions stay mounted.** Anything that hides content keeps it
+   in the DOM (`keepMounted` on collapsible panels; Tabs hides with CSS), so
+   ProseMirror's content holes never unmount. Popups (Tooltip, HoverCard)
+   unmount when closed, so their body is a prop and their *trigger* is the
+   rich-text child, rendered as a `<span>` so the editable text is not
+   inside a `<button>`.
+5. **Author components are self-contained for the canvas.** The content
+   class carries its own font/color/background (ADR-050); components
+   respond to width with `@container` variants (the article and the canvas
+   root are both inline-size containers); `"use client"` only where a
+   component has state or handlers (Newsletter, Tabs).
+
+**The set.** Registered (22): Accordion, AccordionItem, Alert, AspectRatio,
+Avatar, Badge, Button, Card, Collapsible, Empty, HoverCard, Item, Kbd,
+Progress, Separator, Skeleton, Spinner, Table, Tabs, Tab, Toggle, Tooltip —
+in a new `UI` palette category. Installed but not registered, beyond the
+plan's interactive/app-chrome list: **Carousel** (Embla sizes slides as
+direct flex children of its viewport — the block wrappers break that
+contract and a selector-based slide list cannot size the wrappers) and
+**ButtonGroup** (styles its buttons through `> *`, rule 3). The demo's
+content gains `posts/blocks.mdx`, one of each.
+
+**Alternatives rejected.** Rendering nested blocks inside the parent's React
+root (would need PM content holes to cross roots — the ADR-023 design point).
+Making wrappers `display: contents` (ProseMirror needs a box for
+coordinates and selection). Keeping `mk-*` CSS beside utilities (two styling
+systems for one demo).
+
+**Status.** Shipped — 0.6 M5. Follow-up: the CLI extractor does not read
+the project's tsconfig `paths`, so prop types that *import* through `@/`
+(e.g. `VariantProps<typeof buttonVariants>`) infer as `json`; every wrapper
+declares JSON-literal props explicitly, which is the convention until the
+extractor honors `paths` (0.7 candidate).
+
+**0.7 M5 note.** The rules were re-applied across all 39 wrappers: every
+required prop now has a component default that the registry mirrors
+(`default` in `defineMDMX` equals the default parameter, so `<Table />`
+renders the same on the page and in the panel), true arrays are `list`
+props (`Kbd.keys`, `Table.columns/rows`, `Tabs.tabs`, `LogoCloud.names`),
+popups opt into `render.interactive`, and 30 of 39 blocks carry an
+insert-time `preview` (the nine without are containers seeded by their
+children, or blocks whose defaults already render). Carousel/ButtonGroup
+stay unregistered.
+
+## ADR-054 — Studio Tailwind handoff: a Tailwind host compiles studio classes itself, from a generated class manifest (amends ADR-042)
+
+**Context.** ADR-042 compiles studio component utilities into
+`.mdmx/studio.css` at generate time, and kept the Tailwind browser runtime
+for the editor canvas. Both were built for hosts *without* Tailwind. In a
+host that runs Tailwind v4 (the 0.6 demo, and every `create-next-app` +
+shadcn project), they hurt: the compiled sheet carries Tailwind's default
+theme, and the browser runtime does too — it compiles the same utilities
+with the default radius/color scales and loads after the app's stylesheet,
+so every `rounded-xl` in the canvas was 12px where the page's theme said
+14px (measured element-by-element in M5). Two Tailwinds on one page always
+disagree eventually.
+
+**Decision.** Detect Tailwind in the host (`detectTailwind` in
+`@mdmx/project`: `tailwindcss` resolvable from the project root, with the
+package.json dependency lists as the fallback) and hand off:
+
+- `mdmx generate` writes `.mdmx/studio-classes.txt` — one class per line,
+  nothing else — instead of `studio.css`, removes a stale compiled sheet,
+  and emits `server.ts` without the CSS import. The host's own build scans
+  the manifest through one line in its stylesheet, `@source
+  "../.mdmx/studio-classes.txt";` — explicit because automatic source
+  detection can't be relied on for a generated dot-directory (gitignored in
+  many setups; Tailwind honors `.gitignore`). Studio classes then compile
+  against the host's theme, once.
+- `mdmx check` warns when the host runs Tailwind, has studio components,
+  and no stylesheet references the manifest — the failure mode is otherwise
+  silent (unstyled studio components, no error anywhere). `mdmx init` still
+  never edits CSS; the warning is the guidance.
+- The dashboard page resolves `tailwindRuntime` from the same detection
+  (explicit config overrides) and skips the browser runtime when the host
+  compiles; the studio editor's preview says so, and a class new to the
+  project styles after save + regenerate — which `mdmx dev` does on every
+  definition change.
+- A host without Tailwind is unchanged: compiled `studio.css`, runtime in
+  the editor (ADR-042).
+
+**Alternatives rejected.** Keeping the runtime for studio authoring in
+Tailwind hosts (the injected stylesheet persists across client navigation
+and overrides the app's theme in every canvas afterwards). Emitting the
+manifest *and* the compiled sheet (two sources of truth; the sheet would
+carry the default theme). Auto-editing the host's stylesheet (the same
+reasoning as `next.config`: config-as-code is not ours to rewrite).
+
+**Status.** Shipped — 0.6 M6. The M5 parity residue is gone: canvas and page
+agree on every measured property.
+
+## ADR-055 — Distribution before (and between) npm releases: pack tarballs + `pnpm.overrides`
+
+**Context.** 0.6.0 is the first npm publish, but the packages had to be
+usable in the maintainer's own apps before it — and will be again between
+releases. `pnpm link`/workspace protocols drag the monorepo's `node_modules`
+into the app and skip everything publishing checks (`exports` maps, `files`,
+the shipped stylesheet, the CLI bin).
+
+**Decision.** `pnpm pack:all` (`scripts/pack.sh`) builds and packs all
+eight packages into `tarballs/` with `pnpm pack` — the artifact `publish`
+uploads, with `workspace:*` rewritten to real versions — and prints a
+`pnpm.overrides` block with absolute `file:` paths. An app keeps normal
+version ranges in `dependencies` and adds the overrides; because overrides
+apply to the whole graph, `@mdmx/dashboard`'s own `@mdmx/editor` resolves
+to the tarball too, so one copy of each package. Iterating is re-pack +
+`pnpm install`; going to npm is deleting the block. Documented as guide 08;
+the tarballs are also attached to each GitHub Release so the workflow has a
+download that matches the published bits.
+
+**Alternatives rejected.** A private registry (Verdaccio) — more moving
+parts than the problem deserves. Committing tarballs — binary churn in git.
+`pnpm link` — tests the wrong thing.
+
+**Status.** Shipped — 0.6 M7. Smoke-tested: 8 tarballs, deps rewritten to
+`0.6.0`, the editor tarball carries `dist/styles.css`, every package packs
+`dist/` only.
+
+## ADR-056 — The dashboard's left nav collapses from the navbar; persisted panel state is a dashboard convention (amends ADR-034, ADR-051)
+
+**Context.** The entry editor renders inside the dashboard shell (ADR-034)
+beside the shell's fixed 232px left nav, so with the editor's own rail and
+sidebar the editor route was four columns wide — in a 1400px window the
+canvas got the ~536px ADR-051 measured. ADR-051 made the editor's rail and
+sidebar collapsible and persisted the choice per browser; the shell had no
+equivalent, no responsive rule, and no way to reclaim the width.
+
+**Decision.** A navbar toggle (panel-left icon beside the brand;
+`aria-expanded`, `aria-controls`) collapses the left nav, which is hidden
+entirely when collapsed (`.mdmx-dash.is-nav-collapsed .mdmx-dash-side {
+display: none }`). The state persists under `mdmx:dash-nav-collapsed`
+following ADR-051's storage pattern and is read in the shell's state
+initializer (safe: `AuthGate` never renders the shell during SSR). `Mod-\`
+toggles it from anywhere except a text editor — form fields, contenteditable
+regions (ProseMirror), CodeMirror — so the shortcut never eats a keystroke.
+The rules are pure functions in `shell/nav-state.ts`. This sets the
+dashboard convention: a panel that hides persists per browser under an
+`mdmx:` key, and a `document`-level shortcut yields to editable targets.
+
+**Alternatives rejected.** An icon rail (keeps a column; the labels *are*
+the navigation, and the point is the width). Auto-collapsing on the editor
+route (a reader who opened the nav would lose it on every entry; an
+explicit toggle persisted once is one click). A responsive breakpoint alone
+(does nothing for the 1400px case that motivated this).
+
+**Status.** Shipped — 0.7 M1.
+
+## ADR-057 — Registry v3: `preview` as the insert-time seed, `showIf` panel visibility, `link.placeholder` (SPEC §5, §8)
+
+**Context.** The 0.7 block audit over demo-next's 39 wrappers found that 24
+insert failing MDMX006 (a required prop with no `default`), four throw on
+insert (`.split()` on `undefined`) and then stay bricked, and that the
+`preview` 17 wrappers already author in `defineMDMX` was never extracted:
+`ComponentSpec` had no field, the CLI read only `override.default`,
+`registry.json` had zero occurrences. `initialProps` seeded only defaults;
+a rich-text block always seeded one empty paragraph — for Tooltip and
+HoverCard that paragraph *is* the trigger, so the block inserted as an
+invisible zero-width span. Every wrapper faked arrays with delimited strings
+because the panel had no `list` control, and the panel had no way to hide a
+prop that only applies in one configuration (`Skeleton.lines`, the `*Href`
+beside each `*Label`).
+
+**Decision.** Registry schema v2 → v3, three additive fields:
+
+- `ComponentSpec.preview?: PropsObject & { children?: string }` — the
+  insert-time seed. The CLI evaluates it from the `defineMDMX` literal with
+  `static-eval` and validates it: keys must be declared props (undeclared
+  keys are warned about and dropped, so a typo can never seed a prop MDMX007
+  would flag), values are JSON, `children` is a string and is dropped with a
+  warning on a `children: none` component. The editor seeds inserts (palette,
+  slash menu, and the rail drop, which now goes through the same
+  `buildComponentNode`) with `preview` over `default`s, in the spec's
+  declaration order, and the seeded first paragraph carries
+  `preview.children`. `preview` is editor-only: validation and existing
+  content never see it.
+- `PropSpec.showIf?: { prop; eq? }` — panel-only visibility: show the
+  control when `prop` equals `eq`, or is truthy when `eq` is omitted. The
+  CLI checks the governing prop exists and isn't the prop itself. Content is
+  never rewritten: a hidden prop keeps its value, still validates, still
+  serializes.
+- `ControlSpec` `link` gains `placeholder?`, applied through the same
+  `placeholder` override `text`/`textarea` use.
+
+`MDMX_REGISTRY_VERSION = 3`. Every field is optional, so v1 and v2
+registries load unchanged; `mdmx generate` once picks the fields up. The
+`isPropVisible` rule lives in core so the panel and any future check agree.
+
+**Alternatives rejected.** Seeding from `default` alone (a default is what
+the *component* renders when the prop is absent; a preview is what an
+*author* should see first — Tooltip's default `content` is nothing). Letting
+`preview` seed undeclared keys (silent MDMX007). Making `showIf` rewrite or
+clear hidden props (it would turn a panel affordance into a content
+mutation, and hidden-but-set is exactly the state an author toggling
+`shape` back expects to find intact).
+
+**Status.** Shipped — 0.7 M2. Registries regenerated for `examples/demo`
+and `demo-next` (20 of 39 blocks carry a preview; the rest get one in M5).
+
+## ADR-058 — Component context follows the caret; value-typed controls; block actions as pure commands; the render boundary resets on prop change
+
+**Context.** The 0.7 audit of the editor's prop panel: it showed only for a
+`NodeSelection` on a component — a caret inside a Tab's text showed the
+*frontmatter* panel — and editing a container's prop while node-selected
+collapsed the selection into its first child (ProseMirror maps a
+`NodeSelection` through `setNodeMarkup` to a caret inside), so the panel
+vanished after one edit. `controls.tsx` rendered 7 of the 13 control kinds;
+`list` and `object` fell to a bare text input whose string was stored
+verbatim, so an array prop edited in the panel became a string — the reason
+every demo wrapper faked arrays with delimited strings. Unset props showed
+`—` while the component rendered its default. No block could be deleted,
+duplicated or moved except by drag. A live render that threw stayed a
+placeholder until reload, even after the offending prop was fixed.
+
+**Decision.**
+
+- **Context** — `componentContext(state, registry)` (pure, in the headless
+  entry): the selected component, else the deepest component around the
+  caret, plus its component ancestors. The prop panel edits the target and
+  renders the chain as a breadcrumb (`Card › Tabs › Tab`; a crumb makes a
+  `NodeSelection` on that ancestor). A prop edit re-selects the edited node
+  when it was node-selected, so the context never jumps to a child.
+  The sidebar does not auto-switch to Properties on selection (Q4).
+- **Value-typed controls** — `Control.onChange` receives `JsonValue |
+  undefined`; scalars coerce inside the control, `list` renders rows
+  (add/remove/reorder, per-item `Control`), `object` one control per
+  declared field, `link` a text input with the spec's placeholder,
+  `color`/`date` native inputs. An emptied list or object unsets the prop.
+  Every edit is still one `setNodeMarkup` transaction (invariant 6).
+- **Effective defaults** — the panel shows `props[name] ?? default`, muted
+  when the value is the default; a select offers `—` only for an optional
+  prop with no default; a set prop with a default gets a reset that drops
+  the key. `showIf` is evaluated against the same effective values, so
+  `Skeleton.lines` shows while `shape` merely defaults to `text`.
+- **Block actions** — pure commands `deleteBlockAt` (leaves one paragraph
+  when a container that accepts paragraphs would empty), `duplicateBlockAt`
+  (copies the node, children included, and selects the copy),
+  `moveBlockAt(dir)` (swaps with the sibling — same parent, so every
+  constraint holds by construction), bound through `blockActionKeymap`
+  (`Mod-Shift-Backspace`, `Mod-Shift-d`, `Mod-Shift-ArrowUp/Down`) and a
+  small toolbar anchored to the target's top-right corner inside the canvas
+  wrap (measured from the NodeView's DOM on every state change, scroll and
+  resize; hidden on mobile). "Edit source" switches the sidebar to Source
+  and reveals the block's lines (M4 makes it a real editor).
+- **Boundary reset** — `RenderBoundary` retries the live render when the
+  props identity changes; a render that throws again lands back on the
+  fallback without looping.
+
+**Alternatives rejected.** Auto-switching the sidebar to Properties on
+selection (the source pane is the product thesis; it must not be pushed
+away by clicking). Keeping the string-typed `onChange` and coercing in the
+panels (composite controls can't be expressed as one string, and two
+panels already duplicated the coercion). Rewriting hidden `showIf` props
+(a panel affordance must not mutate content). Drag-only reordering (no
+keyboard path, and nested drags have no indicator yet).
+
+**Status.** Shipped — 0.7 M3.
+
+## ADR-059 — The source pane is an editor: CodeMirror 6, parse-gated live apply, focused-pane authority, canonicalize on blur (supersedes the read-only pane's rationale in `packages/editor/DESIGN_NOTES.txt`)
+
+**Context.** The right-hand pane has shown the canonical MDMX since the
+prototype — the product thesis made visible — but as a read-only `<pre>`
+re-rendered from the document on every state change. Hands-on configuration
+of MDX components is exactly what a text pane is for, the Studio already
+edits source in a `<textarea>` with a preview, and text → document already
+existed as the load path (`parseMDX` + `fromMdast`). The pane also located
+the active block with an `indexOf` of its own serialization, so two
+identical blocks highlighted the first one twice.
+
+**Decision.** The pane hosts a CodeMirror 6 `EditorView` (`@codemirror/
+state`, `view`, `language`, `commands`, `lint`, `lang-markdown`,
+`lang-javascript`, `@lezer/highlight`, pinned `~`; `@mdmx/editor` only —
+core stays dependency-light, invariant 9). Markdown highlighting with JSX
+code blocks stands in for an MDX grammar (follow-up). The rules:
+
+- **Text applies through the load path.** `applySourceText` (headless,
+  `source-sync.ts`) parses the pane text with `parseMDX`, converts with
+  `fromMdast(… { source: text })`, and dispatches one transaction
+  (`replaceWith` + the frontmatter attr, meta `mdmx-source`). Whatever the
+  pane shows is what a load of that text would show; an unknown component
+  becomes a raw block. Nothing in the converters or the canonical
+  serializer changed (invariants 1, 3).
+- **Live, debounced, parse-gated.** Edits apply 300 ms after the last
+  keystroke, only when the text parses; ⌘/Ctrl-Enter applies now. A parse
+  error shows a status strip ("Syntax error, line N — canvas shows the last
+  applied version") and the canvas keeps the last applied state.
+  Validation diagnostics (MDMX001–010, plus the syntax error itself) are
+  lint-gutter markers with their codes — informational, never a blocker.
+- **The focused pane is authoritative.** After a pane-originated apply the
+  canonical re-serialization is *not* pushed back (quotes flipping under
+  the cursor is disorienting); the pane recognizes its own applies by the
+  document identity it produced. On blur the pane snaps to canonical text
+  once — unless the text does not parse, in which case it stays, with its
+  error, so the fix is still possible. Canvas edits always stream into an
+  unfocused pane.
+- **Line map, both directions.** `blockLineMap` serializes each top-level
+  block and walks the canonical text sequentially, so duplicates get their
+  own ranges; the active canvas block is marked in the pane, and while the
+  pane is focused the block under its cursor is outlined on the canvas
+  and scrolled into view — the ProseMirror selection is not moved by
+  cursor movement, only by an apply (which selects the block under the
+  cursor: a component gets a `NodeSelection`).
+- **Undo.** Each apply is one ProseMirror history event; CodeMirror keeps
+  its own text history.
+- **Edit source** (block action) switches the sidebar to Source, puts the
+  cursor on the block's first line, and focuses the pane. Mobile uses the
+  same instance inside the existing sheet.
+
+Theme: token *classes* from a `HighlightStyle`, colored by `--mdmx-code-*`
+tokens in the editor stylesheet, so dark mode follows the dashboard without
+a JS theme.
+
+**Alternatives rejected.** Apply on blur/explicit only (the loop guard is
+the hard part either way, and live apply is what makes "type a prop, watch
+the canvas" work). Pushing canonical text back after every apply (the
+cursor jumps; the round-trip is better seen once, on blur). A structural
+patch of the document from a text diff (the load path is the contract; a
+parallel converter would drift). Keeping the `<pre>` and adding a modal
+text editor (two source surfaces).
+
+**Status.** Shipped — 0.7 M4. Verified live and in jsdom (CodeMirror
+mounts under jsdom with a `Range.getClientRects` polyfill in the editor's
+vitest setup).
+
+## ADR-060 — Props stay static JSON: canvas interaction does not write back (the per-block `setProp` channel is the 0.8 candidate)
+
+**Context.** Five demo wrappers hold uncontrolled state — `AccordionItem`
+and `Collapsible` (`defaultOpen`), `FAQItem`, `Toggle` (`defaultPressed`),
+`Tabs` (a local `useState`). Toggling them in the canvas changes what the
+author sees and nothing else: the prop keeps its authored value, the source
+pane does not move, a reload restores the file. An author who opens an
+accordion item and saves expects `open={true}`; today they must set it in
+the panel. The 0.7 audit recorded this as the one editing gap the plan does
+not close (Q7).
+
+**Decision.** Deferred; recorded here so it is a decision, not an
+oversight. Props remain static JSON (SPEC §1.3, invariant 2) written only
+through the prop panel, the source pane, or a load. Interaction in the
+canvas is *preview*: a wrapper seeds its state from the prop and diverges
+freely, exactly as it would on the page. The candidate design for 0.8: a
+per-block **`setProp` channel** — the React NodeView passes the author
+component, beside its props, a setter (`useMDMXProps()` → `{ props,
+setProp(name, value) }`); a wrapper calls it from `onOpenChange` /
+`onPressedChange` / `onValueChange`; the editor turns each call into one
+`setNodeMarkup` transaction (invariant 6), with the same history grouping
+as typing. It needs a registry-level opt-in (`render.writeBack`, or a
+per-prop `bind`) so a component can keep preview-only state, the public
+renderer to ignore the channel, and its own live checks — which is why it
+is not part of the editing wave.
+
+**Alternatives rejected.** Making the wrappers controlled from the prop
+alone (then a click in the canvas does nothing — worse than diverging).
+Observing DOM state (`data-open`, `aria-pressed`) from the NodeView and
+writing it back (couples the editor to each primitive's DOM contract; the
+studio components have none).
+
+**Status.** Deferred to 0.8 (Roadmap). 0.7 ships the gap as documented
+behavior.

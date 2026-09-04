@@ -67,8 +67,8 @@ describe("watchTargets", () => {
 describe("runGenerate", () => {
   it("writes the registry and summarizes component count + hash", async () => {
     const { result, line } = await runGenerate(app, config);
-    expect(result.spec.components.map((c) => c.name)).toEqual(["Callout", "Chart"]);
-    expect(line).toContain("2 component(s)");
+    expect(result.spec.components.map((c) => c.name)).toEqual(["Callout", "Chart", "Poll"]);
+    expect(line).toContain("3 component(s)");
     expect(line).toContain(result.spec.hash);
   });
 });
@@ -99,7 +99,7 @@ describe("dev watch loop", () => {
       error: () => {},
     });
     expect(logs.some((l) => l.startsWith("mdmx dev: watching"))).toBe(true);
-    expect(logs.some((l) => l.includes("2 component(s)"))).toBe(true);
+    expect(logs.some((l) => l.includes("3 component(s)"))).toBe(true);
     expect(handle.lastHash).toMatch(/^[0-9a-f]{16}$/);
     handle.close();
     expect(fw.disposed()).toBe(true);
@@ -180,7 +180,7 @@ describe("dev watch loop", () => {
     await handle.regenerate();
 
     expect(handle.lastHash).not.toBe(firstHash);
-    expect(logs.some((l) => l.includes("3 component(s)"))).toBe(true);
+    expect(logs.some((l) => l.includes("4 component(s)"))).toBe(true);
     handle.close();
   });
 });

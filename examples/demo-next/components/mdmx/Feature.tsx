@@ -1,24 +1,27 @@
 import type { ReactNode } from "react";
 import { defineMDMX } from "@mdmx/core";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 interface FeatureProps {
-  title: string;
+  title?: string;
   /** Emoji or short glyph shown above the title */
   icon?: string;
   children: ReactNode;
 }
 
-function FeatureImpl({ title, icon, children }: FeatureProps) {
+function FeatureImpl({ title = "Feature", icon, children }: FeatureProps) {
   return (
-    <article className="mk-feature">
-      {icon ? (
-        <span className="mk-feature-icon" aria-hidden>
-          {icon}
-        </span>
-      ) : null}
-      <h3 className="mk-feature-title">{title}</h3>
-      <div className="mk-feature-body">{children}</div>
-    </article>
+    <Card size="sm" className="h-full">
+      <CardHeader>
+        {icon ? (
+          <span className="text-2xl leading-none" aria-hidden>
+            {icon}
+          </span>
+        ) : null}
+        <CardTitle>{title}</CardTitle>
+      </CardHeader>
+      <CardContent className="text-sm text-muted-foreground">{children}</CardContent>
+    </Card>
   );
 }
 
@@ -30,7 +33,8 @@ export const Feature = defineMDMX(FeatureImpl, {
   children: "rich-text",
   constraints: { allowedParents: ["FeatureGrid"] },
   props: {
-    title: { placeholder: "Feature title" },
+    title: { placeholder: "Feature title", default: "Feature" },
     icon: { placeholder: "✨" },
   },
+  preview: { title: "Fast", icon: "⚡", children: "Ships in seconds." },
 });

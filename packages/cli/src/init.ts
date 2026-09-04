@@ -168,6 +168,8 @@ export const Callout = defineMDMX(CalloutImpl, {
   icon: "alert-circle",
   description: "Highlighted box for notes and warnings",
   children: "rich-text",
+  // What a freshly inserted block holds (props over defaults + first paragraph).
+  preview: { variant: "info", title: "Heads up", children: "Something worth knowing." },
 });
 `;
 

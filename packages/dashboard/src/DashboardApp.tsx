@@ -135,11 +135,15 @@ function AuthedDashboard({
     return { ...studio, ...components };
   }, [components, studioEntries]);
 
-  // Studio components carry Tailwind classes; load the browser runtime so the
-  // editor canvas (and studio previews) style them.
+  // Studio components carry Tailwind classes. A host without Tailwind needs
+  // the browser runtime for the editor canvas to style them; a Tailwind host
+  // compiles them itself from the class manifest, and the runtime would only
+  // override the host's theme (ADR-054).
   useEffect(() => {
-    if (studioEntries.length > 0) ensureTailwindRuntime(config.tailwindSrc);
-  }, [studioEntries, config.tailwindSrc]);
+    if (studioEntries.length > 0 && config.tailwindRuntime) {
+      ensureTailwindRuntime(config.tailwindSrc);
+    }
+  }, [studioEntries, config.tailwindRuntime, config.tailwindSrc]);
 
   // Re-apply the stored theme pin (settings) on every dashboard load.
   useEffect(() => {

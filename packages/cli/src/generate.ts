@@ -1,13 +1,14 @@
 import { createHash } from "node:crypto";
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, writeFileSync, rmSync } from "node:fs";
 import { join } from "node:path";
 import { glob } from "tinyglobby";
 import {
-  MDMX_SPEC_VERSION,
+  MDMX_REGISTRY_VERSION,
   collectionsFromConfig,
   type RegistrySpec,
 } from "@mdmx/core";
 import type { MDMXConfig } from "@mdmx/project";
+import { detectTailwind } from "@mdmx/project";
 import {
   extractComponents,
   type ExtractionIssue,
@@ -18,7 +19,12 @@ import {
   emitRegistryModule,
   emitServerModule,
 } from "./emit.js";
-import { compileStudioCss } from "./studio-css.js";
+import {
+  STUDIO_MANIFEST,
+  compileStudioCss,
+  emitStudioManifest,
+  extractStudioClasses,
+} from "./studio-css.js";
 import { loadStudioDefs } from "./studio-defs.js";
 
 export interface GenerateResult {
@@ -92,7 +98,7 @@ export async function generate(cwd: string, config: MDMXConfig): Promise<Generat
   // No `generatedAt`: the artifacts are committed (ADR-040), so identical
   // input must produce identical bytes or every dev session dirties the tree.
   const spec: RegistrySpec = {
-    mdmxRegistryVersion: MDMX_SPEC_VERSION,
+    mdmxRegistryVersion: MDMX_REGISTRY_VERSION,
     hash: hashSpec(componentSpecs, collections),
     components: componentSpecs,
     ...(collections.length > 0 ? { collections } : {}),
@@ -108,17 +114,36 @@ export async function generate(cwd: string, config: MDMXConfig): Promise<Generat
   const cssPath = join(outDir, "studio.css");
 
   // Studio components carry Tailwind-style classes the host's CSS build never
-  // sees, so compile exactly those utilities here (ADR-042).
+  // sees. A Tailwind host gets a class manifest to scan through `@source`
+  // (ADR-054); any other host gets the utilities compiled here (ADR-042).
   const studioDefs = loadStudioDefs(cwd, config);
-  const studio = await compileStudioCss(studioDefs);
-  const hasStudioCss = studio.css.length > 0;
+  const hostTailwind = detectTailwind(cwd);
+  const manifestPath = join(outDir, STUDIO_MANIFEST);
+  let hasStudioCss = false;
+  let cssWrite: string | null = null;
+  let manifestWrite: string | null = null;
+  if (hostTailwind) {
+    const classes = extractStudioClasses(studioDefs);
+    manifestWrite = classes.length
+      ? writeIfChanged(manifestPath, emitStudioManifest(classes))
+      : removeIfPresent(manifestPath);
+    // A stale compiled sheet from before the handoff would shadow the host's
+    // theme if anything still imported it; nothing does, so drop it.
+    removeIfPresent(cssPath);
+  } else {
+    const studio = await compileStudioCss(studioDefs);
+    hasStudioCss = studio.css.length > 0;
+    cssWrite = hasStudioCss ? writeIfChanged(cssPath, studio.css) : removeIfPresent(cssPath);
+    removeIfPresent(manifestPath);
+  }
 
   const changed = [
     writeIfChanged(jsonPath, JSON.stringify(spec, null, 2) + "\n"),
     writeIfChanged(tsPath, emitRegistryModule(spec, deduped, outDir)),
     writeIfChanged(clientPath, emitClientComponents(deduped, outDir)),
     writeIfChanged(serverPath, emitServerModule(config, hasStudioCss)),
-    hasStudioCss ? writeIfChanged(cssPath, studio.css) : null,
+    cssWrite,
+    manifestWrite,
   ].filter((p): p is string => p !== null);
 
   return {
@@ -135,6 +160,13 @@ export async function generate(cwd: string, config: MDMXConfig): Promise<Generat
  * committed artifacts would show as dirty in git, and every downstream file
  * watcher would fire for nothing.
  */
+/** Delete an artifact this generate no longer produces; the path if it was there. */
+function removeIfPresent(path: string): string | null {
+  if (!existsSync(path)) return null;
+  rmSync(path);
+  return path;
+}
+
 function writeIfChanged(path: string, content: string): string | null {
   if (existsSync(path) && readFileSync(path, "utf8") === content) return null;
   writeFileSync(path, content);

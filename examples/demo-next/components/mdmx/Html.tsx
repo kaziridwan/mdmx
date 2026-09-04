@@ -3,12 +3,15 @@ import { sanitizeHtml } from "@mdmx/editor";
 
 interface HtmlProps {
   /** Raw HTML, sanitized before render */
-  code: string;
+  code?: string;
 }
 
-function HtmlImpl({ code }: HtmlProps) {
+function HtmlImpl({ code = "" }: HtmlProps) {
   return (
-    <div className="mk-html" dangerouslySetInnerHTML={{ __html: sanitizeHtml(code ?? "") }} />
+    <div
+      className="rounded-lg border border-dashed"
+      dangerouslySetInnerHTML={{ __html: sanitizeHtml(code ?? "") }}
+    />
   );
 }
 
@@ -18,7 +21,7 @@ export const Html = defineMDMX(HtmlImpl, {
   icon: "code",
   description: "Custom HTML block (sanitized on render)",
   props: {
-    code: { control: { type: "textarea" }, placeholder: "<div>…</div>" },
+    code: { control: { type: "textarea" }, placeholder: "<div>…</div>", default: "" },
   },
   preview: {
     code: '<div style="padding:12px;border-radius:10px;background:#eef2ff">Custom <strong>HTML</strong> block</div>',

@@ -1,9 +1,9 @@
-import type { ControlSpec, JsonValue, PropSpec } from "@mdmx/core";
+import type { ComponentSpec, ControlSpec, JsonValue, PropSpec } from "@mdmx/core";
 
 /**
  * Coerce a raw form-input value into the JSON value a prop should hold, given
- * its control type. Pure (no DOM) so it is unit-testable; the prop panel uses
- * it before writing the single `props` attr. Returning `undefined` means "no
+ * its control type. Pure (no DOM) so it is unit-testable; the scalar controls
+ * use it before emitting a typed value. Returning `undefined` means "no
  * value" → the prop is dropped from the props object.
  */
 export function coerceControlValue(
@@ -63,20 +63,56 @@ export function displayControlValue(
 }
 
 /**
- * Update one entry in a props object, dropping keys whose value coerces to
- * undefined (so optional props don't serialize as empty). Never mutates input.
+ * Update one entry in a props object, dropping keys whose value is undefined
+ * (so optional props don't serialize as empty). Never mutates input.
  */
 export function setPropValue(
   props: Record<string, JsonValue>,
   spec: PropSpec,
-  raw: string,
+  value: JsonValue | undefined,
 ): Record<string, JsonValue> {
   const next = { ...props };
-  const value = coerceControlValue(spec.control, raw);
   if (value === undefined) {
     delete next[spec.name];
   } else {
     next[spec.name] = value;
   }
   return next;
+}
+
+/**
+ * The props as the component sees them: every `default`, overlaid by what
+ * the content actually sets. What the panel displays and what `showIf`
+ * rules are evaluated against (ADR-058).
+ */
+export function effectiveProps(
+  spec: ComponentSpec,
+  props: Record<string, JsonValue>,
+): Record<string, JsonValue> {
+  const out: Record<string, JsonValue> = {};
+  for (const p of spec.props) {
+    if (p.default !== undefined) out[p.name] = p.default;
+  }
+  return { ...out, ...props };
+}
+
+/** The value a new list item / cleared composite member starts with, per control kind. */
+export function emptyValueFor(control: ControlSpec): JsonValue {
+  switch (control.type) {
+    case "number":
+      return 0;
+    case "boolean":
+      return false;
+    case "json":
+      return null;
+    case "list":
+    case "multiselect":
+      return [];
+    case "object":
+      return {};
+    case "select":
+      return control.options[0] ?? "";
+    default:
+      return "";
+  }
 }

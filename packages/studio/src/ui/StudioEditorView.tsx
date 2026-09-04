@@ -84,10 +84,12 @@ export function StudioEditorView({ name,
     setLoadedFrom(entry.sha);
   }, [entry, loadedFrom]);
 
-  // Tailwind runtime for the live preview (idempotent).
+  // Tailwind runtime for the live preview (idempotent) — unless the host
+  // compiles studio classes itself (ADR-054).
+  const runtime = host.tailwindRuntime ?? true;
   useEffect(() => {
-    ensureTailwindRuntime(host.tailwindSrc);
-  }, [host.tailwindSrc]);
+    if (runtime) ensureTailwindRuntime(host.tailwindSrc);
+  }, [runtime, host.tailwindSrc]);
 
   const conversion = useMemo(() => htmlToTemplate(html), [html]);
 
@@ -260,6 +262,9 @@ export function StudioEditorView({ name,
           />
           <p className="mdmx-studio-hint">
             Bind props with <code>{"{props.name}"}</code> in text or attribute values.
+            {runtime
+              ? null
+              : " This app compiles Tailwind itself: a class new to the project styles after you save and mdmx regenerates."}
           </p>
         </section>
         <section className="mdmx-studio-preview">

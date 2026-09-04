@@ -20,9 +20,11 @@ Add `"@mdmx/core", "@mdmx/editor", "@mdmx/next", "@mdmx/dashboard"` to
 packages are built (`pnpm build`) — the apps consume `dist/`.
 
 **The dashboard renders unstyled**
-The stylesheet ships inside `@mdmx/dashboard` and flows through
-`transpilePackages` — if `@mdmx/dashboard` is missing from that list, the CSS
-import inside the package is not processed.
+Two stylesheets flow through `transpilePackages`: the dashboard's own
+(inside `@mdmx/dashboard`) and the editor chrome (`@mdmx/editor/styles.css`,
+imported by the dashboard). If either package is missing from that list, its
+CSS import is not processed — an unstyled editor with a styled dashboard
+means `@mdmx/editor` is the one missing.
 
 **"Could not reach the MDMX API" on the dashboard gate**
 The dashboard's `basePath` (default `/api/mdmx`) doesn't line up with where
@@ -113,3 +115,12 @@ The upload `path` must sit under the handler's `mediaDir`. Keep the editor's
   registry schema, and provider contract.
 - [`docs/wiki/Architecture.md`](../../wiki/Architecture.md) explains the
   request lifecycle end to end.
+
+## The source pane says "Syntax error, line N"
+
+The text in the pane does not parse as MDX (an unclosed tag, a stray `<`),
+so nothing was applied: the canvas shows the last version that did parse,
+and the line number points at the problem. Fix the text and the canvas
+follows; ⌘/Ctrl-⏎ applies right away. A parse error is different from a
+validation marker (MDMX001–010, shown in the gutter) — those describe a
+document that parses and applies but would fail `mdmx check`.

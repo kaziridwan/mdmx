@@ -4,7 +4,7 @@ import { notFound } from "next/navigation";
 import { getEntries, getEntryBySlug, getStudioComponentDefs, type MDMXEntry } from "@mdmx/next";
 import { MDMXContent } from "@mdmx/next/render";
 import { studioRenderComponents } from "@mdmx/studio/react";
-import { serverComponents } from "./registry.js";
+import { serverComponents } from "./registry";
 
 /** Collection name → directory, from mdmx.config.json. */
 export const collections = {} as const;

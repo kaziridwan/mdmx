@@ -27,9 +27,9 @@ What you get at `/mdmx`:
   forms that write `mdmx.config.json` through the commit pipeline
 - **new-entry scaffolding**: title → slug → a valid starter entry from the
   collection's field schema, then straight into the editor
-- the **embedded block editor**: your components rendered live, prop panels,
-  slash menu, the live canonical-source pane, media uploads, sha-checked
-  conflict-safe saves
+- the **embedded block editor**: your components rendered live, a prop
+  panel that follows the caret, block actions, the slash menu, the two-way
+  source pane, media uploads, sha-checked conflict-safe saves
 - a **media library**, a **settings page** (session, repo, validation mode,
   light/dark pin), and **⌘K quick-open** across entries and actions
 - the **Component Studio**: build template components in the browser, eject
@@ -78,6 +78,55 @@ standard layout from [guide 1](01-installation.md).
 | `mediaDir` | `"public/media"` | Media directory, repo-relative |
 | `registryPath` | `".mdmx/registry.json"` | Registry JSON, project-root-relative |
 | `title` | `"MDMX"` | Product name in the navbar |
+| `contentClassName` | `"mdmx-page"` | Class the editor puts on its canvas content root so your site's content styles apply while editing; `""` opts out |
+
+## Editing
+
+### The source pane is an editor
+
+The right-hand **Source** pane shows the canonical MDMX and edits both ways.
+Type in it and the canvas follows — 300 ms after the last keystroke, or
+⌘/Ctrl-⏎ right away — through the same parse path a file load uses, so what
+the pane says is what the canvas shows (an unknown component becomes a raw
+block). Every canvas edit re-serializes into the pane. The rules to know:
+
+- A **syntax error** keeps the canvas on the last applied version; a strip
+  at the bottom says which line. Validation problems (MDMX001–010) are lint
+  markers in the gutter with their codes — they never block an apply.
+- While the pane is focused **your text is authoritative**: the editor does
+  not rewrite it under the cursor. When you leave the pane it snaps to the
+  canonical form once — quotes, spacing, and attribute layout become what
+  the file will contain.
+- The block under the pane's cursor is outlined on the canvas. **Edit
+  source** on any block (toolbar or ⌘⇧… see below) jumps the pane to its
+  first line.
+- Each apply is one undo step in the canvas (⌘Z there); the pane keeps its
+  own text history.
+
+### Properties follow the caret
+
+**Properties** edits the component the caret is in — the selected block,
+or the deepest component around a text caret — with a breadcrumb
+(`Card › Tabs › Tab`); click a crumb to select that ancestor. Unset props
+show their default muted; a set prop with a default gets a reset (↺) that
+drops the key. Every control kind renders: lists as rows (add / remove /
+reorder), objects as one control per field, links with their placeholder,
+native color and date pickers. Props with a `showIf` rule (guide 2) hide
+until they apply. Each edit is one transaction, one undo step, one line of
+output.
+
+### Block actions
+
+A small toolbar sits at the top-right corner of the block in context: move
+up/down, duplicate, edit source, delete. Keyboard: ⌘⇧↑ / ⌘⇧↓ move, ⌘⇧D
+duplicates, ⌘⇧⌫ deletes (Ctrl on Windows/Linux). Moves swap with a sibling,
+so nesting constraints always hold.
+
+### Making room
+
+The dashboard's left navigation collapses from the navbar toggle (or ⌘\ /
+Ctrl-\); the editor's component rail and sidebar collapse from its toolbar.
+All three are remembered per browser.
 
 ## Theming
 
@@ -98,13 +147,43 @@ restyling is a token override:
 }
 ```
 
-The embedded editor is themed by the same stylesheet, **scoped under
-`.mdmx-dash-editor`** — an editor you mount yourself elsewhere (below) stays
-headless, as `@mdmx/editor` always has been.
+The embedded editor's chrome is `@mdmx/editor/styles.css` (the dashboard
+imports it for you). It reads the same `--mdmx-*` tokens, so the override
+above themes the rail, toolbar, and sidebar too.
 
-Your own block components are yours to style: global CSS (like the demo's
-`mk-*` classes) applies inside the editor canvas and on your public pages
-alike — that's what makes the editing experience WYSIWYG.
+**The canvas is your page.** The editor puts your content class on its
+content root — `mdmx-page` by convention, the class the scaffolded
+`app/posts/[slug]/page.tsx` gives its `<article>`; set `contentClassName`
+if yours differs — so your global CSS (the demo's `mk-*` classes, your
+`.mdmx-page` typography, Tailwind utilities on your components) applies
+inside the editor exactly as on the public page. The editor adds nothing
+inside the canvas that changes geometry; its own prose rules are
+zero-specificity fallbacks that any rule of yours beats. Two things to keep
+in mind:
+
+- Components respond to the canvas width with **container queries**, not
+  window media queries — the default `fit` preview is the pane's own width,
+  and the device previews are zoomed frames.
+- Components are **live** in the canvas: clicking a button, typing into an
+  input, or switching a tab inside a block reaches the component; clicking
+  anywhere else on the block selects it. Links never navigate (⌘/Ctrl-click
+  opens a new tab). Override per component with `render: { interactive:
+  true | false }` in `defineMDMX` (guide 2); Alt-click always reaches the
+  editor — it selects a leaf block, and in a block with editable children
+  it puts the caret inside, which makes that block the one in context.
+- Make the content class self-contained: give it its own `color`,
+  `background`, and font, not just `body`'s — inside the editor it sits in
+  the dashboard, whose body colors differ.
+- Bare-element rules for your content belong on your content class (`.mdmx-page
+  h2 { … }`), not on `body`/`h2` globally, or they'll style the dashboard
+  too.
+- In the editor each block sits in a plain wrapper `<div>`. Two things
+  follow: write sibling rhythm in `rem` (`.mdmx-page > * + * { margin-top:
+  1rem }`), since an `em` value would compute against the wrapper's font
+  size; and give a shrink-wrapped block `flex w-fit` rather than
+  `inline-flex`, so it lays out the same inside a grid on the page and
+  inside its wrapper in the canvas. If you use Tailwind, keep them in `@layer base` so utilities on your
+  components still win (the demo's `globals.css` shows the pattern).
 
 ## Advanced: mounting the editor manually
 
@@ -171,9 +250,10 @@ export function MyEditor({
 ```
 
 Rejecting the `onSave` promise surfaces the error in the editor's save
-toolbar. Note that a manual mount is **unstyled** — the editor renders
-class-named markup (`.mdmx-editor`, `.mdmx-rail`, …) and leaves appearance to
-you; the dashboard's scoped chrome deliberately doesn't apply outside it.
+toolbar. A manual mount gets the reference chrome by importing the editor's
+stylesheet (`import "@mdmx/editor/styles.css"`) and is themed through the
+same `--mdmx-*` tokens; leave the import out and the editor stays headless
+class-named markup (`.mdmx-editor`, `.mdmx-rail`, …) for you to style.
 
 ### `MDMXEditorProps` reference
 
@@ -188,6 +268,7 @@ you; the dashboard's scoped chrome deliberately doesn't apply outside it.
 | `backHref` / `backLabel` | `string` | Optional back link at the start of the toolbar |
 | `media` | `MediaSource` | Media adapter (`{ list, upload }`); presence enables the image button + library |
 | `mediaDir` | `string` | Where uploads land (default `public/media`) |
+| `contentClassName` | `string` | Class on the canvas content root so your site's content styles apply while editing (default `mdmx-page`; `""` opts out) |
 
 A `MediaSource` backed by the MDMX API is ~20 lines — list via
 `GET /files?dir=<mediaDir>`, upload via `POST /media`, map repo paths under

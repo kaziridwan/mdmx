@@ -11,7 +11,8 @@ side-channel that types it all.
         │  defineMDMX()                      .mdmx/registry.ts    (server map)
         │                                    .mdmx/components.ts  (client map)
         │                                    .mdmx/server.ts      (bound helpers)
-        │                                    .mdmx/studio.css     (studio styles)
+        │                                    .mdmx/studio.css     (studio styles — or
+        │                                    .mdmx/studio-classes.txt in a Tailwind host)
         │                                          │
         │                                          ▼  drives
         ▼                              ┌───────────────────────────┐
@@ -43,7 +44,7 @@ validator, CLI, and editor, and round-trip tests run headlessly.
 | `@mdmx/project` | core | What a project on disk looks like: `mdmx.config.*` schema + loading (json and mjs), environment/mode resolution (fail-closed in production), registry loading. Node-only, framework-free (ADR-043). |
 | `@mdmx/studio` | core | Component Studio: template model, validation, registry merge (code beats studio), TSX eject, one `{props.x}` implementation; `/react` holds the single template→React renderer (ADR-045). |
 | `@mdmx/cli` | core, project, studio | `mdmx init` (scaffold), `mdmx generate` (registry + both component maps + bound server helpers + studio CSS), `mdmx check` (lint + stale-registry detection), `mdmx dev` (watch). |
-| `@mdmx/editor` | core | Registry→ProseMirror schema; mdast⇄PM converters; command/palette layer; the React editor UI under `/react`. Headless — ships no CSS. |
+| `@mdmx/editor` | core | Registry→ProseMirror schema; mdast⇄PM converters; command/palette layer + block actions; the React editor UI under `/react` — context-aware prop panel (ADR-058), the two-way CodeMirror source pane (ADR-059) — with its reference chrome at `/styles.css` (ADR-050; the main entry stays React-free). |
 | `@mdmx/next` | core | LocalProvider, build-time readers, sealed sessions, GitHub OAuth, content/media/collections API handlers (request-time collection resolution, ADR-035). |
 | `@mdmx/provider-github` | core | GitHubProvider over the Git Data API: atomic multi-file commits, conflict detection. |
 | `@mdmx/dashboard` | core + editor + next | **The app layer** (ADR-034): the drop-in CMS — two-file mount, shell, views, quick-open, shipped light+dark stylesheet that also themes the embedded editor. |

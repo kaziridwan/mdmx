@@ -4,6 +4,7 @@ import { getEntryBySlug, getSession } from "@mdmx/next";
 import { MDMXContent } from "@mdmx/next/render";
 import { renderComponents } from "../../../.mdmx/server";
 import { SiteHeader } from "../../site-header";
+import { Badge } from "@/components/ui/badge";
 
 // /private/<collection path>/<slug> — entries with status "private", visible
 // only to an authenticated MDMX session (ADR: road-to-0.4.1). This demo runs
@@ -35,9 +36,7 @@ export default async function PrivatePostPage({
     <>
       <SiteHeader />
       <article className="mdmx-page">
-        <span className="site-badge" data-status="private">
-          private
-        </span>
+        <Badge variant="secondary">private</Badge>
         <MDMXContent source={entry.source} components={await renderComponents()} />
       </article>
     </>

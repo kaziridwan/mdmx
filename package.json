@@ -1,7 +1,8 @@
 {
   "name": "mdmx-monorepo",
   "private": true,
-  "version": "0.5.0",
+  "version": "0.7.0",
+  "license": "MIT",
   "type": "module",
   "packageManager": "pnpm@11.7.0",
   "scripts": {
@@ -13,7 +14,8 @@
     "generate": "sh scripts/generate.sh",
     "dev:next": "sh scripts/dev-next.sh",
     "dev:playground": "sh scripts/dev-playground.sh",
-    "clean": "sh scripts/clean.sh"
+    "clean": "sh scripts/clean.sh",
+    "pack:all": "sh scripts/pack.sh"
   },
   "devDependencies": {
     "typescript": "~5.5.4",

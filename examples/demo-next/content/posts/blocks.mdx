@@ -1,0 +1,113 @@
+---
+title: UI blocks
+status: published
+slug: blocks
+description: The shadcn components that ship as blocks, one of each.
+---
+
+# UI blocks
+
+Every block below is a shadcn component wrapped in `defineMDMX`. They render
+live in the editor, react to clicks and typing there, and round-trip to
+canonical MDMX.
+
+<Alert title="Heads up" icon="💡">
+  Alerts hold **rich text**. This one has an icon and a title.
+</Alert>
+
+<Card title="A card" description="Cards hold any blocks.">
+  Paragraphs, lists, even other components:
+
+  <Badge label="Nested" variant="secondary" />
+</Card>
+
+<Tabs tabs={["Overview", "Details"]}>
+  <Tab title="Overview">
+    The overview panel.
+  </Tab>
+
+  <Tab title="Details">
+    The details panel — click the tab to switch, even while editing.
+  </Tab>
+</Tabs>
+
+<Accordion>
+  <AccordionItem title="What is a block?" open={true}>
+    A registered component the editor can insert, edit, and serialize.
+  </AccordionItem>
+
+  <AccordionItem title="Can blocks nest?">
+    Yes — this item holds blocks, and a Card can hold an Accordion.
+  </AccordionItem>
+</Accordion>
+
+<Collapsible title="Show the fine print">
+  Collapsed by default; the content stays in the document.
+</Collapsible>
+
+<Table
+  columns={["Plan", "Price", "Seats"]}
+  rows={[["Starter", "$0", "1"], ["Team", "$29", "10"], ["Enterprise", "Custom", "Unlimited"]]}
+  caption="Plans at a glance"
+/>
+
+<Progress value={62} label="Migration" />
+
+<Item
+  title="An item row"
+  description="With a description and an icon."
+  icon="📦"
+/>
+
+<Item
+  title="A compact row that links"
+  description="size and href are props too."
+  icon="🔗"
+  size="sm"
+  href="#"
+/>
+
+<Empty
+  title="Nothing here yet"
+  description="Empty states are blocks too."
+  icon="📭"
+/>
+
+<Separator label="elements" />
+
+<Button label="Primary action" href="#" />
+
+<Badge label="Beta" variant="outline" />
+
+<Badge label="Changelog" variant="link" href="#" />
+
+<Avatar fallback="MX" size="lg" />
+
+<Kbd keys={["⌘", "K"]} />
+
+<Toggle label="Pinned" pressed={true} />
+
+<Spinner label="Working…" />
+
+<Tooltip
+  content="Tooltips take their text as a prop; the trigger is inline-editable."
+  side="right"
+  align="start"
+  sideOffset={8}
+>
+  Hover this text
+</Tooltip>
+
+<HoverCard
+  title="MDMX"
+  content="A git-native CMS where your components are blocks."
+  side="top"
+>
+  Hover for a card
+</HoverCard>
+
+<Separator orientation="vertical" />
+
+<AspectRatio src="/media/placeholder.svg" alt="Placeholder" ratio="21/9" />
+
+<Skeleton shape="text" lines={3} />

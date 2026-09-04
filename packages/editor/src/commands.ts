@@ -1,10 +1,11 @@
 import { setBlockType, toggleMark, wrapIn } from "prosemirror-commands";
 import { inputRules, textblockTypeInputRule, wrappingInputRule } from "prosemirror-inputrules";
 import { insertPoint } from "prosemirror-transform";
-import type { Command, EditorState, Transaction } from "prosemirror-state";
+import { NodeSelection, Selection, type Command, type EditorState, type Transaction } from "prosemirror-state";
 import { Fragment, type Node as PMNode, type NodeType, type Schema } from "prosemirror-model";
 import type { ComponentSpec, Registry } from "@mdmx/core";
 import { componentNodeName, componentNameFromNode } from "./schema.js";
+import { componentContext } from "./component-context.js";
 
 /** Markdown input rules: type the shortcut, the block transforms. */
 export function mdmxInputRules(schema: Schema) {
@@ -81,13 +82,29 @@ export function wrapBlockquote(schema: Schema): Command {
 // Component insertion
 // ---------------------------------------------------------------------------
 
-/** Build the initial props object for a freshly inserted component. */
+/**
+ * The props a freshly inserted component starts with: every `default`, then
+ * the spec's insert-time `preview` over it (registry v3; `preview.children`
+ * is paragraph text, not a prop — see `previewChildren`).
+ */
 export function initialProps(spec: ComponentSpec): Record<string, unknown> {
+  const preview = spec.preview ?? {};
+  // Spec declaration order, so the serialized attributes read the way the
+  // author declared them regardless of where each value came from.
   const props: Record<string, unknown> = {};
   for (const p of spec.props) {
-    if (p.default !== undefined) props[p.name] = p.default;
+    const value = preview[p.name] !== undefined ? preview[p.name] : p.default;
+    if (value !== undefined) props[p.name] = value;
   }
   return props;
+}
+
+/** The text a component's seeded first paragraph carries on insert, if any. */
+export function previewChildren(spec: ComponentSpec): string | null {
+  const text = spec.preview?.children;
+  return typeof text === "string" && text.length > 0 && spec.children.policy !== "none"
+    ? text
+    : null;
 }
 
 /** Cap recursion when seeding container subtrees (guards self-allowing specs). */
@@ -97,7 +114,8 @@ const MAX_SEED_DEPTH = 4;
  * Build a component node, seeding a usable initial subtree so containers land
  * editable rather than empty:
  * - `none` → atom (no content)
- * - `rich-text` / `blocks` → one empty paragraph
+ * - `rich-text` / `blocks` → one paragraph, carrying the spec's
+ *   `preview.children` text when it has one (registry v3), else empty
  * - slot containers (`allowedChildren`) → one of each allowed child, or **two**
  *   when there is a single allowed type (the TwoColumn / repeater case),
  *   recursively seeded.
@@ -124,7 +142,8 @@ export function buildComponentNode(
         if (child) content.push(child);
       }
     } else if (spec.children.policy === "rich-text" || spec.children.policy === "blocks") {
-      content.push(schema.nodes.paragraph!.create());
+      const text = previewChildren(spec);
+      content.push(schema.nodes.paragraph!.create(null, text ? schema.text(text) : null));
     }
   }
 
@@ -318,4 +337,97 @@ export function slashItemsFor(
   return slashItems(registry, schema).filter(
     (item) => item.kind === "core" || canInsertComponent(registry, schema, state, item.id),
   );
+}
+
+// ---------------------------------------------------------------------------
+// Block actions (ADR-058): pure commands over the block at a position
+// ---------------------------------------------------------------------------
+
+/**
+ * Delete the block at `pos`. If that empties a container that accepts
+ * paragraphs (a Column, a Card), one empty paragraph is left behind so the
+ * container stays enterable; the selection lands where the block was.
+ */
+export function deleteBlockAt(pos: number): Command {
+  return (state, dispatch) => {
+    const node = state.doc.nodeAt(pos);
+    if (!node || !node.isBlock) return false;
+    if (dispatch) {
+      const tr = state.tr.delete(pos, pos + node.nodeSize);
+      const $at = tr.doc.resolve(Math.min(pos, tr.doc.content.size));
+      const paragraph = state.schema.nodes.paragraph;
+      if ($at.parent.childCount === 0 && paragraph && $at.parent.type.contentMatch.matchType(paragraph)) {
+        tr.insert($at.pos, paragraph.create());
+      }
+      tr.setSelection(Selection.near(tr.doc.resolve(Math.min(pos, tr.doc.content.size)), 1));
+      dispatch(tr.scrollIntoView());
+    }
+    return true;
+  };
+}
+
+/** Insert a copy of the block at `pos` (children included) right after it, and select the copy. */
+export function duplicateBlockAt(pos: number): Command {
+  return (state, dispatch) => {
+    const node = state.doc.nodeAt(pos);
+    if (!node || !node.isBlock) return false;
+    if (dispatch) {
+      const at = pos + node.nodeSize;
+      const tr = state.tr.insert(at, node);
+      tr.setSelection(NodeSelection.create(tr.doc, at));
+      dispatch(tr.scrollIntoView());
+    }
+    return true;
+  };
+}
+
+/**
+ * Swap the block at `pos` with its previous/next sibling. Same parent, so
+ * every `allowedParents`/`allowedChildren` constraint holds by construction;
+ * a no-op (false) at the edge.
+ */
+export function moveBlockAt(pos: number, dir: "up" | "down"): Command {
+  return (state, dispatch) => {
+    const node = state.doc.nodeAt(pos);
+    if (!node || !node.isBlock) return false;
+    const $pos = state.doc.resolve(pos);
+    const parent = $pos.parent;
+    const index = $pos.index();
+    let to: number;
+    if (dir === "up") {
+      if (index === 0) return false;
+      to = pos - parent.child(index - 1).nodeSize;
+    } else {
+      if (index >= parent.childCount - 1) return false;
+      to = pos + parent.child(index + 1).nodeSize;
+    }
+    if (dispatch) {
+      const tr = state.tr.delete(pos, pos + node.nodeSize).insert(to, node);
+      tr.setSelection(NodeSelection.create(tr.doc, to));
+      dispatch(tr.scrollIntoView());
+    }
+    return true;
+  };
+}
+
+/**
+ * Keyboard bindings for the block actions, resolved against the component
+ * context at keypress (the selected component, else the deepest one around
+ * the caret): `Mod-Shift-Backspace` delete, `Mod-Shift-d` duplicate,
+ * `Mod-Shift-ArrowUp/Down` move.
+ */
+export function blockActionKeymap(registry: Registry): Record<string, Command> {
+  const onTarget =
+    (make: (pos: number) => Command): Command =>
+    (state, dispatch, view) => {
+      const context = componentContext(state, registry);
+      return context ? make(context.target.pos)(state, dispatch, view) : false;
+    };
+  return {
+    "Mod-Shift-Backspace": onTarget(deleteBlockAt),
+    "Mod-Shift-d": onTarget(duplicateBlockAt),
+    "Mod-Shift-D": onTarget(duplicateBlockAt),
+    "Mod-Shift-ArrowUp": onTarget((pos) => moveBlockAt(pos, "up")),
+    "Mod-Shift-ArrowDown": onTarget((pos) => moveBlockAt(pos, "down")),
+  };
 }

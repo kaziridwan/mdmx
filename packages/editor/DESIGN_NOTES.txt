@@ -48,3 +48,11 @@ WYSIWYG editor is unusual — most editors hide the markup. Here it IS the pitch
 
 One accessory removed: dropped a planned minimap of the document; the source
 pane already serves as the document's structural overview.
+
+0.7 addendum (ADR-059): the source pane is now an editor, not a mirror. The
+seam edits both ways — typed MDMX applies to the canvas live (parse-gated,
+debounced; ⌘⏎ applies now), canvas edits keep re-serializing into the text,
+the focused pane is authoritative and snaps to canonical on blur. The amber
+active-line marker stays; the block under the pane's cursor is outlined on
+the canvas. Validation shows as lint markers in the gutter, never as a
+blocker.

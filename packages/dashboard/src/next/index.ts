@@ -12,11 +12,13 @@
 //   import { createMDMXHandlers, LocalProvider } from "@mdmx/dashboard/next";
 //   export const { GET, POST, PUT, DELETE } = createMDMXHandlers({ ... });
 //   export const dynamic = "force-dynamic";
+import "@mdmx/editor/styles.css";
 import "../styles.css";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { createElement } from "react";
 import type { RegistrySpec } from "@mdmx/core";
+import { detectTailwind } from "@mdmx/project";
 import type { ComponentMap } from "@mdmx/editor/react";
 import { DashboardApp } from "../DashboardApp.js";
 import { resolveConfig, type DashboardConfig } from "../config.js";
@@ -42,14 +44,22 @@ export interface DashboardPageProps {
  */
 export function createDashboardPage(options: DashboardPageOptions = {}) {
   const { components, ...config } = options;
-  const resolved = resolveConfig(config);
+  // A Tailwind host styles studio components through its own build, so the
+  // browser runtime stays off unless asked for (ADR-054).
+  const resolved = resolveConfig({
+    tailwindRuntime: !detectTailwind(process.cwd()),
+    ...config,
+  });
 
   return async function MDMXDashboardPage({ params }: DashboardPageProps) {
     const { slug = [] } = await params;
-    const registryPath = join(process.cwd(), resolved.registryPath);
+    // Read from the working tree per request by design; the turbopackIgnore
+    // comments keep Next 16's build from tracing the whole project for it
+    // (see @mdmx/project's findConfigFile for the longer note).
+    const registryPath = join(/* turbopackIgnore: true */ process.cwd(), resolved.registryPath);
     let spec: RegistrySpec;
     try {
-      spec = JSON.parse(readFileSync(registryPath, "utf8")) as RegistrySpec;
+      spec = JSON.parse(readFileSync(/* turbopackIgnore: true */ registryPath, "utf8")) as RegistrySpec;
     } catch (err) {
       throw new Error(
         `MDMX dashboard: could not read the registry at ${registryPath}. ` +

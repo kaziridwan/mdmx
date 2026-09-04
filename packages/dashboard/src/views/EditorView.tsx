@@ -130,6 +130,7 @@ export function EditorView({ path: segments }: { path: string[] }) {
         backLabel={collection ? collection.name : "Dashboard"}
         media={media}
         mediaDir={config.mediaDir}
+        contentClassName={config.contentClassName}
       />
     </div>
   );

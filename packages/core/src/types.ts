@@ -7,6 +7,14 @@
 
 /** Version of the MDMX grammar implemented by this package. */
 export const MDMX_SPEC_VERSION = 1;
+/**
+ * Registry schema counter (distinct from the grammar's `MDMX_SPEC_VERSION`,
+ * SPEC §8). History: 1 — 0.1; 2 — 0.6, `render.interactive` (ADR-052);
+ * 3 — 0.7, `preview` (insert-time props + children text), `showIf`,
+ * `link.placeholder` (ADR-057). Every field is optional, so older
+ * registries read unchanged.
+ */
+export const MDMX_REGISTRY_VERSION = 3;
 
 // ---------------------------------------------------------------------------
 // JSON values (the "props are JSON" rule)
@@ -80,7 +88,7 @@ export type ControlSpec =
   | { type: "color" }
   | { type: "date" }
   | { type: "image" }
-  | { type: "link" }
+  | { type: "link"; placeholder?: string }
   | { type: "json" }
   | { type: "list"; item: ControlSpec }
   | { type: "object"; fields: Record<string, ControlSpec> };
@@ -91,12 +99,39 @@ export type ControlSpec =
 
 export type ChildrenPolicy = "none" | "rich-text" | "blocks";
 
+/**
+ * Panel-only visibility rule (registry v3): show the prop when `prop` holds
+ * `eq` — or, with `eq` omitted, any truthy value. Content is never rewritten
+ * by it; a hidden prop keeps whatever value it has.
+ */
+export interface ShowIf {
+  prop: string;
+  eq?: JsonValue;
+}
+
 export interface PropSpec {
   name: string;
   required: boolean;
   control: ControlSpec;
   default?: JsonValue;
   description?: string;
+  showIf?: ShowIf;
+}
+
+/**
+ * Insert-time seed (registry v3): the props a freshly inserted block starts
+ * with, over its `default`s, plus the text of its first paragraph when the
+ * component holds children. Keys must be declared props; values JSON.
+ */
+export type PreviewSpec = PropsObject & { children?: string };
+
+/** Whether a prop's control should be shown for the given props (`showIf`). */
+export function isPropVisible(prop: PropSpec, props: PropsObject): boolean {
+  const rule = prop.showIf;
+  if (!rule) return true;
+  const value = props[rule.prop];
+  if (rule.eq === undefined) return Boolean(value);
+  return JSON.stringify(value) === JSON.stringify(rule.eq);
 }
 
 export interface ComponentConstraints {
@@ -107,6 +142,20 @@ export interface ComponentConstraints {
 }
 
 export type RenderMode = "live" | "placeholder" | "static";
+
+/** How a component renders in the editor and which DOM events it keeps. */
+export interface RenderSpec {
+  mode: RenderMode;
+  /**
+   * Event routing inside a live block (ADR-052). Unset — the default policy:
+   * events on interactive elements (buttons, inputs, selects, tabs, …) reach
+   * the component; everything else selects the block. `true`: every event
+   * reaches the component (Alt-click still selects the block). `false`:
+   * every event selects the block. The editable hole of a rich-text/blocks
+   * component is always the editor's, whatever the policy.
+   */
+  interactive?: boolean;
+}
 
 export interface ComponentSpec {
   name: string;
@@ -119,7 +168,9 @@ export interface ComponentSpec {
   children: { policy: ChildrenPolicy };
   props: PropSpec[];
   constraints?: ComponentConstraints;
-  render?: { mode: RenderMode };
+  render?: RenderSpec;
+  /** Insert-time props and children text (registry v3; ADR-057). */
+  preview?: PreviewSpec;
 }
 
 // ---------------------------------------------------------------------------
@@ -241,10 +292,15 @@ export interface DefineMDMXConfig {
     string,
     Partial<Omit<PropSpec, "name">> & { placeholder?: string }
   >;
-  /** Props used to render the component when inserted from the palette. */
-  preview?: PropsObject & { children?: string };
+  /**
+   * Insert-time seed: props (over `default`s) and, for a component with
+   * children, the text of its first paragraph. Extracted into the registry
+   * (v3); keys must be declared props.
+   */
+  preview?: PreviewSpec;
   constraints?: Partial<ComponentConstraints>;
-  render?: { mode: RenderMode };
+  /** `mode` defaults to `live`; see `RenderSpec.interactive` for routing. */
+  render?: Partial<RenderSpec>;
 }
 
 export interface MDMXTagged {

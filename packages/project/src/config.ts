@@ -59,11 +59,20 @@ export interface LoadedConfig {
   root: string;
 }
 
-/** Locate the config file for a project root (JSON preferred over .mjs). */
+/**
+ * Locate the config file for a project root (JSON preferred over .mjs).
+ *
+ * The `turbopackIgnore` comments: Next 16's Turbopack traces filesystem
+ * access reachable from `process.cwd()` at build time and, unable to scope
+ * this lookup, warns that it "causes tracing of the whole project". The
+ * config is read from the project root at request time by design (a
+ * git-native CMS reads the working tree), so the calls are opted out of
+ * tracing here rather than in every consumer's next.config.
+ */
 export function findConfigFile(root: string): string | null {
   for (const name of CONFIG_FILENAMES) {
-    const candidate = join(root, name);
-    if (existsSync(candidate)) return candidate;
+    const candidate = join(/* turbopackIgnore: true */ root, name);
+    if (existsSync(/* turbopackIgnore: true */ candidate)) return candidate;
   }
   return null;
 }
@@ -77,9 +86,15 @@ export async function loadConfig(root: string): Promise<LoadedConfig> {
   const path = findConfigFile(root);
   if (!path) return { config: { ...DEFAULT_CONFIG }, path: null, root };
 
+  // The `.mjs` form is loaded at runtime from the user's project, never
+  // bundled: both bundlers are told to leave the dynamic import alone.
   const raw = path.endsWith(".json")
-    ? (JSON.parse(readFileSync(path, "utf8")) as Partial<MDMXConfig>)
-    : (((await import(pathToFileURL(resolve(path)).href)) as {
+    ? (JSON.parse(readFileSync(/* turbopackIgnore: true */ path, "utf8")) as Partial<MDMXConfig>)
+    : (((await import(
+        /* webpackIgnore: true */ /* turbopackIgnore: true */ pathToFileURL(
+          resolve(/* turbopackIgnore: true */ path),
+        ).href,
+      )) as {
         default?: Partial<MDMXConfig>;
       }).default ?? {});
 

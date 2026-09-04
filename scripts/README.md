@@ -12,6 +12,7 @@ are also wired as root package scripts (`pnpm <name>`).
 | `generate.sh` | `pnpm generate` | Regenerate `.mdmx/registry.*` for every example app. |
 | `test.sh` | `pnpm test` | Run all package test suites. |
 | `check.sh` | `pnpm verify` | Typecheck everything, then run all tests (pre-push gate). |
+| `pack.sh` | `pnpm pack:all` | Build, then `pnpm pack` every package into `tarballs/` and print the `pnpm.overrides` snippet for consuming them from another app (guide 08). `--out DIR` to pack elsewhere. |
 | `clean.sh` | `pnpm clean` | Remove build artifacts (`dist/`, `.next/`, generated `.mdmx/`, tsbuildinfo). `--all` also wipes `node_modules`. |
 
 ## Quick start

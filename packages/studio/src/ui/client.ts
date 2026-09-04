@@ -44,4 +44,11 @@ export interface StudioHost {
    * on-the-fly utilities. Public pages get build-time CSS instead (ADR-042).
    */
   tailwindSrc?: string;
+  /**
+   * False when the host runs Tailwind itself (ADR-054): its build compiles
+   * studio classes from the generated manifest, so the runtime stays off and
+   * a class new to the project appears after the definition is saved and
+   * `mdmx generate` (or `mdmx dev`) has run. Default true.
+   */
+  tailwindRuntime?: boolean;
 }

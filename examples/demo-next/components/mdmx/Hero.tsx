@@ -1,9 +1,11 @@
 import { defineMDMX } from "@mdmx/core";
+import { buttonVariants } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 
 interface HeroProps {
   /** Small label above the title */
   eyebrow?: string;
-  title: string;
+  title?: string;
   subtitle?: string;
   primaryLabel?: string;
   primaryHref?: string;
@@ -14,7 +16,7 @@ interface HeroProps {
 
 function HeroImpl({
   eyebrow,
-  title,
+  title = "Headline",
   subtitle,
   primaryLabel,
   primaryHref,
@@ -22,20 +24,40 @@ function HeroImpl({
   secondaryHref,
   align = "center",
 }: HeroProps) {
+  const centered = align === "center";
   return (
-    <section className="mk-hero" data-align={align}>
-      {eyebrow ? <p className="mk-hero-eyebrow">{eyebrow}</p> : null}
-      <h1 className="mk-hero-title">{title}</h1>
-      {subtitle ? <p className="mk-hero-subtitle">{subtitle}</p> : null}
+    <section
+      data-align={align}
+      className={cn(
+        "rounded-2xl border bg-linear-to-b from-primary/5 to-card px-8 py-14 @3xl:px-12 @3xl:py-22",
+        centered ? "text-center" : "text-left",
+      )}
+    >
+      {eyebrow ? (
+        <p className="mb-2.5 text-xs font-semibold tracking-wider text-primary uppercase">{eyebrow}</p>
+      ) : null}
+      <h1 className="font-heading my-0 text-3xl font-semibold tracking-tight text-balance @3xl:text-5xl">
+        {title}
+      </h1>
+      {subtitle ? (
+        <p
+          className={cn(
+            "mt-3 mb-0 max-w-[46ch] text-lg text-muted-foreground @3xl:text-xl",
+            centered && "mx-auto",
+          )}
+        >
+          {subtitle}
+        </p>
+      ) : null}
       {primaryLabel || secondaryLabel ? (
-        <div className="mk-hero-actions">
+        <div className={cn("mt-6 flex flex-wrap gap-3", centered ? "justify-center" : "justify-start")}>
           {primaryLabel ? (
-            <a className="mk-btn mk-btn-primary" href={primaryHref ?? "#"}>
+            <a className={buttonVariants({ size: "lg" })} href={primaryHref ?? "#"}>
               {primaryLabel}
             </a>
           ) : null}
           {secondaryLabel ? (
-            <a className="mk-btn mk-btn-ghost" href={secondaryHref ?? "#"}>
+            <a className={buttonVariants({ variant: "outline", size: "lg" })} href={secondaryHref ?? "#"}>
               {secondaryLabel}
             </a>
           ) : null}
@@ -52,13 +74,13 @@ export const Hero = defineMDMX(HeroImpl, {
   description: "Headline section with title, subtitle, and call-to-action buttons",
   props: {
     eyebrow: { placeholder: "Eyebrow label" },
-    title: { placeholder: "Headline" },
+    title: { placeholder: "Headline", default: "Headline" },
     subtitle: { control: { type: "textarea" }, placeholder: "Supporting subtitle" },
     primaryLabel: { placeholder: "Primary button" },
-    primaryHref: { control: { type: "link" } },
+    primaryHref: { control: { type: "link" }, placeholder: "/start", showIf: { prop: "primaryLabel" } },
     secondaryLabel: { placeholder: "Secondary button" },
-    secondaryHref: { control: { type: "link" } },
-    align: { default: "center" },
+    secondaryHref: { control: { type: "link" }, placeholder: "/docs", showIf: { prop: "secondaryLabel" } },
+    align: { control: { type: "select", options: ["left", "center"] }, default: "center" },
   },
   preview: {
     eyebrow: "Now in beta",
