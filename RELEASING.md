@@ -24,6 +24,8 @@ maintainer runs the publish steps.
 1. **npm org** — the packages live under the `@mdmx` scope. Create the
    `mdmx` organization at https://www.npmjs.com/org/create (free; public
    packages), then `npm login` on this machine (`npm whoami` to confirm).
+   Publishing prompts for the account's 2FA code, so run step 2 in an
+   interactive terminal.
 2. **Publish all packages** from the release branch, from the repo root:
 
    ```sh

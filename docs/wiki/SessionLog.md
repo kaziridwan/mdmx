@@ -11,6 +11,36 @@ initial design-and-build conversation (12 commits).
 
 <!-- APPEND NEW ENTRIES ABOVE THIS LINE -->
 
+### S36 — 0.7.0 published: `@mdmx/*@0.7.0` on npm, `v0.7.0`, GitHub Release, from-npm smoke
+- The maintainer created the `mdmx` npm org (owner `kazi`) and ran
+  `pnpm -r publish --access public` from `main` at 3bf3cc3 ("pre-publish
+  work", which carries the S35 preflight) — the account's 2FA is
+  auth-and-writes, so the publish has to run in an interactive terminal
+  (noted in RELEASING.md step 1). All eight packages public at 0.7.0,
+  `workspace:*` rewritten (e.g. `@mdmx/cli` → `@mdmx/core@0.7.0`).
+- Tag `v0.7.0` (annotated) on 3bf3cc3, pushed. GitHub Release
+  `v0.7.0` ("mdmx 0.7.0", notes = `docs/releases/0.7.0.md`) with the eight
+  tarballs downloaded from the registry (`npm pack @mdmx/<p>@0.7.0`), so
+  the attachments are byte-for-byte the published bits.
+- From-npm smoke (RELEASING "After publishing"): fresh `create-next-app`
+  (Next 16.3.5, `src/app/`, pnpm 11.7), guide 01 verbatim — `pnpm add` the
+  six runtime packages + `-D @mdmx/cli`, `pnpm mdmx init nextjs`,
+  `transpilePackages` pasted, `pnpm mdmx check` 0/0, `next build` clean,
+  `next dev`: `/mdmx` 200, `/api/mdmx/collections` 200,
+  `/api/mdmx/entries?collection=posts` 200 with the starter entry. The
+  init page import is the four-level one under `src/app/` (S35 fix).
+- Registry note: for ~4 minutes after publish the abbreviated install
+  metadata (`application/vnd.npm.install-v1+json`) returned 404 while the
+  full document and tarballs were already 200 — `pnpm add` fails with "not
+  in the npm registry" until it catches up. Wait and retry; nothing to fix.
+- Wiki pages touched: SessionLog (this entry), Roadmap (immediate-next
+  paragraph: published). RELEASING.md: interactive-terminal note.
+- Follow-ups: the tarballs ship `dist/` only, so the npm package pages
+  have no README (`files` could add a short per-package README or the
+  root one); `mdmx --help` → "Unknown option" (bare `mdmx` prints usage);
+  the init hint says `next.config.mjs` while `create-next-app` writes
+  `next.config.ts`; a from-npm smoke in CI (Roadmap).
+
 ### S35 — 0.7.0 publish preflight: guide 08's tarball flow against a fresh `create-next-app`, two fixes
 - State on entry: 0.7.0 merged to `main` (PR #2); the npm publish is still
   the maintainer's step — no `npm login` on this machine and the `@mdmx`
