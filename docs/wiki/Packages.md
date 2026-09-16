@@ -55,7 +55,7 @@ one package. Depends only on core; core never imports it.
 
 ---
 
-## @mdmx/cli — 44 tests
+## @mdmx/cli — 45 tests
 
 Tooling. Binary: `mdmx`. Config loading now lives in `@mdmx/project`; the CLI
 owns codegen, linting, scaffolding, and watch mode.

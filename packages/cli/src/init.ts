@@ -63,7 +63,7 @@ export function initNext(cwd: string): InitResult {
 
   write("mdmx.config.json", CONFIG);
   write(join(appDir, "api", "mdmx", "[...route]", "route.ts"), API_ROUTE);
-  write(join(appDir, "mdmx", "[[...slug]]", "page.tsx"), DASHBOARD_PAGE);
+  write(join(appDir, "mdmx", "[[...slug]]", "page.tsx"), dashboardPage(appDir));
   write(join("components", "mdmx", "Callout.tsx"), STARTER_COMPONENT);
   write(join("content", "posts", "hello.mdx"), STARTER_ENTRY);
 
@@ -137,12 +137,22 @@ export const { GET, POST, PUT, DELETE } = createMDMXHandlers();
 export const dynamic = "force-dynamic";
 `;
 
-const DASHBOARD_PAGE = `import { createDashboardPage } from "@mdmx/dashboard/next";
-import { components } from "../../../.mdmx/components";
+/**
+ * The dashboard page imports the generated registry by relative path, so the
+ * number of `../` segments depends on where the app directory lives:
+ * `app/mdmx/[[...slug]]/` is three levels below the project root,
+ * `src/app/mdmx/[[...slug]]/` is four.
+ */
+function dashboardPage(appDir: string): string {
+  const depth = appDir.split(/[\\/]/).length + 2;
+  const up = "../".repeat(depth);
+  return `import { createDashboardPage } from "@mdmx/dashboard/next";
+import { components } from "${up}.mdmx/components";
 
 export default createDashboardPage({ components });
 export const dynamic = "force-dynamic";
 `;
+}
 
 const STARTER_COMPONENT = `import { defineMDMX } from "@mdmx/core";
 

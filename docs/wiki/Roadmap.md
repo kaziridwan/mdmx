@@ -116,8 +116,10 @@ npm release).
 
 ## The immediate next milestone
 
-0.7.0 is prepared on `release/0.7.0` and waits on the maintainer's publish
-(RELEASING.md) — the first npm release. Deferred from 0.7, in rough order of
+0.7.0 is merged to `main` (PR #2) and waits on the maintainer's publish
+(RELEASING.md) — the first npm release; the S35 preflight (tarballs packed,
+publish dry-run, guide 08's flow against a fresh `create-next-app`) is done.
+Deferred from 0.7, in rough order of
 value: canvas → prop write-back through a per-block `setProp` channel
 (ADR-060); an MDX grammar for the CodeMirror pane (JSX blocks highlight as
 markdown HTML today); the CLI extractor honoring tsconfig `paths`; Carousel

@@ -28,8 +28,7 @@ absolute paths.
 
 ## 2. Point your app at them
 
-In the consuming app's `package.json`, keep the normal dependencies and add
-the overrides the script printed:
+Keep the normal dependencies in the consuming app's `package.json`:
 
 ```jsonc
 {
@@ -43,21 +42,29 @@ the overrides the script printed:
   },
   "devDependencies": {
     "@mdmx/cli": "^0.7.0"
-  },
-  "pnpm": {
-    "overrides": {
-      "@mdmx/core": "file:/path/to/mdmx/tarballs/mdmx-core-0.7.0.tgz",
-      "@mdmx/project": "file:/path/to/mdmx/tarballs/mdmx-project-0.7.0.tgz",
-      "@mdmx/studio": "file:/path/to/mdmx/tarballs/mdmx-studio-0.7.0.tgz",
-      "@mdmx/next": "file:/path/to/mdmx/tarballs/mdmx-next-0.7.0.tgz",
-      "@mdmx/editor": "file:/path/to/mdmx/tarballs/mdmx-editor-0.7.0.tgz",
-      "@mdmx/dashboard": "file:/path/to/mdmx/tarballs/mdmx-dashboard-0.7.0.tgz",
-      "@mdmx/cli": "file:/path/to/mdmx/tarballs/mdmx-cli-0.7.0.tgz",
-      "@mdmx/provider-github": "file:/path/to/mdmx/tarballs/mdmx-provider-github-0.7.0.tgz"
-    }
   }
 }
 ```
+
+and add the overrides the script printed to the app's `pnpm-workspace.yaml`
+(create the file if the app has none — a single-package app is a workspace
+of one):
+
+```yaml
+overrides:
+  "@mdmx/core": "file:/path/to/mdmx/tarballs/mdmx-core-0.7.0.tgz"
+  "@mdmx/project": "file:/path/to/mdmx/tarballs/mdmx-project-0.7.0.tgz"
+  "@mdmx/studio": "file:/path/to/mdmx/tarballs/mdmx-studio-0.7.0.tgz"
+  "@mdmx/next": "file:/path/to/mdmx/tarballs/mdmx-next-0.7.0.tgz"
+  "@mdmx/editor": "file:/path/to/mdmx/tarballs/mdmx-editor-0.7.0.tgz"
+  "@mdmx/dashboard": "file:/path/to/mdmx/tarballs/mdmx-dashboard-0.7.0.tgz"
+  "@mdmx/cli": "file:/path/to/mdmx/tarballs/mdmx-cli-0.7.0.tgz"
+  "@mdmx/provider-github": "file:/path/to/mdmx/tarballs/mdmx-provider-github-0.7.0.tgz"
+```
+
+pnpm 11 no longer reads the `pnpm` field in `package.json` — settings live
+in `pnpm-workspace.yaml`. (pnpm ≤ 10 also accepts the same block as
+`"pnpm": { "overrides": { … } }` in `package.json`.)
 
 Overrides apply to the whole graph, which is the point: `@mdmx/dashboard`'s
 own `@mdmx/editor` dependency resolves to your tarball too, so there is one
@@ -78,8 +85,8 @@ enough — no version bump needed while you iterate.
 
 ## When the packages are on npm
 
-Delete the `pnpm.overrides` block and `pnpm install`; the version ranges in
-`dependencies` take over. Nothing else changes.
+Delete the `overrides` block from `pnpm-workspace.yaml` and `pnpm install`;
+the version ranges in `dependencies` take over. Nothing else changes.
 
 ## Notes
 

@@ -20,7 +20,7 @@ project to a deployed CMS backed by GitHub OAuth.
 | 5 | [Rendering content](05-rendering-content.md) | `<MDMXEntry>` and the generated `.mdmx/server.ts`, draft/publish, Layer-2 readers |
 | 6 | [Production: GitHub mode](06-production-github.md) | GitHub OAuth app, sealed sessions, `GitHubProvider`, deployment |
 | 7 | [Troubleshooting](07-troubleshooting.md) | Common errors, HTTP status meanings, diagnostic codes |
-| 8 | [Before (or between) npm releases](08-before-npm.md) | Consume the packages as `pnpm pack` tarballs from a checkout, via `pnpm.overrides` |
+| 8 | [Before (or between) npm releases](08-before-npm.md) | Consume the packages as `pnpm pack` tarballs from a checkout, via pnpm `overrides` |
 
 ## How the pieces fit
 

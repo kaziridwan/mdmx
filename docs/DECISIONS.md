@@ -1753,7 +1753,9 @@ parts than the problem deserves. Committing tarballs — binary churn in git.
 
 **Status.** Shipped — 0.6 M7. Smoke-tested: 8 tarballs, deps rewritten to
 `0.6.0`, the editor tarball carries `dist/styles.css`, every package packs
-`dist/` only.
+`dist/` only. Amended for 0.7.0 (S35): pnpm 11 stopped reading the `pnpm`
+field in `package.json`, so the block is `overrides:` in the app's
+`pnpm-workspace.yaml`; `pack.sh` and guide 08 print that form.
 
 ## ADR-056 — The dashboard's left nav collapses from the navbar; persisted panel state is a dashboard convention (amends ADR-034, ADR-051)
 

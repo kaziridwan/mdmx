@@ -42,7 +42,10 @@ maintainer runs the publish steps.
    git tag v0.7.0 && git push origin release/0.7.0 --tags
    ```
 
-4. **Merge** `release/0.7.0` into `main` (PR, as with 0.5.0).
+4. **Merge** `release/0.7.0` into `main` (PR, as with 0.5.0). If the branch
+   was merged before publishing (0.7.0 was), publish from `main` and tag
+   `main` instead — the merge commit carries the same tree — and push with
+   `git push origin main --tags`.
 5. **GitHub Release** for the tag, with the tarballs attached so the
    before-npm workflow (guide 08) has a download that matches the published
    bits:

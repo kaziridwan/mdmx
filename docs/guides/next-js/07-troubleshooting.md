@@ -9,6 +9,15 @@ be skipped. If a component is missing from the palette, check it matches the
 `components` glob in `mdmx.config.json` and that its `defineMDMX` call
 compiled without extraction errors (`mdmx generate` prints them).
 
+**`ERR_PNPM_IGNORED_BUILDS` after `pnpm install`, then every `pnpm exec`/`pnpm run` refuses**
+pnpm 11 blocks dependency build scripts it hasn't been told about and, until
+you decide, treats the install as incomplete — so `pnpm mdmx init nextjs`
+and `pnpm dev` stop with the same message. A fresh `create-next-app` hits it
+through `eslint-config-next` (`unrs-resolver`); it is not an mdmx package.
+Run `pnpm approve-builds`, or write the decision into
+`pnpm-workspace.yaml` (`allowBuilds:` with `unrs-resolver: false`) and
+`pnpm install` again.
+
 **`document is not defined` / `window is not defined` when opening the editor**
 `MDMXEditor` was imported at module top level in a server-rendered file.
 ProseMirror touches browser globals at import time — always load it via

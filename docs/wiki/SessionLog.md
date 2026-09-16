@@ -11,6 +11,53 @@ initial design-and-build conversation (12 commits).
 
 <!-- APPEND NEW ENTRIES ABOVE THIS LINE -->
 
+### S35 — 0.7.0 publish preflight: guide 08's tarball flow against a fresh `create-next-app`, two fixes
+- State on entry: 0.7.0 merged to `main` (PR #2); the npm publish is still
+  the maintainer's step — no `npm login` on this machine and the `@mdmx`
+  scope does not exist yet (registry `/-/org/mdmx/user` → "Scope not
+  found"; RELEASING.md step 1). Preflight: `pnpm test` green (489),
+  `pnpm pack:all` (8 tarballs; `dist/` + `LICENSE` + `package.json` only;
+  every `workspace:*` rewritten to `0.7.0`, including `@mdmx/next`'s
+  optional `@mdmx/provider-github` peer), `pnpm -r publish --access public
+  --dry-run` walks core → editor → project → provider-github → studio → cli
+  → next → dashboard.
+- Guide 08's flow against a fresh `create-next-app@latest --yes` (Next
+  16.3.4, `src/app/`, pnpm 11.7) found two things:
+  1. **pnpm 11 no longer reads the `pnpm` field in `package.json`** (removed
+     in 11.0.0), so the documented `pnpm.overrides` block was silently
+     ignored and `pnpm install` 404'd on the registry. The block now goes in
+     the app's `pnpm-workspace.yaml` (`overrides:`); `scripts/pack.sh`
+     prints that form; guide 08, `scripts/README.md`, the guides index, the
+     0.7.0 release notes, and ADR-055's status are amended. pnpm 11's
+     `strictDepBuilds` also stops a fresh `create-next-app` at
+     `unrs-resolver` (`ERR_PNPM_IGNORED_BUILDS`) and then refuses every
+     `pnpm exec`/`pnpm run` — guide 07 gets an entry.
+  2. **`mdmx init nextjs` broke `src/app/` layouts**: the dashboard page's
+     registry import was the fixed `../../../.mdmx/components`, one level
+     short under `src/app/mdmx/[[...slug]]/`, so `next build` failed with
+     "Module not found". `dashboardPage(appDir)` in `packages/cli/src/init.ts`
+     now derives the depth from the app dir (`app/` → three `../`,
+     `src/app/` → four). +1 cli test (`init.test.ts`: scaffold under
+     `src/app` and the import depth); cli 44 → 45, total 490.
+- After the fixes, in the smoke app from the re-packed tarballs: `mdmx init`
+  → `mdmx check` clean → `next build` clean (0 warnings) → `next dev`:
+  `/mdmx` 200 (dashboard gate), `/api/mdmx/collections` 200,
+  `/api/mdmx/entries?collection=posts` 200 with the starter entry. Under
+  `next start` the API returns the documented production guard (no GitHub
+  env, no local opt-in) — expected.
+- Gate: `pnpm verify` green (490 tests: core 61, project 16, studio 32, cli
+  45, editor 185, next 90, dashboard 49, provider-github 12).
+- Wiki pages touched: SessionLog, Packages (cli 45), Testing / Home / README
+  (490), Roadmap (next-milestone paragraph: merged, preflight done).
+  DECISIONS.md: ADR-055 status amended; no new ADR (both changes are fixes,
+  not decisions). RELEASING.md: note for the merged-before-publish order.
+- Follow-ups: the publish itself (RELEASING.md): create the `mdmx` org,
+  `npm login`, `pnpm -r publish --access public`, tag `v0.7.0` on `main`,
+  `gh release create v0.7.0 tarballs/*.tgz`; then guide 01 from npm without
+  overrides. Cosmetic: `mdmx --help` prints "Unknown option" (bare `mdmx`
+  prints usage); the init hint says `next.config.mjs` while
+  `create-next-app` writes `next.config.ts`.
+
 ### S34 — 0.7.0 release session (release/0.7.0): editing UX
 - Kickoff per the plan (`.dev-context/plans/2026-09-03-0.7-plan.md`, Q1–Q11):
   `release/0.6.0` renamed in place to `release/0.7.0` (the seven 0.6

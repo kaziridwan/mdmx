@@ -34,7 +34,7 @@ registry that drives validation, the editor palette, and prop panels.
   first npm publish (RELEASING.md; 0.6.0 was prepared but never published —
   its work ships in 0.7.0; see
   [Roadmap](Roadmap.md#phase-29--070-editing-ux--two-way-source-component-editing-blocks-that-insert-usable)).
-  489 tests, all green; strict TypeScript throughout; Next 16 (Turbopack) +
+  490 tests, all green; strict TypeScript throughout; Next 16 (Turbopack) +
   React 19.2; demo-next is a Tailwind v4 + shadcn app with 39 author blocks,
   22 of them shadcn components, all inserting usable (0.7 M5), and the
   dashboard stylesheet is host-independent (ADR-049).

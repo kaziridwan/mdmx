@@ -49,8 +49,23 @@ describe("mdmx init nextjs", () => {
       "createMDMXHandlers()",
     );
     expect(readFileSync(join(app, "app/mdmx/[[...slug]]/page.tsx"), "utf8")).toContain(
-      '.mdmx/components',
+      'from "../../../.mdmx/components"',
     );
+  });
+
+  it("scaffolds under src/app and points the page at the registry one level higher", () => {
+    const src = mkdtempSync(join(tmpdir(), "mdmx-src-"));
+    try {
+      mkdirSync(join(src, "src", "app"), { recursive: true });
+      const result = initNext(src);
+      expect(result.created).toContain("src/app/mdmx/[[...slug]]/page.tsx");
+      expect(result.created).toContain("src/app/api/mdmx/[...route]/route.ts");
+      expect(readFileSync(join(src, "src/app/mdmx/[[...slug]]/page.tsx"), "utf8")).toContain(
+        'from "../../../../.mdmx/components"',
+      );
+    } finally {
+      rmSync(src, { recursive: true, force: true });
+    }
   });
 
   it("adds the generate scripts but keeps the ones already there", () => {
